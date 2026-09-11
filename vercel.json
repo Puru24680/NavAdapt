@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "buildCommand": "cd frontend && npm install && npm run build",
+  "outputDirectory": "frontend/dist",
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/av_pipeline_demo.html", "destination": "/av_pipeline_demo.html" },
+    { "source": "/pyscript_av_node.html", "destination": "/pyscript_av_node.html" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

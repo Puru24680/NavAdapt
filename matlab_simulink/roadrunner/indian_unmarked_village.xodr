@@ -1,0 +1,59 @@
+<?xml version="1.0" standalone="yes"?>
+<OpenDRIVE>
+  <header revMajor="1" revMinor="6" name="NavAdapt_Indian_Unmarked_Village_Road" version="1.00" date="2026-09-04T00:00:00" north="0.0" south="0.0" east="0.0" west="0.0">
+    <geoReference><![CDATA[+proj=utm +zone=43 +ellps=WGS84 +datum=WGS84 +units=m +no_defs]]></geoReference>
+  </header>
+  <road name="Gramin_Sadak_Unmarked" length="250.0" id="1" junction="-1">
+    <link/>
+    <planView>
+      <geometry s="0.0" x="0.0" y="0.0" hdg="0.0" length="250.0">
+        <line/>
+      </geometry>
+    </planView>
+    <elevationProfile>
+      <elevation s="0.0" a="0.0" b="0.005" c="0.0" d="0.0"/>
+    </elevationProfile>
+    <lateralProfile/>
+    <lanes>
+      <laneSection s="0.0">
+        <center>
+          <lane id="0" type="none" level="false">
+            <link/>
+            <!-- Missing lane markings: no road markings on centerline -->
+            <roadMark sOffset="0.0" type="none" weight="standard" color="standard" width="0.0"/>
+          </lane>
+        </center>
+        <right>
+          <!-- Single undivided carriageway with unpaved dirt shoulder -->
+          <lane id="-1" type="driving" level="false">
+            <link/>
+            <width sOffset="0.0" a="3.2" b="0.0" c="0.0" d="0.0"/>
+            <roadMark sOffset="0.0" type="none" weight="standard" color="standard" width="0.0"/>
+          </lane>
+          <lane id="-2" type="shoulder" level="false">
+            <link/>
+            <width sOffset="0.0" a="1.8" b="0.0" c="0.0" d="0.0"/>
+            <material sOffset="0.0" surface="dirt" friction="0.55"/>
+          </lane>
+        </right>
+        <left>
+          <lane id="1" type="driving" level="false">
+            <link/>
+            <width sOffset="0.0" a="3.2" b="0.0" c="0.0" d="0.0"/>
+            <roadMark sOffset="0.0" type="none" weight="standard" color="standard" width="0.0"/>
+          </lane>
+          <lane id="2" type="shoulder" level="false">
+            <link/>
+            <width sOffset="0.0" a="1.8" b="0.0" c="0.0" d="0.0"/>
+            <material sOffset="0.0" surface="dirt" friction="0.55"/>
+          </lane>
+        </left>
+      </laneSection>
+    </lanes>
+    <objects>
+      <!-- Simulated pothole hazards on road surface -->
+      <object id="pot_01" name="Pothole_Severe_12cm" type="obstacle" s="52.0" t="0.4" zOffset="-0.12" validLength="1.2" orientation="none" length="1.2" width="1.0" height="0.12" hdg="0.0" pitch="0.0" roll="0.0"/>
+      <object id="pot_02" name="Pothole_Medium_9cm" type="obstacle" s="110.0" t="-0.5" zOffset="-0.09" validLength="1.0" orientation="none" length="1.0" width="0.9" height="0.09" hdg="0.0" pitch="0.0" roll="0.0"/>
+    </objects>
+  </road>
+</OpenDRIVE>

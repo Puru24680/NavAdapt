@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NavAdapt — PyScript Advanced 3D/BEV Autonomous Driving AI Simulator</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- PyScript Core Engine (WebAssembly Pyodide) -->
+  <link rel="stylesheet" href="https://pyscript.net/releases/2024.1.1/core.css" />
+  <script type="module" src="https://pyscript.net/releases/2024.1.1/core.js"></script>
+
+  <style>
+    @keyframes alert-flash { 0%, 100% { border-color: rgba(239,68,68,0.3); box-shadow: inset 0 0 30px rgba(239,68,68,0.2); } 50% { border-color: rgba(239,68,68,0.9); box-shadow: inset 0 0 60px rgba(239,68,68,0.4); } }
+    .alert-active { animation: alert-flash 0.8s infinite ease-in-out; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="bg-[#050811] text-slate-100 min-h-screen p-3 md:p-5 antialiased select-none">
+  <div class="max-w-7xl mx-auto space-y-3 md:space-y-4">
+    
+    <!-- Top Cockpit Status Bar -->
+    <header class="bg-[#0b1222]/90 border border-cyan-900/50 rounded-2xl p-4 shadow-2xl flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+      <div class="flex items-center space-x-3">
+        <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-cyan-500 via-blue-600 to-indigo-900 p-0.5 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+          <div class="w-full h-full bg-[#070d1a] rounded-[10px] flex items-center justify-center font-black text-cyan-400 text-lg">
+            NA
+          </div>
+        </div>
+        <div>
+          <div class="flex items-center space-x-2">
+            <h1 class="text-xl font-black tracking-wider text-white">NavAdapt <span class="text-cyan-400 font-mono text-sm font-semibold">PYTHON WASM 3D</span></h1>
+            <span class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-700 text-cyan-300 font-mono font-bold uppercase">
+              100% Client-Side Python
+            </span>
+          </div>
+          <p class="text-xs text-slate-400">
+            Linear Kalman Filter • 3D FSD Horizon • Frenet Polynomial Lattice • Zero Backend Required
+          </p>
+        </div>
+      </div>
+
+      <!-- Live Telemetry Quick Badges -->
+      <div class="flex flex-wrap items-center gap-2 text-xs font-mono">
+        <div id="pyscript-status" class="bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center space-x-2 text-amber-400">
+          <span class="animate-spin">⏳</span>
+          <span>INITIALIZING PYTHON WASM...</span>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center space-x-2">
+          <span class="text-slate-400">RISK:</span>
+          <span id="badge-risk" class="text-cyan-300 font-bold">12 / 100 (SAFE)</span>
+        </div>
+        <div class="bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center space-x-2">
+          <span class="text-slate-400">TRAVELED:</span>
+          <span id="badge-dist" class="text-white font-bold">0.0 m</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Visualizer & Command Center -->
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-4">
+      
+      <!-- 3 Columns: Advanced Canvas with 3D/BEV Switcher -->
+      <div class="lg:col-span-3 bg-[#080e1b] border border-cyan-950 rounded-2xl p-3 md:p-4 shadow-2xl flex flex-col justify-between">
+        
+        <!-- Canvas Toolbar -->
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-2.5 pb-2.5 border-b border-slate-800/80">
+          <div class="flex items-center space-x-2">
+            <div class="bg-slate-950 p-1 rounded-xl border border-slate-800 flex items-center space-x-1 text-xs font-semibold">
+              <button id="btn-view-3d" class="px-3 py-1.5 rounded-lg bg-cyan-600 text-white shadow-md transition font-mono">
+                🚀 3D Perspective FSD
+              </button>
+              <button id="btn-view-2d" class="px-3 py-1.5 rounded-lg text-slate-400 hover:text-white transition font-mono">
+                🛰️ 2D Tactical BEV
+              </button>
+            </div>
+            <label class="hidden sm:flex items-center space-x-1.5 text-xs text-slate-400 ml-2 cursor-pointer">
+              <input type="checkbox" id="chk-lidar" checked class="rounded accent-cyan-500" />
+              <span>LiDAR Point Cloud</span>
+            </label>
+            <label class="hidden sm:flex items-center space-x-1.5 text-xs text-slate-400 cursor-pointer">
+              <input type="checkbox" id="chk-lattice" checked class="rounded accent-cyan-500" />
+              <span>Frenet Lattice</span>
+            </label>
+          </div>
+
+          <div class="flex items-center space-x-2">
+            <button id="btn-pause" class="px-3 py-1.5 rounded-xl bg-amber-600/80 hover:bg-amber-600 text-white font-mono text-xs font-bold transition active:scale-95">
+              ⏸️ Pause
+            </button>
+            <button id="btn-reset" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-xs font-bold border border-slate-700 transition active:scale-95">
+              🔄 Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Canvas Container -->
+        <div class="relative bg-slate-950 rounded-xl overflow-hidden border border-slate-800/80 aspect-[16/9] min-h-[380px] max-h-[580px]">
+          <canvas id="simCanvas" width="960" height="540" class="w-full h-full block cursor-crosshair"></canvas>
+          <div id="danger-overlay" class="pointer-events-none absolute inset-0 border-4 border-red-500/0 transition-all rounded-xl"></div>
+          
+          <!-- On-Canvas HUD Elements (Tesla/Waymo Style) -->
+          <div class="absolute top-3 left-3 bg-[#081020]/80 backdrop-blur-md border border-slate-800 p-2.5 rounded-xl font-mono text-[11px] space-y-1 select-none pointer-events-none">
+            <div class="text-cyan-400 font-bold flex items-center space-x-1.5">
+              <span class="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></span>
+              <span id="hud-behavior">BEHAVIOR: FOLLOW CORRIDOR</span>
+            </div>
+            <div class="text-slate-300">CRUISE: <span class="text-white font-bold">35.0 km/h</span> | CURRENT: <span id="hud-speed" class="text-emerald-400 font-bold">35.0 km/h</span></div>
+            <div class="text-slate-300">STEERING: <span id="hud-steer" class="text-cyan-300 font-bold">0.0°</span> | CROSS-TRACK: <span id="txt-efa" class="text-slate-400">0.04m</span></div>
+          </div>
+        </div>
+
+        <!-- Indian Road Hazard Injection Bar -->
+        <div class="mt-3 pt-3 border-t border-slate-800/80 space-y-2">
+          <div class="flex items-center justify-between">
+            <span class="text-xs font-bold tracking-wider text-slate-300 uppercase">
+              ⚠️ Trigger Indian Road Hazards:
+            </span>
+            <span class="text-[10px] font-mono text-cyan-400">Click anywhere on road canvas to spawn!</span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 font-mono text-xs">
+            <button id="btn-hz-cow" class="p-2 rounded-xl bg-amber-950/40 border border-amber-600/60 hover:bg-amber-900/60 text-amber-200 transition active:scale-95 text-left flex items-center space-x-2">
+              <span class="text-lg">🐄</span>
+              <div>
+                <div class="font-bold text-[11px]">Cattle Crossing</div>
+                <div class="text-[9px] text-amber-400/70">Cow stops in lane</div>
+              </div>
+            </button>
+
+            <button id="btn-hz-rickshaw" class="p-2 rounded-xl bg-yellow-950/40 border border-yellow-600/60 hover:bg-yellow-900/60 text-yellow-200 transition active:scale-95 text-left flex items-center space-x-2">
+              <span class="text-lg">🛺</span>
+              <div>
+                <div class="font-bold text-[11px]">Auto Cut-In</div>
+                <div class="text-[9px] text-yellow-400/70">Aggressive merge</div>
+              </div>
+            </button>
+
+            <button id="btn-hz-ped" class="p-2 rounded-xl bg-cyan-950/40 border border-cyan-600/60 hover:bg-cyan-900/60 text-cyan-200 transition active:scale-95 text-left flex items-center space-x-2">
+              <span class="text-lg">🚶</span>
+              <div>
+                <div class="font-bold text-[11px]">Pedestrian Dart</div>
+                <div class="text-[9px] text-cyan-400/70">Jaywalker crossing</div>
+              </div>
+            </button>
+
+            <button id="btn-hz-pothole" class="p-2 rounded-xl bg-rose-950/40 border border-rose-600/60 hover:bg-rose-900/60 text-rose-200 transition active:scale-95 text-left flex items-center space-x-2">
+              <span class="text-lg">🕳️</span>
+              <div>
+                <div class="font-bold text-[11px]">Deep Pothole</div>
+                <div class="text-[9px] text-rose-400/70">Road crater</div>
+              </div>
+            </button>
+
+            <button id="btn-hz-clear" class="p-2 rounded-xl bg-emerald-950/40 border border-emerald-600/60 hover:bg-emerald-900/60 text-emerald-200 transition active:scale-95 text-left flex items-center space-x-2">
+              <span class="text-lg">🛣️</span>
+              <div>
+                <div class="font-bold text-[11px]">Clear Track</div>
+                <div class="text-[9px] text-emerald-400/70">Autonomous cruise</div>
+              </div>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Right Column: Live Algorithm Instruments (Stanley, Frenet, EKF, Risk) -->
+      <div class="space-y-4">
+        
+        <!-- Decision State Card -->
+        <div id="card-decision" class="bg-[#080e1b] border border-slate-800 rounded-2xl p-4 shadow-xl transition-all">
+          <div class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">Python Decision Engine</div>
+          <div id="txt-decision" class="text-lg font-bold text-emerald-400 mt-1">
+            ✅ CRUISING AT 35 KM/H
+          </div>
+          <p id="txt-desc" class="text-xs text-slate-400 mt-1">
+            Frenet longitudinal cruise active. Road clearance validated.
+          </p>
+          <div class="mt-3 pt-3 border-t border-slate-800/80 grid grid-cols-2 gap-2 text-center font-mono">
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+              <div class="text-[9px] uppercase text-slate-500">Predicted Rel X</div>
+              <div id="val-relx" class="text-sm font-bold text-cyan-400 mt-0.5">-- m</div>
+            </div>
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+              <div class="text-[9px] uppercase text-slate-500">Predicted Rel Y</div>
+              <div id="val-rely" class="text-sm font-bold text-cyan-400 mt-0.5">-- m</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stanley Steering Dial -->
+        <div class="bg-[#080e1b] border border-slate-800 rounded-2xl p-4 shadow-xl space-y-3">
+          <div class="flex items-center justify-between">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">Stanley Lateral Controller</span>
+            <span class="text-[9px] font-mono text-cyan-400">ε = 0.5 m/s softening</span>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs font-mono mb-1">
+              <span class="text-slate-400">Steering Angle (δ)</span>
+              <span id="txt-steer-val" class="text-cyan-400 font-bold">0.0°</span>
+            </div>
+            <div class="h-3 w-full bg-slate-950 rounded-full overflow-hidden relative border border-slate-800">
+              <div id="bar-steer" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-75" style="width: 50%;"></div>
+              <div class="absolute inset-y-0 left-1/2 w-0.5 bg-slate-500"></div>
+            </div>
+            <div class="flex justify-between text-[9px] font-mono text-slate-500 mt-1">
+              <span>-30° (Swerve Left)</span>
+              <span>0°</span>
+              <span>+30° (Right)</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2 text-xs font-mono pt-1">
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400">Target Speed:</span>
+              <div class="text-sm font-bold text-emerald-400">35.0 km/h</div>
+            </div>
+            <div class="bg-slate-950/70 p-2 rounded-xl border border-slate-800">
+              <span class="text-[10px] text-slate-400">Actuation:</span>
+              <div id="txt-actuation" class="text-sm font-bold text-cyan-400">THR 50%</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Real-Time CAN Frame Telemetry -->
+        <div class="bg-[#080e1b] border border-slate-800 rounded-2xl p-3 shadow-xl">
+          <div class="flex items-center justify-between mb-1.5">
+            <span class="text-[10px] font-mono font-bold uppercase tracking-wider text-slate-400">CAN 2.0B Hardware Frames</span>
+            <span class="text-[9px] font-mono text-emerald-400 font-bold">500 kbps • 25 Hz</span>
+          </div>
+          <div id="can-bus-log" class="h-24 bg-slate-950 rounded-xl p-2 font-mono text-[10px] overflow-y-auto space-y-0.5 text-slate-400 border border-slate-800/80 select-none">
+            <div>[0.0s] 0x102: STEER_ACTUATOR = 0.000 rad</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Shared JS/Python State Bridge -->
+  <script>
+    window.AV_CMD = {
+      viewMode: '3d',
+      isRunning: true,
+      pendingHazard: null,
+      resetRequested: false
+    };
+
+    document.getElementById("btn-view-3d").onclick = () => {
+      window.AV_CMD.viewMode = '3d';
+      document.getElementById("btn-view-3d").className = "px-3 py-1.5 rounded-lg bg-cyan-600 text-white shadow-md font-mono";
+      document.getElementById("btn-view-2d").className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-mono";
+    };
+
+    document.getElementById("btn-view-2d").onclick = () => {
+      window.AV_CMD.viewMode = '2d';
+      document.getElementById("btn-view-2d").className = "px-3 py-1.5 rounded-lg bg-cyan-600 text-white shadow-md font-mono";
+      document.getElementById("btn-view-3d").className = "px-3 py-1.5 rounded-lg text-slate-400 hover:text-white font-mono";
+    };
+
+    document.getElementById("btn-pause").onclick = () => {
+      window.AV_CMD.isRunning = !window.AV_CMD.isRunning;
+      const btn = document.getElementById("btn-pause");
+      btn.textContent = window.AV_CMD.isRunning ? "⏸️ Pause" : "▶️ Resume";
+      btn.className = window.AV_CMD.isRunning
+        ? "px-3 py-1.5 rounded-xl bg-amber-600/80 hover:bg-amber-600 text-white font-mono text-xs font-bold transition active:scale-95"
+        : "px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-mono text-xs font-bold transition active:scale-95";
+    };
+
+    document.getElementById("btn-reset").onclick = () => {
+      window.AV_CMD.resetRequested = true;
+    };
+
+    document.getElementById("btn-hz-cow").onclick = () => window.AV_CMD.pendingHazard = 'cow';
+    document.getElementById("btn-hz-rickshaw").onclick = () => window.AV_CMD.pendingHazard = 'rickshaw';
+    document.getElementById("btn-hz-ped").onclick = () => window.AV_CMD.pendingHazard = 'pedestrian';
+    document.getElementById("btn-hz-pothole").onclick = () => window.AV_CMD.pendingHazard = 'pothole';
+    document.getElementById("btn-hz-clear").onclick = () => window.AV_CMD.pendingHazard = 'clear';
+
+    const canvas = document.getElementById("simCanvas");
+    canvas.onclick = (e) => {
+      const types = ['cow', 'rickshaw', 'pedestrian', 'pothole'];
+      window.AV_CMD.pendingHazard = types[Math.floor(Math.random() * types.length)];
+    };
+  </script>
+
+  <!-- ======================================================= -->
+  <!-- 🐍 PURE PYTHON IN-BROWSER 3D FSD PIPELINE (PYSCRIPT)    -->
+  <!-- ======================================================= -->
+  <script type="py" config='{"packages":["numpy"]}'>
+import time
+import asyncio
+import math
+import numpy as np
+from pyscript import document, window
+
+# 1. LINEAR KALMAN FILTER CLASS
+class LinearKalmanFilter:
+    def __init__(self, dt=0.04, process_noise=1e-2, measurement_noise=0.1):
+        self.dt = dt
+        self.x = np.array([[38.0], [0.1], [-0.2], [0.0]])
+        self.F = np.array([[1, 0, dt, 0], [0, 1, 0, dt], [0, 0, 1, 0], [0, 0, 0, 1]])
+        self.H = np.array([[1, 0, 0, 0], [0, 1, 0, 0]])
+        self.P = np.eye(4)
+        self.Q = np.eye(4) * process_noise
+        self.R = np.eye(2) * measurement_noise
+
+    def predict(self):
+        self.x = self.F @ self.x
+        self.P = self.F @ self.P @ self.F.T + self.Q
+        return self.x
+
+    def update(self, z):
+        y = z - (self.H @ self.x)
+        S = self.H @ self.P @ self.H.T + self.R
+        K = self.P @ self.H.T @ np.linalg.inv(S)
+        self.x = self.x + (K @ y)
+        self.P = (np.eye(4) - K @ self.H) @ self.P
+        return self.x
+
+    def reset(self, x=38.0, y=0.1):
+        self.x = np.array([[x], [y], [-0.2], [0.0]])
+        self.P = np.eye(4)
+
+# 2. CONTINUOUS 3D AUTONOMOUS VEHICLE NODE
+class ContinuousAVNode3D:
+    def __init__(self):
+        self.tracker = LinearKalmanFilter(dt=0.04)
+        self.speed = 9.72 # 35 km/h
+        self.target_speed = 9.72
+        self.lateral_y = 0.0
+        self.heading = 0.0
+        self.steering_angle = 0.0
+        self.total_dist = 0.0
+
+        self.obstacle_active = True
+        self.obstacle_type = 'cow'
+        self.obstacle_rel_x = 38.0
+        self.obstacle_rel_y = 0.1
+        self.obstacle_vy = 0.0
+
+        self.is_swerving = False
+        self.tick = 0
+        self.lidar_angle = 0.0
+        self.lidar_pts = []
+        self.candidates = []
+        self.optimal_path = []
+
+    def spawn(self, htype='cow'):
+        self.obstacle_type = htype
+        self.obstacle_rel_x = float(38.0 + np.random.rand() * 4.0)
+        self.obstacle_active = True
+        if htype == 'cow':
+            self.obstacle_rel_y = 0.2
+            self.obstacle_vy = -0.05
+        elif htype == 'rickshaw':
+            self.obstacle_rel_y = -2.2
+            self.obstacle_vy = 1.6
+        elif htype == 'pedestrian':
+            self.obstacle_rel_y = 2.4
+            self.obstacle_vy = -1.4
+        else: # pothole
+            self.obstacle_rel_y = 0.0
+            self.obstacle_vy = 0.0
+        self.tracker.reset(self.obstacle_rel_x, self.obstacle_rel_y)
+
+    def step(self, dt=0.04):
+        self.tick += 1
+        self.lidar_angle += 0.25
+
+        # 16-beam rotating LiDAR
+        self.lidar_pts = []
+        for b in range(16):
+            ang = self.lidar_angle + (b * math.pi * 2) / 16.0
+            rng = 20.0 + (math.sin(ang * 3.0) + 1.0) * 8.0
+            self.lidar_pts.append((math.cos(ang) * rng, math.sin(ang) * (rng * 0.45)))
+
+        # Perception & EKF
+        if self.obstacle_active:
+            noise = np.random.randn(2, 1) * 0.6
+            z = np.array([[self.obstacle_rel_x], [self.obstacle_rel_y]]) + noise
+            self.tracker.predict()
+            self.tracker.update(z)
+
+        # Frenet Lattice
+        self.candidates = []
+        self.optimal_path = []
+        target_lat = 2.4 if self.is_swerving else 0.0
+        for lat in [-2.4, -1.2, 0.0, 1.2, 2.4]:
+            p = []
+            for s in range(0, 46, 3):
+                prg = s / 45.0
+                cy = self.lateral_y + (lat - self.lateral_y) * (3*prg*prg - 2*prg*prg*prg)
+                p.append((s, cy))
+            self.candidates.append(p)
+
+        for s in range(0, 46, 2):
+            prg = s / 45.0
+            cy = self.lateral_y + (target_lat - self.lateral_y) * (3*prg*prg - 2*prg*prg*prg)
+            self.optimal_path.append((s, cy))
+
+        # Collision Avoidance
+        pred_x = float(self.tracker.x[0][0])
+        pred_y = float(self.tracker.x[1][0])
+
+        if self.obstacle_active and pred_x > 0 and pred_x < 28.0 and abs(pred_y) < 2.2:
+            self.is_swerving = True
+            target_lat = 2.4
+            self.speed = max(4.5, self.speed - 3.5 * dt)
+        elif self.is_swerving and (pred_x <= 0 or not self.obstacle_active):
+            target_lat = 0.0
+            self.speed = min(self.target_speed, self.speed + 2.0 * dt)
+            if abs(self.lateral_y) < 0.25:
+                self.is_swerving = False
+        else:
+            target_lat = 0.0
+            self.speed = min(self.target_speed, self.speed + 2.5 * dt)
+
+        # Stanley Controller Law (ε = 0.5 m/s)
+        k = 0.85
+        epsilon = 0.5
+        e_fa = self.lateral_y - target_lat
+        stanley = -self.heading - math.atan((k * e_fa) / (self.speed + epsilon))
+        self.steering_angle = max(-0.52, min(0.52, stanley))
+
+        # Kinematics
+        L = 2.7
+        self.heading += (self.speed / L) * math.tan(self.steering_angle) * dt
+        self.heading *= 0.92
+        self.lateral_y += self.speed * math.sin(self.heading) * dt
+        self.lateral_y = max(-3.5, min(3.5, self.lateral_y))
+
+        dist = self.speed * dt
+        self.total_dist += dist
+
+        if self.obstacle_active:
+            self.obstacle_rel_x -= dist
+            self.obstacle_rel_y += self.obstacle_vy * dt
+            if self.obstacle_rel_x < -12.0:
+                self.spawn(np.random.choice(['cow', 'rickshaw', 'pedestrian', 'pothole']))
+
+    def draw(self, ctx, W, H, mode='3d'):
+        if mode == '3d':
+            self.draw_3d(ctx, W, H)
+        else:
+            self.draw_2d(ctx, W, H)
+        self.update_dom()
+
+    def draw_3d(self, ctx, W, H):
+        ctx.clearRect(0, 0, W, H)
+        horizon = H * 0.38
+        vanish_x = W * 0.5
+
+        # Sky
+        sky_grad = ctx.createLinearGradient(0, 0, 0, horizon)
+        sky_grad.addColorStop(0, "#030611")
+        sky_grad.addColorStop(1, "#0d1c3a")
+        ctx.fillStyle = sky_grad
+        ctx.fillRect(0, 0, W, horizon)
+
+        # Road
+        road_bottom = W * 0.85
+        road_top = W * 0.12
+        ctx.beginPath()
+        ctx.moveTo(vanish_x - road_top / 2, horizon)
+        ctx.lineTo(vanish_x + road_top / 2, horizon)
+        ctx.lineTo(vanish_x + road_bottom / 2, H)
+        ctx.lineTo(vanish_x - road_bottom / 2, H)
+        ctx.closePath()
+
+        road_g = ctx.createLinearGradient(0, horizon, 0, H)
+        road_g.addColorStop(0, "#0b1324")
+        road_g.addColorStop(1, "#070c18")
+        ctx.fillStyle = road_g
+        ctx.fill()
+
+        # Curbs
+        ctx.strokeStyle = "#0284c7"
+        ctx.lineWidth = 3
+        ctx.beginPath()
+        ctx.moveTo(vanish_x - road_top / 2, horizon)
+        ctx.lineTo(vanish_x - road_bottom / 2, H)
+        ctx.moveTo(vanish_x + road_top / 2, horizon)
+        ctx.lineTo(vanish_x + road_bottom / 2, H)
+        ctx.stroke()
+
+        # Scrolling dashes
+        ctx.fillStyle = "rgba(148, 163, 184, 0.8)"
+        for i in range(10):
+            dn = ((i + (self.total_dist * 0.4) % 1) / 10.0)
+            yp = horizon + math.pow(dn, 2.2) * (H - horizon)
+            dh = max(2, math.pow(dn, 2) * 26)
+            dw = max(1.5, dn * 6)
+            ctx.fillRect(vanish_x - dw / 2, yp, dw, dh)
+
+        def proj(wx, wy):
+            depth = max(1.0, wx)
+            norm = min(1.0, 1.0 / (1.0 + depth * 0.038))
+            sy = horizon + (1.0 - norm) * (H - horizon)
+            rw = road_top + (road_bottom - road_top) * (1.0 - norm)
+            sx = vanish_x + (wy / 3.5) * (rw / 2.0)
+            return sx, sy, norm
+
+        # Optimal Frenet Ribbon
+        if len(self.optimal_path) > 0:
+            ctx.shadowColor = "#06b6d4"
+            ctx.shadowBlur = 14
+            ctx.strokeStyle = "#06b6d4"
+            ctx.lineWidth = 4.5
+            ctx.beginPath()
+            for i, pt in enumerate(self.optimal_path):
+                sx, sy, _ = proj(pt[0], pt[1])
+                if i == 0: ctx.moveTo(sx, sy)
+                else: ctx.lineTo(sx, sy)
+            ctx.stroke()
+            ctx.shadowBlur = 0
+
+        # Obstacle
+        if self.obstacle_active and 0 < self.obstacle_rel_x < 55:
+            ox, oy, sc = proj(self.obstacle_rel_x, self.obstacle_rel_y)
+            ctx.save()
+            ctx.translate(ox, oy)
+            sz = sc * 1.6
+            bw, bh = 38 * sz, 45 * sz
+            ctx.strokeStyle = "#ef4444" if self.is_swerving else "#f59e0b"
+            ctx.lineWidth = 2
+            ctx.strokeRect(-bw/2, -bh, bw, bh)
+
+            if self.obstacle_type == 'cow':
+                # Procedural Desi Stray Cattle
+                ctx.fillStyle = "#d97706"
+                ctx.beginPath()
+                ctx.ellipse(0, -18*sz, 20*sz, 12*sz, 0, 0, math.pi*2)
+                ctx.fill()
+                ctx.fillStyle = "#b45309"
+                ctx.beginPath()
+                ctx.ellipse(14*sz, -24*sz, 8*sz, 9*sz, 0.3, 0, math.pi*2)
+                ctx.fill()
+                ctx.strokeStyle = "#1e293b"
+                ctx.lineWidth = max(1.5, 2.0*sz)
+                ctx.beginPath()
+                ctx.moveTo(11*sz, -30*sz)
+                ctx.lineTo(8*sz, -37*sz)
+                ctx.moveTo(17*sz, -30*sz)
+                ctx.lineTo(21*sz, -37*sz)
+                ctx.stroke()
+                ctx.strokeStyle = "#92400e"
+                ctx.lineWidth = max(1.5, 2.5*sz)
+                for lx in [-12, -4, 6, 14]:
+                    ctx.beginPath()
+                    ctx.moveTo(lx*sz, -10*sz)
+                    ctx.lineTo(lx*sz, 0)
+                    ctx.stroke()
+            elif self.obstacle_type == 'rickshaw':
+                # Procedural Bajaj Auto-Rickshaw
+                ctx.fillStyle = "#15803d"
+                ctx.fillRect(-18*sz, -22*sz, 36*sz, 14*sz)
+                ctx.fillStyle = "#eab308"
+                ctx.fillRect(-19*sz, -34*sz, 38*sz, 12*sz)
+                ctx.fillStyle = "#0f172a"
+                ctx.fillRect(-14*sz, -28*sz, 28*sz, 5*sz)
+                ctx.fillStyle = "#fef08a"
+                ctx.beginPath()
+                ctx.arc(0, -15*sz, 3.5*sz, 0, math.pi*2)
+                ctx.fill()
+                ctx.fillStyle = "#111827"
+                ctx.fillRect(-16*sz, -8*sz, 5*sz, 8*sz)
+                ctx.fillRect(11*sz, -8*sz, 5*sz, 8*sz)
+            elif self.obstacle_type == 'pedestrian':
+                # Procedural Pedestrian
+                ctx.fillStyle = "#fde047"
+                ctx.beginPath()
+                ctx.arc(0, -32*sz, 5*sz, 0, math.pi*2)
+                ctx.fill()
+                ctx.fillStyle = "#0284c7"
+                ctx.fillRect(-4*sz, -27*sz, 8*sz, 14*sz)
+                ctx.strokeStyle = "#1e293b"
+                ctx.lineWidth = max(1.5, 2.0*sz)
+                ctx.beginPath()
+                ctx.moveTo(-2*sz, -13*sz)
+                ctx.lineTo(-4*sz, 0)
+                ctx.moveTo(2*sz, -13*sz)
+                ctx.lineTo(4*sz, 0)
+                ctx.stroke()
+            else:
+                ctx.fillStyle = "rgba(220, 38, 38, 0.4)"
+                ctx.beginPath()
+                ctx.ellipse(0, 0, 24*sz, 12*sz, 0, 0, math.pi*2)
+                ctx.fill()
+                ctx.strokeStyle = "#ef4444"
+                ctx.stroke()
+
+            ctx.font = f"bold {max(9, int(11*sz))}px monospace"
+            ctx.fillStyle = "#ef4444" if self.is_swerving else "#f59e0b"
+            ctx.fillText(f"{self.obstacle_type.upper()} • {self.obstacle_rel_x:.1f}m", -bw/2, -bh - 6)
+            ctx.restore()
+
+        # Ego Vehicle (Chase View)
+        ego_x = vanish_x + (self.lateral_y / 3.5) * (road_bottom * 0.35)
+        ego_y = H - 35
+        ctx.save()
+        ctx.translate(ego_x, ego_y)
+        ctx.rotate(self.heading * 0.6)
+
+        cw, ch = 90, 50
+        body_g = ctx.createLinearGradient(0, -ch, 0, 0)
+        body_g.addColorStop(0, "#0284c7")
+        body_g.addColorStop(1, "#0369a1")
+        ctx.fillStyle = body_g
+        ctx.beginPath()
+        ctx.roundRect(-cw/2, -ch, cw, ch, [10, 10, 4, 4])
+        ctx.fill()
+        ctx.strokeStyle = "#38bdf8"
+        ctx.lineWidth = 2.5
+        ctx.stroke()
+
+        # Taillights
+        ctx.fillStyle = "#ef4444" if self.is_swerving else "#dc2626"
+        ctx.fillRect(-cw*0.45, -ch*0.35, cw*0.9, 6)
+
+        # Spinning LiDAR puck
+        ctx.fillStyle = "#06b6d4"
+        ctx.fillRect(-6, -ch - 6, 12, 3)
+
+        ctx.fillStyle = "#ffffff"
+        ctx.font = "bold 9px monospace"
+        ctx.fillText("NAVADAPT", -24, -14)
+        ctx.restore()
+
+    def draw_2d(self, ctx, W, H):
+        ctx.clearRect(0, 0, W, H)
+        ox, oy = 140, H / 2.0
+        sc = 14.0
+
+        ctx.fillStyle = "#070c18"
+        ctx.fillRect(0, 0, W, H)
+
+        # Road
+        ctx.fillStyle = "#0f172a"
+        ctx.fillRect(0, oy - 3.5*sc, W, 7.0*sc)
+        ctx.strokeStyle = "#0284c7"
+        ctx.strokeRect(0, oy - 3.5*sc, W, 7.0*sc)
+
+        # Optimal path
+        ctx.strokeStyle = "#06b6d4"
+        ctx.lineWidth = 3
+        ctx.beginPath()
+        for i, pt in enumerate(self.optimal_path):
+            sx = ox + pt[0] * sc
+            sy = oy - pt[1] * sc
+            if i == 0: ctx.moveTo(sx, sy)
+            else: ctx.lineTo(sx, sy)
+        ctx.stroke()
+
+        # Ego
+        ctx.save()
+        ctx.translate(ox, oy - self.lateral_y * sc)
+        ctx.rotate(self.heading)
+        ctx.fillStyle = "#0284c7"
+        ctx.fillRect(-2.3*sc, -1.0*sc, 4.6*sc, 2.0*sc)
+        ctx.strokeStyle = "#38bdf8"
+        ctx.strokeRect(-2.3*sc, -1.0*sc, 4.6*sc, 2.0*sc)
+        ctx.restore()
+
+        # Obstacle
+        if self.obstacle_active:
+            sx = ox + self.obstacle_rel_x * sc
+            sy = oy - self.obstacle_rel_y * sc
+            ctx.fillStyle = "#ef4444" if self.is_swerving else "#f59e0b"
+            ctx.beginPath()
+            ctx.arc(sx, sy, 8, 0, math.pi*2)
+            ctx.fill()
+
+    def update_dom(self):
+        kmh = self.speed * 3.6
+        document.getElementById("hud-speed").innerText = f"{kmh:.1f} km/h"
+        document.getElementById("badge-dist").innerText = f"{self.total_dist:.1f} m"
+
+        deg = self.steering_angle * 57.2958
+        document.getElementById("hud-steer").innerText = f"{deg:.1f}°"
+        document.getElementById("txt-steer-val").innerText = f"{deg:.1f}° ({self.steering_angle:.2f} rad)"
+
+        steer_pct = max(5, min(95, (self.steering_angle / 0.52 + 1.0) * 50.0))
+        document.getElementById("bar-steer").style.width = f"{steer_pct:.1f}%"
+
+        e_fa = self.lateral_y - (2.4 if self.is_swerving else 0.0)
+        document.getElementById("txt-efa").innerText = f"{e_fa:.2f} m"
+
+        overlay = document.getElementById("danger-overlay")
+        card_dec = document.getElementById("card-decision")
+        txt_dec = document.getElementById("txt-decision")
+        badge_risk = document.getElementById("badge-risk")
+
+        if self.is_swerving:
+            overlay.className = "pointer-events-none absolute inset-0 border-4 border-red-500 alert-active rounded-xl"
+            card_dec.className = "bg-red-950/40 border border-red-600 rounded-2xl p-4 shadow-xl transition-all"
+            txt_dec.innerText = "🚨 COLLISION AVOIDANCE SWERVE"
+            txt_dec.className = "text-lg font-bold text-red-400 mt-1"
+            badge_risk.innerText = "88 / 100 (CRITICAL)"
+            badge_risk.className = "text-red-400 font-bold"
+            document.getElementById("hud-behavior").innerText = "BEHAVIOR: AVOID OBSTACLE"
+            document.getElementById("txt-actuation").innerText = "THR 20% | BRK 60%"
+        else:
+            overlay.className = "pointer-events-none absolute inset-0 border-4 border-red-500/0 transition-all rounded-xl"
+            card_dec.className = "bg-[#080e1b] border border-slate-800 rounded-2xl p-4 shadow-xl transition-all"
+            txt_dec.innerText = "✅ CRUISING AT 35 KM/H"
+            txt_dec.className = "text-lg font-bold text-emerald-400 mt-1"
+            badge_risk.innerText = "12 / 100 (SAFE)"
+            badge_risk.className = "text-emerald-400 font-bold"
+            document.getElementById("hud-behavior").innerText = "BEHAVIOR: FOLLOW CORRIDOR"
+            document.getElementById("txt-actuation").innerText = "THR 50% | BRK 0%"
+
+        pred_x = float(self.tracker.x[0][0])
+        pred_y = float(self.tracker.x[1][0])
+        if self.obstacle_active and pred_x < 70:
+            document.getElementById("val-relx").innerText = f"{pred_x:.1f} m"
+            document.getElementById("val-rely").innerText = f"{pred_y:.1f} m"
+        else:
+            document.getElementById("val-relx").innerText = "--"
+            document.getElementById("val-rely").innerText = "--"
+
+# 3. RUN LOOP
+node = ContinuousAVNode3D()
+canvas = document.getElementById("simCanvas")
+ctx = canvas.getContext("2d")
+
+status_pill = document.getElementById("pyscript-status")
+status_pill.innerHTML = "<span class='w-2 h-2 rounded-full bg-emerald-400 animate-ping'></span> <span>PYTHON 3D WASM ACTIVE</span>"
+status_pill.className = "bg-slate-900/90 border border-slate-800 px-3 py-1.5 rounded-xl flex items-center space-x-2 text-emerald-400 font-bold"
+
+async def main_loop():
+    while True:
+        cmd = window.AV_CMD
+        if cmd.resetRequested:
+            cmd.resetRequested = False
+            node.speed = node.target_speed
+            node.lateral_y = 0.0
+            node.heading = 0.0
+            node.steering_angle = 0.0
+            node.is_swerving = False
+            node.total_dist = 0.0
+            node.spawn('cow')
+
+        if cmd.pendingHazard:
+            ht = cmd.pendingHazard
+            cmd.pendingHazard = None
+            if ht == 'clear':
+                node.obstacle_active = False
+                node.is_swerving = False
+            else:
+                node.spawn(ht)
+
+        if cmd.isRunning:
+            node.step(0.04)
+
+        node.draw(ctx, canvas.width, canvas.height, cmd.viewMode)
+        await asyncio.sleep(0.04) # 25 Hz
+
+asyncio.ensure_future(main_loop())
+  </script>
+</body>
+</html>

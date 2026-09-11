@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpenSCENARIO>
+  <FileHeader revMajor="1" revMinor="0" date="2026-09-04T00:00:00" description="Scenario 5: Sudden Cattle Crossing Hazard" author="NavAdapt Team SIH"/>
+  <ParameterDeclarations>
+    <ParameterDeclaration name="EgoSpeed" parameterType="double" value="11.11"/>
+    <ParameterDeclaration name="CattleTriggerDistance" parameterType="double" value="22.0"/>
+  </ParameterDeclarations>
+  <CatalogLocations/>
+  <RoadNetwork>
+    <LogicFile filepath="../indian_unmarked_village.xodr"/>
+  </RoadNetwork>
+  <Entities>
+    <ScenarioObject name="EgoVehicle">
+      <Vehicle name="Sedan_Autonomous_NavAdapt" vehicleCategory="car">
+        <ParameterDeclarations/>
+        <Performance maxSpeed="50.0" maxAcceleration="3.5" maxDeceleration="7.0"/>
+        <BoundingBox>
+          <Center x="1.35" y="0.0" z="0.75"/>
+          <Dimensions width="1.9" length="4.6" height="1.5"/>
+        </BoundingBox>
+        <Axles>
+          <FrontAxle maxSteering="0.61" wheelDiameter="0.65" trackWidth="1.62" positionX="2.7" positionZ="0.32"/>
+          <RearAxle maxSteering="0.0" wheelDiameter="0.65" trackWidth="1.62" positionX="0.0" positionZ="0.32"/>
+        </Axles>
+      </Vehicle>
+    </ScenarioObject>
+    <ScenarioObject name="StrayCattle_01">
+      <Pedestrian name="BosTaurus_IndianCow" pedestrianCategory="animal" mass="450.0">
+        <BoundingBox>
+          <Center x="0.0" y="0.0" z="0.8"/>
+          <Dimensions width="1.1" length="2.4" height="1.6"/>
+        </BoundingBox>
+      </Pedestrian>
+    </ScenarioObject>
+  </Entities>
+  <Storyboard>
+    <Init>
+      <Actions>
+        <Private entityRef="EgoVehicle">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="0.0" y="0.0" z="0.0" h="0.0"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+          <PrivateAction>
+            <LongitudinalAction>
+              <SpeedAction>
+                <SpeedActionDynamics dynamicsShape="step" value="0.0" dynamicsDimension="time"/>
+                <SpeedActionTarget>
+                  <AbsoluteTargetSpeed value="$EgoSpeed"/>
+                </SpeedActionTarget>
+              </SpeedAction>
+            </LongitudinalAction>
+          </PrivateAction>
+        </Private>
+        <Private entityRef="StrayCattle_01">
+          <PrivateAction>
+            <TeleportAction>
+              <Position>
+                <WorldPosition x="48.0" y="3.2" z="0.0" h="-1.5708"/>
+              </Position>
+            </TeleportAction>
+          </PrivateAction>
+        </Private>
+      </Actions>
+    </Init>
+    <Story name="CattleHazardStory">
+      <Act name="CattleCrossingAct">
+        <ManeuverGroup maximumExecutionCount="1" name="CattleManeuver">
+          <Actors selectTriggeringEntities="false">
+            <EntityRef entityRef="StrayCattle_01"/>
+          </Actors>
+          <Maneuver name="StepIntoRoadway">
+            <Event name="CattleStartCrossing" priority="overwrite">
+              <Action name="WalkAcross">
+                <PrivateAction>
+                  <LateralAction>
+                    <LaneOffsetAction continuous="true">
+                      <LaneOffsetActionDynamics maxLateralAcc="1.5" dynamicsShape="sinusoidal"/>
+                      <LaneOffsetTarget>
+                        <AbsoluteTargetLaneOffset value="-2.5"/>
+                      </LaneOffsetTarget>
+                    </LaneOffsetAction>
+                  </LateralAction>
+                </PrivateAction>
+              </Action>
+              <StartTrigger>
+                <ConditionGroup>
+                  <Condition name="ProximityTrigger" delay="0.0" conditionEdge="rising">
+                    <ByEntityCondition>
+                      <TriggeringEntities triggeringEntitiesRule="any">
+                        <EntityRef entityRef="EgoVehicle"/>
+                      </TriggeringEntities>
+                      <EntityCondition>
+                        <DistanceCondition value="$CattleTriggerDistance" freespace="false" rule="lessThan">
+                          <Position>
+                            <WorldPosition x="48.0" y="3.2" z="0.0"/>
+                          </Position>
+                        </DistanceCondition>
+                      </EntityCondition>
+                    </ByEntityCondition>
+                  </Condition>
+                </ConditionGroup>
+              </StartTrigger>
+            </Event>
+          </Maneuver>
+        </ManeuverGroup>
+      </Act>
+    </Story>
+  </Storyboard>
+</OpenSCENARIO>

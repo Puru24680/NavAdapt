@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NavAdapt — 3D WebGL Autonomous Driving AI Simulator</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Three.js (WebGL 3D Engine) + OrbitControls -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+  <style>
+    body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background-color: #030712; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+    #canvas-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+    #hud-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+    .interactive { pointer-events: auto; }
+    .glass-panel { background: rgba(8, 14, 28, 0.84); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid rgba(6, 182, 212, 0.28); box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.45); }
+    @keyframes pulse-danger { 0%, 100% { border-color: rgba(239,68,68,0.4); box-shadow: 0 0 25px rgba(239,68,68,0.3); } 50% { border-color: rgba(239,68,68,1); box-shadow: 0 0 50px rgba(239,68,68,0.6); } }
+    .danger-border { animation: pulse-danger 0.7s infinite ease-in-out; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+  </style>
+</head>
+<body class="text-slate-100 select-none">
+
+  <!-- 3D WebGL Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- HUD & UI Overlay on top of 3D Scene -->
+  <div id="hud-overlay" class="flex flex-col justify-between p-3 md:p-5">
+    
+    <!-- Top Section: Brand, Controls, Weather Switcher & Telemetry -->
+    <div class="space-y-2.5">
+      
+      <!-- Top Bar: Brand, Camera Modes, Simulation Controls & Live Telemetry -->
+      <div class="flex flex-wrap items-center justify-between gap-3 interactive">
+        
+        <!-- Brand & Project Info -->
+        <div class="glass-panel px-4 py-2 rounded-2xl flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-700 flex items-center justify-center font-black text-white text-base shadow-lg shadow-cyan-500/30">
+            NA
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="font-extrabold text-base tracking-wider text-white">NavAdapt 3D</span>
+              <span class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-400 text-cyan-300 font-mono font-bold">
+                MULTI-AGENT 3D
+              </span>
+            </div>
+            <p class="text-[10px] text-slate-400 font-mono">
+              Smart India Hackathon 2026 • Dense Mixed Indian Traffic Stack
+            </p>
+          </div>
+        </div>
+
+        <!-- Camera Angle Controls -->
+        <div class="glass-panel p-1 rounded-2xl flex items-center space-x-1 text-xs font-mono">
+          <button id="cam-chase" class="px-3 py-1.5 rounded-xl bg-cyan-600 text-white font-bold transition shadow" title="3rd Person Follow Camera">
+            🎥 Chase Cam
+          </button>
+          <button id="cam-cockpit" class="px-3 py-1.5 rounded-xl text-slate-300 hover:text-white transition" title="First Person Driver Perspective">
+            🚗 Cockpit
+          </button>
+          <button id="cam-orbit" class="px-3 py-1.5 rounded-xl text-slate-300 hover:text-white transition" title="Free 360° Mouse Orbit">
+            🛸 Free 3D Orbit
+          </button>
+          <button id="cam-bev" class="px-3 py-1.5 rounded-xl text-slate-300 hover:text-white transition" title="Top-Down Bird's Eye View">
+            🛰️ Tactical BEV
+          </button>
+        </div>
+
+        <!-- Live Simulation Action Buttons (Pause/Play, Reset, Speed, Sound) -->
+        <div class="glass-panel px-3 py-1.5 rounded-2xl flex items-center space-x-2 text-xs font-mono">
+          <button id="btn-toggle-play" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition active:scale-95 shadow">
+            <span id="txt-play-icon">⏸️</span>
+            <span id="txt-play-label">PAUSE</span>
+          </button>
+          
+          <button id="btn-reset-sim" class="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold transition active:scale-95" title="Reset Car to Origin">
+            <span>🔄</span>
+            <span>RESET</span>
+          </button>
+
+          <button id="btn-speed-toggle" class="px-2.5 py-1.5 rounded-xl bg-blue-950/60 hover:bg-blue-900/80 text-cyan-300 border border-blue-600/40 font-bold transition" title="Cycle Target Cruise Speed">
+            ⚡ <span id="txt-target-speed">35 KM/H</span>
+          </button>
+
+          <button id="btn-sound-toggle" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold transition" title="Toggle Synthesized Audio Engine">
+            <span id="txt-sound-status">🔊 SFX ON</span>
+          </button>
+        </div>
+
+        <!-- Live Telemetry Badges -->
+        <div class="glass-panel px-4 py-2 rounded-2xl flex items-center space-x-4 text-xs font-mono">
+          <div>
+            <span class="text-[9px] text-slate-400 block uppercase">Speed</span>
+            <span id="txt-speed" class="text-lg font-black text-emerald-400">35.0 km/h</span>
+          </div>
+          <div class="h-6 w-[1px] bg-slate-700"></div>
+          <div>
+            <span class="text-[9px] text-slate-400 block uppercase">Tracked Agents</span>
+            <span id="txt-obj-count" class="text-cyan-400 font-bold text-base">10 Active</span>
+          </div>
+          <div class="h-6 w-[1px] bg-slate-700"></div>
+          <div>
+            <span class="text-[9px] text-slate-400 block uppercase">Traveled</span>
+            <span id="txt-dist" class="text-white font-bold">0.0 m</span>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Sub-Bar: Weather & Traffic Density Controls -->
+      <div class="flex flex-wrap items-center justify-between gap-3 interactive">
+        
+        <!-- Weather Selector Buttons -->
+        <div class="glass-panel p-1 rounded-2xl flex items-center space-x-1 text-xs font-mono">
+          <span class="text-[10px] text-amber-400 font-bold px-2 flex items-center space-x-1">
+            <span>🌦️</span>
+            <span>WEATHER:</span>
+          </span>
+          <button id="w-clear" class="px-2.5 py-1 rounded-xl bg-cyan-600 text-white font-bold transition shadow">
+            🌙 Clear Night
+          </button>
+          <button id="w-rain" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition">
+            🌧️ Monsoon Rain
+          </button>
+          <button id="w-fog" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition">
+            🌫️ Dense Fog
+          </button>
+          <button id="w-dust" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition">
+            🌪️ Dust Storm
+          </button>
+          <button id="w-day" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition">
+            ☀️ Daylight
+          </button>
+        </div>
+
+        <!-- Traffic Density Mode Selector -->
+        <div class="glass-panel p-1 rounded-2xl flex items-center space-x-1 text-xs font-mono">
+          <span class="text-[10px] text-cyan-400 font-bold px-2 flex items-center space-x-1">
+            <span>🚦</span>
+            <span>TRAFFIC DENSITY:</span>
+          </span>
+          <button id="dens-light" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition">
+            🚗 Light (4)
+          </button>
+          <button id="dens-medium" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition">
+            🚕 Moderate (8)
+          </button>
+          <button id="dens-heavy" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 text-white font-bold transition shadow">
+            🇮🇳 Indian Chaos (14+)
+          </button>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Center Screen Alert Notification (Flashes on Hazard Avoidance) -->
+    <div class="flex justify-center pointer-events-none">
+      <div id="alert-banner" class="hidden glass-panel px-6 py-3 rounded-2xl border-2 border-red-500 danger-border flex items-center space-x-3 transition-all duration-200">
+        <span class="text-3xl animate-bounce">🚨</span>
+        <div>
+          <div id="alert-title" class="text-sm font-black text-red-400 tracking-wider uppercase font-mono">
+            COLLISION AVOIDANCE INITIATED
+          </div>
+          <div id="alert-sub" class="text-xs text-red-200 font-mono">
+            Hazard detected in corridor. Stanley controller swerving into clearance corridor.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Bar: Controller HUD, Dynamic Object Spawner & Perception Telemetry -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end interactive">
+      
+      <!-- 1. Left: Vehicle Telemetry & Stanley Lateral Control Law -->
+      <div class="glass-panel p-3.5 rounded-2xl space-y-2 text-xs font-mono">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Stanley Lateral Controller</span>
+          <span id="txt-closest-threat" class="text-[9px] text-amber-400 font-bold">Threat: Calculating...</span>
+        </div>
+
+        <!-- Steering Angle -->
+        <div>
+          <div class="flex justify-between text-[11px] mb-1">
+            <span class="text-slate-400">Steering Wheel Angle:</span>
+            <span id="txt-steer" class="text-cyan-300 font-bold">0.0°</span>
+          </div>
+          <div class="h-2 w-full bg-slate-950 rounded-full overflow-hidden relative border border-slate-800">
+            <div id="bar-steer" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-75" style="width: 50%;"></div>
+            <div class="absolute inset-y-0 left-1/2 w-0.5 bg-slate-400"></div>
+          </div>
+        </div>
+
+        <!-- Cross-Track Error & Behavior -->
+        <div class="grid grid-cols-2 gap-2 text-[10px]">
+          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
+            <span class="text-slate-500 block">Cross-Track e_fa</span>
+            <span id="txt-efa" class="text-emerald-400 font-bold text-xs">0.02 m</span>
+          </div>
+          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
+            <span class="text-slate-500 block">Behavior State</span>
+            <span id="txt-behavior" class="text-cyan-400 font-bold text-xs">CRUISE</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Center: Multi-Object Quick Injection (Click to inject more into scene) -->
+      <div class="glass-panel p-3.5 rounded-2xl text-center space-y-2">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-[10px] text-amber-400 font-bold uppercase tracking-wider font-mono">
+            ➕ Inject More Road Entities Ahead
+          </span>
+          <span class="text-[9px] text-slate-400 font-mono">Instant spawn:</span>
+        </div>
+
+        <div class="grid grid-cols-6 gap-1.5 font-mono text-[11px]">
+          <button id="btn-add-cow" class="p-1.5 rounded-xl bg-amber-950/60 border border-amber-500/70 hover:bg-amber-900/80 text-amber-200 transition active:scale-95 flex flex-col items-center shadow">
+            <span class="text-lg">🐄</span>
+            <span class="text-[8px] font-bold mt-0.5">+ Cow</span>
+          </button>
+          <button id="btn-add-rickshaw" class="p-1.5 rounded-xl bg-yellow-950/60 border border-yellow-500/70 hover:bg-yellow-900/80 text-yellow-200 transition active:scale-95 flex flex-col items-center shadow">
+            <span class="text-lg">🛺</span>
+            <span class="text-[8px] font-bold mt-0.5">+ Auto</span>
+          </button>
+          <button id="btn-add-truck" class="p-1.5 rounded-xl bg-indigo-950/60 border border-indigo-500/70 hover:bg-indigo-900/80 text-indigo-200 transition active:scale-95 flex flex-col items-center shadow">
+            <span class="text-lg">🚛</span>
+            <span class="text-[8px] font-bold mt-0.5">+ Truck</span>
+          </button>
+          <button id="btn-add-bike" class="p-1.5 rounded-xl bg-pink-950/60 border border-pink-500/70 hover:bg-pink-900/80 text-pink-200 transition active:scale-95 flex flex-col items-center shadow">
+            <span class="text-lg">🏍️</span>
+            <span class="text-[8px] font-bold mt-0.5">+ Bike</span>
+          </button>
+          <button id="btn-add-ped" class="p-1.5 rounded-xl bg-cyan-950/60 border border-cyan-500/70 hover:bg-cyan-900/80 text-cyan-200 transition active:scale-95 flex flex-col items-center shadow">
+            <span class="text-lg">🚶</span>
+            <span class="text-[8px] font-bold mt-0.5">+ Walker</span>
+          </button>
+          <button id="btn-add-pothole" class="p-1.5 rounded-xl bg-rose-950/60 border border-rose-500/70 hover:bg-rose-900/80 text-rose-200 transition active:scale-95 flex flex-col items-center shadow">
+            <span class="text-lg">🕳️</span>
+            <span class="text-[8px] font-bold mt-0.5">+ Pothole</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. Right: Sensor Fusion & CAN 2.0B Multi-Target Telemetry Feed -->
+      <div class="glass-panel p-3.5 rounded-2xl space-y-2 text-xs font-mono">
+        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
+          <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Perception & Multi-Target Fusion</span>
+          <span id="txt-primary-sensor" class="text-[9px] text-slate-300">LiDAR + Radar</span>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] text-slate-300">
+          <span>16-Beam LiDAR: <span class="text-emerald-400 font-bold">1200 pts</span></span>
+          <span>Radar: <span class="text-emerald-400 font-bold">77 GHz Multi</span></span>
+          <span>Camera: <span class="text-emerald-400 font-bold">YOLOv8 60fps</span></span>
+        </div>
+
+        <div id="can-stream" class="h-14 bg-slate-950/80 rounded-xl p-1.5 text-[9px] font-mono overflow-y-auto space-y-0.5 text-slate-400 border border-slate-800">
+          <div>[0.0s] 0x102: STEER_ACTUATOR = 0.000 rad</div>
+          <div>[0.0s] 0x103: SPEED_DEMAND = 9.72 m/s</div>
+          <div>[0.0s] 0x205: TRACKED_TARGETS = 10 objects in FOV</div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 🚀 THREE.JS FULL 3D MULTI-AGENT AUTONOMOUS DRIVING SIMULATOR  -->
+  <!-- ============================================================ -->
+  <script>
+    // --- 0. BROWSER WEB AUDIO SYNTHESIZER ---
+    class SoundEngine {
+      constructor() {
+        this.ctx = null;
+        this.motorOsc = null;
+        this.motorGain = null;
+        this.rainGain = null;
+        this.windGain = null;
+        this.enabled = true;
+      }
+      init() {
+        if (this.ctx) return;
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          this.ctx = new AudioContext();
+          
+          // 1. Motor hum oscillator
+          this.motorOsc = this.ctx.createOscillator();
+          this.motorOsc.type = 'sawtooth';
+          this.motorOsc.frequency.value = 55;
+
+          const motorFilter = this.ctx.createBiquadFilter();
+          motorFilter.type = 'lowpass';
+          motorFilter.frequency.value = 280;
+
+          this.motorGain = this.ctx.createGain();
+          this.motorGain.gain.value = this.enabled ? 0.04 : 0;
+
+          this.motorOsc.connect(motorFilter);
+          motorFilter.connect(this.motorGain);
+          this.motorGain.connect(this.ctx.destination);
+          this.motorOsc.start();
+
+          // 2. Procedural Rain generator
+          const bufferSize = this.ctx.sampleRate * 2;
+          const noiseBuffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+          }
+          const rainSource = this.ctx.createBufferSource();
+          rainSource.buffer = noiseBuffer;
+          rainSource.loop = true;
+
+          const rainFilter = this.ctx.createBiquadFilter();
+          rainFilter.type = 'bandpass';
+          rainFilter.frequency.value = 1100;
+          rainFilter.Q.value = 0.8;
+
+          this.rainGain = this.ctx.createGain();
+          this.rainGain.gain.value = 0.0;
+
+          rainSource.connect(rainFilter);
+          rainFilter.connect(this.rainGain);
+          this.rainGain.connect(this.ctx.destination);
+          rainSource.start();
+
+          // 3. Procedural Wind generator
+          const windSource = this.ctx.createBufferSource();
+          windSource.buffer = noiseBuffer;
+          windSource.loop = true;
+
+          const windFilter = this.ctx.createBiquadFilter();
+          windFilter.type = 'lowpass';
+          windFilter.frequency.value = 350;
+
+          this.windGain = this.ctx.createGain();
+          this.windGain.gain.value = 0.0;
+
+          windSource.connect(windFilter);
+          windFilter.connect(this.windGain);
+          this.windGain.connect(this.ctx.destination);
+          windSource.start();
+
+        } catch(e) {
+          console.warn("AudioContext not permitted yet", e);
+        }
+      }
+      setSpeed(speedMps) {
+        if (!this.motorOsc || !this.enabled) return;
+        const targetFreq = 45 + (speedMps * 6.5);
+        this.motorOsc.frequency.setTargetAtTime(targetFreq, this.ctx.currentTime, 0.1);
+      }
+      setWeather(weather) {
+        if (!this.ctx || !this.enabled) return;
+        if (weather === 'rain') {
+          this.rainGain.gain.setTargetAtTime(0.06, this.ctx.currentTime, 0.3);
+          this.windGain.gain.setTargetAtTime(0.02, this.ctx.currentTime, 0.3);
+        } else if (weather === 'dust') {
+          this.rainGain.gain.setTargetAtTime(0.0, this.ctx.currentTime, 0.3);
+          this.windGain.gain.setTargetAtTime(0.07, this.ctx.currentTime, 0.3);
+        } else {
+          this.rainGain.gain.setTargetAtTime(0.0, this.ctx.currentTime, 0.3);
+          this.windGain.gain.setTargetAtTime(0.0, this.ctx.currentTime, 0.3);
+        }
+      }
+      playWarning() {
+        if (!this.ctx || !this.enabled) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(440, this.ctx.currentTime + 0.25);
+          gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.25);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.26);
+        } catch(e) {}
+      }
+      toggle() {
+        this.enabled = !this.enabled;
+        if (this.motorGain) {
+          this.motorGain.gain.value = this.enabled ? 0.04 : 0;
+        }
+        return this.enabled;
+      }
+    }
+    const audio = new SoundEngine();
+    document.body.addEventListener('click', () => audio.init(), { once: true });
+
+    // --- 1. SETUP THREE.JS SCENE, RENDERER & LIGHTS ---
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x060913);
+    scene.fog = new THREE.FogExp2(0x060913, 0.010);
+
+    const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    container.appendChild(renderer.domElement);
+
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.maxPolarAngle = Math.PI / 2 - 0.05;
+    controls.minDistance = 2;
+    controls.maxDistance = 140;
+
+    // Ambient & Directional Sun/Moonlight
+    const ambientLight = new THREE.AmbientLight(0x1e293b, 0.95);
+    scene.add(ambientLight);
+
+    const sunMoonLight = new THREE.DirectionalLight(0x93c5fd, 0.85);
+    sunMoonLight.position.set(30, 60, -30);
+    sunMoonLight.castShadow = true;
+    sunMoonLight.shadow.mapSize.width = 2048;
+    sunMoonLight.shadow.mapSize.height = 2048;
+    sunMoonLight.shadow.camera.near = 10;
+    sunMoonLight.shadow.camera.far = 160;
+    sunMoonLight.shadow.camera.left = -35;
+    sunMoonLight.shadow.camera.right = 35;
+    sunMoonLight.shadow.camera.top = 35;
+    sunMoonLight.shadow.camera.bottom = -35;
+    scene.add(sunMoonLight);
+
+    // --- 2. ENDLESS 3D ROAD & HIGHWAY CORRIDOR ---
+    const ROAD_WIDTH = 13.0; // 3 standard lanes + shoulders
+    const ROAD_LENGTH = 500.0;
+
+    const roadGeo = new THREE.PlaneGeometry(ROAD_WIDTH, ROAD_LENGTH, 1, 60);
+    const roadMat = new THREE.MeshStandardMaterial({
+      color: 0x0f172a,
+      roughness: 0.82,
+      metalness: 0.15
+    });
+    const road = new THREE.Mesh(roadGeo, roadMat);
+    road.rotation.x = -Math.PI / 2;
+    road.receiveShadow = true;
+    scene.add(road);
+
+    // Curbs
+    const curbGeo = new THREE.BoxGeometry(0.8, 0.3, ROAD_LENGTH);
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
+    const leftCurb = new THREE.Mesh(curbGeo, curbMat);
+    leftCurb.position.set(-ROAD_WIDTH / 2 - 0.4, 0.15, 0);
+    leftCurb.receiveShadow = true;
+    scene.add(leftCurb);
+
+    const rightCurb = new THREE.Mesh(curbGeo, curbMat);
+    rightCurb.position.set(ROAD_WIDTH / 2 + 0.4, 0.15, 0);
+    rightCurb.receiveShadow = true;
+    scene.add(rightCurb);
+
+    // Center Dashed White Lines
+    const dashGroup = new THREE.Group();
+    const dashGeo = new THREE.PlaneGeometry(0.22, 3.8);
+    const dashMat = new THREE.MeshBasicMaterial({ color: 0xe2e8f0 });
+    for (let z = -ROAD_LENGTH / 2; z < ROAD_LENGTH / 2; z += 7.0) {
+      const d1 = new THREE.Mesh(dashGeo, dashMat);
+      d1.rotation.x = -Math.PI / 2;
+      d1.position.set(-2.2, 0.02, z);
+      dashGroup.add(d1);
+
+      const d2 = new THREE.Mesh(dashGeo, dashMat);
+      d2.rotation.x = -Math.PI / 2;
+      d2.position.set(2.2, 0.02, z);
+      dashGroup.add(d2);
+    }
+    scene.add(dashGroup);
+
+    // Streetlights
+    const streetlightGroup = new THREE.Group();
+    for (let z = -ROAD_LENGTH / 2; z < ROAD_LENGTH / 2; z += 40.0) {
+      const poleGeo = new THREE.CylinderGeometry(0.1, 0.12, 7, 8);
+      const poleMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+      const pole = new THREE.Mesh(poleGeo, poleMat);
+      pole.position.set(-ROAD_WIDTH / 2 - 1.5, 3.5, z);
+      streetlightGroup.add(pole);
+
+      const lampLight = new THREE.SpotLight(0xfef08a, 1.3, 35, Math.PI / 4, 0.5, 1.2);
+      lampLight.position.set(-ROAD_WIDTH / 2 - 1.0, 6.8, z);
+      lampLight.target.position.set(0, 0, z);
+      scene.add(lampLight.target);
+      streetlightGroup.add(lampLight);
+    }
+    scene.add(streetlightGroup);
+
+    // --- 3. 3D EGO AUTONOMOUS VEHICLE ---
+    const egoVehicle = new THREE.Group();
+    scene.add(egoVehicle);
+
+    const carBodyGeo = new THREE.BoxGeometry(2.0, 0.8, 4.6);
+    const carBodyMat = new THREE.MeshStandardMaterial({
+      color: 0x0284c7,
+      metalness: 0.85,
+      roughness: 0.18
+    });
+    const carBody = new THREE.Mesh(carBodyGeo, carBodyMat);
+    carBody.position.y = 0.65;
+    carBody.castShadow = true;
+    carBody.receiveShadow = true;
+    egoVehicle.add(carBody);
+
+    const cabinGeo = new THREE.BoxGeometry(1.6, 0.6, 2.4);
+    const cabinMat = new THREE.MeshStandardMaterial({
+      color: 0x0a101f,
+      roughness: 0.1,
+      metalness: 0.95
+    });
+    const cabin = new THREE.Mesh(cabinGeo, cabinMat);
+    cabin.position.set(0, 1.2, -0.2);
+    cabin.castShadow = true;
+    egoVehicle.add(cabin);
+
+    // Roof LiDAR Puck
+    const lidarPuck = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.2, 0.2, 0.2, 16),
+      new THREE.MeshStandardMaterial({ color: 0x111827, metalness: 0.9 })
+    );
+    lidarPuck.position.set(0, 1.6, -0.2);
+    egoVehicle.add(lidarPuck);
+
+    const ring = new THREE.Mesh(
+      new THREE.TorusGeometry(0.22, 0.03, 8, 24),
+      new THREE.MeshBasicMaterial({ color: 0x06b6d4 })
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(0, 1.6, -0.2);
+    egoVehicle.add(ring);
+
+    // Wheels
+    const wheels = [];
+    const wheelGeo = new THREE.CylinderGeometry(0.38, 0.38, 0.25, 20);
+    const wheelMat = new THREE.MeshStandardMaterial({ color: 0x111827, roughness: 0.9 });
+    const rimMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.2 });
+
+    const wheelPositions = [
+      { x: -0.95, y: 0.38, z: 1.4, isFront: true },
+      { x: 0.95, y: 0.38, z: 1.4, isFront: true },
+      { x: -0.95, y: 0.38, z: -1.4, isFront: false },
+      { x: 0.95, y: 0.38, z: -1.4, isFront: false }
+    ];
+
+    wheelPositions.forEach((pos) => {
+      const wGroup = new THREE.Group();
+      wGroup.position.set(pos.x, pos.y, pos.z);
+
+      const tire = new THREE.Mesh(wheelGeo, wheelMat);
+      tire.rotation.z = Math.PI / 2;
+      tire.castShadow = true;
+      wGroup.add(tire);
+
+      const rim = new THREE.Mesh(new THREE.CylinderGeometry(0.22, 0.22, 0.26, 12), rimMat);
+      rim.rotation.z = Math.PI / 2;
+      wGroup.add(rim);
+
+      egoVehicle.add(wGroup);
+      wheels.push({ group: wGroup, tire: tire, isFront: pos.isFront });
+    });
+
+    // Headlights
+    const headlightL = new THREE.SpotLight(0xfef08a, 2.8, 50, 0.45, 0.6, 1.5);
+    headlightL.position.set(-0.65, 0.6, 2.3);
+    headlightL.target.position.set(-0.65, 0.0, 35.0);
+    scene.add(headlightL.target);
+    egoVehicle.add(headlightL);
+
+    const headlightR = new THREE.SpotLight(0xfef08a, 2.8, 50, 0.45, 0.6, 1.5);
+    headlightR.position.set(0.65, 0.6, 2.3);
+    headlightR.target.position.set(0.65, 0.0, 35.0);
+    scene.add(headlightR.target);
+    egoVehicle.add(headlightR);
+
+    // Taillights
+    const taillightMat = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
+    const taillight = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.1), taillightMat);
+    taillight.position.set(0, 0.7, -2.31);
+    egoVehicle.add(taillight);
+
+    // --- 4. 16-BEAM ROTATING LIDAR POINT CLOUD PARTICLES ---
+    const LIDAR_COUNT = 1200;
+    const lidarGeo = new THREE.BufferGeometry();
+    const lidarPos = new Float32Array(LIDAR_COUNT * 3);
+    const lidarCol = new Float32Array(LIDAR_COUNT * 3);
+
+    for (let i = 0; i < LIDAR_COUNT; i++) {
+      lidarPos[i * 3 + 0] = 0;
+      lidarPos[i * 3 + 1] = 0;
+      lidarPos[i * 3 + 2] = 0;
+      lidarCol[i * 3 + 0] = 0.1;
+      lidarCol[i * 3 + 1] = 0.8;
+      lidarCol[i * 3 + 2] = 0.9;
+    }
+
+    lidarGeo.setAttribute('position', new THREE.BufferAttribute(lidarPos, 3));
+    lidarGeo.setAttribute('color', new THREE.BufferAttribute(lidarCol, 3));
+
+    const lidarMat = new THREE.PointsMaterial({
+      size: 0.18,
+      vertexColors: true,
+      transparent: true,
+      opacity: 0.85,
+      blending: THREE.AdditiveBlending
+    });
+    const lidarCloud = new THREE.Points(lidarGeo, lidarMat);
+    scene.add(lidarCloud);
+
+    // --- 5. FRENET DYNAMIC 3D TRAJECTORY RIBBON ---
+    const trajectoryGeo = new THREE.BufferGeometry();
+    const trajectoryMat = new THREE.MeshBasicMaterial({
+      color: 0x06b6d4,
+      transparent: true,
+      opacity: 0.75,
+      side: THREE.DoubleSide
+    });
+    const trajectoryRibbon = new THREE.Mesh(trajectoryGeo, trajectoryMat);
+    scene.add(trajectoryRibbon);
+
+    // --- 6. 3D WEATHER PARTICLE SYSTEMS ---
+    // Rain
+    const RAIN_COUNT = 3000;
+    const rainGeo = new THREE.BufferGeometry();
+    const rainPos = new Float32Array(RAIN_COUNT * 3);
+    for (let i = 0; i < RAIN_COUNT; i++) {
+      rainPos[i * 3 + 0] = (Math.random() - 0.5) * 60;
+      rainPos[i * 3 + 1] = Math.random() * 35;
+      rainPos[i * 3 + 2] = (Math.random() - 0.5) * 90;
+    }
+    rainGeo.setAttribute('position', new THREE.BufferAttribute(rainPos, 3));
+    const rainSystem = new THREE.Points(rainGeo, new THREE.PointsMaterial({
+      color: 0x93c5fd, size: 0.16, transparent: true, opacity: 0.75, blending: THREE.AdditiveBlending
+    }));
+    rainSystem.visible = false;
+    scene.add(rainSystem);
+
+    // Dust
+    const DUST_COUNT = 1500;
+    const dustGeo = new THREE.BufferGeometry();
+    const dustPos = new Float32Array(DUST_COUNT * 3);
+    for (let i = 0; i < DUST_COUNT; i++) {
+      dustPos[i * 3 + 0] = (Math.random() - 0.5) * 60;
+      dustPos[i * 3 + 1] = Math.random() * 18;
+      dustPos[i * 3 + 2] = (Math.random() - 0.5) * 80;
+    }
+    dustGeo.setAttribute('position', new THREE.BufferAttribute(dustPos, 3));
+    const dustSystem = new THREE.Points(dustGeo, new THREE.PointsMaterial({
+      color: 0xf59e0b, size: 0.32, transparent: true, opacity: 0.65, blending: THREE.AdditiveBlending
+    }));
+    dustSystem.visible = false;
+    scene.add(dustSystem);
+
+    // --- 7. MULTI-AGENT PROCEDURAL 3D MESH BUILDERS ---
+    function buildRickshawMesh(color = 0x15803d, roofColor = 0xeab308) {
+      const g = new THREE.Group();
+      // Body
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.4, 1.1, 2.5), new THREE.MeshStandardMaterial({ color: color, roughness: 0.4 }));
+      body.position.y = 0.75;
+      g.add(body);
+      // Canopy
+      const canopy = new THREE.Mesh(new THREE.BoxGeometry(1.45, 0.4, 2.2), new THREE.MeshStandardMaterial({ color: roofColor, roughness: 0.3 }));
+      canopy.position.set(0, 1.45, -0.1);
+      g.add(canopy);
+      // Wheels
+      const w1 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.15, 12), wheelMat);
+      w1.rotation.z = Math.PI / 2;
+      w1.position.set(0, 0.3, 1.0);
+      g.add(w1);
+      const w2 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.15, 12), wheelMat);
+      w2.rotation.z = Math.PI / 2;
+      w2.position.set(-0.7, 0.3, -0.8);
+      g.add(w2);
+      const w3 = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.3, 0.15, 12), wheelMat);
+      w3.rotation.z = Math.PI / 2;
+      w3.position.set(0.7, 0.3, -0.8);
+      g.add(w3);
+      g.wheels = [w1, w2, w3];
+      return g;
+    }
+
+    function buildCowMesh(color = 0xd97706) {
+      const g = new THREE.Group();
+      const body = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.0, 2.2), new THREE.MeshStandardMaterial({ color: color, roughness: 0.8 }));
+      body.position.y = 1.1;
+      g.add(body);
+      const head = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.6, 0.7), new THREE.MeshStandardMaterial({ color: 0xb45309 }));
+      head.position.set(0, 1.4, 1.2);
+      g.add(head);
+      // Horns
+      const hL = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.4, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+      hL.position.set(-0.35, 1.75, 1.1); hL.rotation.z = 0.5; g.add(hL);
+      const hR = new THREE.Mesh(new THREE.ConeGeometry(0.08, 0.4, 8), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+      hR.position.set(0.35, 1.75, 1.1); hR.rotation.z = -0.5; g.add(hR);
+      // Legs
+      g.legs = [];
+      for (let lx of [-0.4, 0.4]) {
+        for (let lz of [-0.7, 0.7]) {
+          const pivot = new THREE.Group();
+          pivot.position.set(lx, 0.8, lz);
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.8), new THREE.MeshStandardMaterial({ color: 0x92400e }));
+          leg.position.y = -0.4;
+          pivot.add(leg);
+          g.add(pivot);
+          g.legs.push(pivot);
+        }
+      }
+      return g;
+    }
+
+    function buildTruckMesh() {
+      // 3D Tata Heavy Commercial Cargo Truck
+      const g = new THREE.Group();
+      // Chassis & Cargo Box
+      const cargo = new THREE.Mesh(new THREE.BoxGeometry(2.4, 1.8, 5.5), new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.5 }));
+      cargo.position.set(0, 1.7, -0.6);
+      g.add(cargo);
+      // Cab
+      const cab = new THREE.Mesh(new THREE.BoxGeometry(2.35, 1.7, 2.0), new THREE.MeshStandardMaterial({ color: 0x2563eb, roughness: 0.3 }));
+      cab.position.set(0, 1.6, 2.4);
+      g.add(cab);
+      // Windshield
+      const ws = new THREE.Mesh(new THREE.BoxGeometry(2.1, 0.7, 0.2), new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.1 }));
+      ws.position.set(0, 1.9, 3.42);
+      g.add(ws);
+      // Rear "HORN OK PLEASE" tailgate plate
+      const plate = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.4, 0.1), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
+      plate.position.set(0, 1.1, -3.4);
+      g.add(plate);
+      // 6 Big Truck Wheels
+      g.wheels = [];
+      const trkWheelGeo = new THREE.CylinderGeometry(0.5, 0.5, 0.35, 16);
+      for (let wx of [-1.2, 1.2]) {
+        for (let wz of [2.2, -1.2, -2.5]) {
+          const w = new THREE.Mesh(trkWheelGeo, wheelMat);
+          w.rotation.z = Math.PI / 2;
+          w.position.set(wx, 0.5, wz);
+          g.add(w);
+          g.wheels.push(w);
+        }
+      }
+      return g;
+    }
+
+    function buildMotorcycleMesh() {
+      // 3D Hero/Bajaj Two-Wheeler with Rider
+      const g = new THREE.Group();
+      // Bike Body Frame
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.5, 1.8), new THREE.MeshStandardMaterial({ color: 0xdc2626, metalness: 0.7 }));
+      frame.position.y = 0.6;
+      g.add(frame);
+      // 2 Wheels
+      const bW1 = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.12, 14), wheelMat);
+      bW1.rotation.z = Math.PI / 2;
+      bW1.position.set(0, 0.35, 0.8);
+      g.add(bW1);
+      const bW2 = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.35, 0.12, 14), wheelMat);
+      bW2.rotation.z = Math.PI / 2;
+      bW2.position.set(0, 0.35, -0.8);
+      g.add(bW2);
+      g.wheels = [bW1, bW2];
+      // Rider Figure
+      const rider = new THREE.Mesh(new THREE.BoxGeometry(0.45, 0.65, 0.3), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+      rider.position.set(0, 1.1, 0.0);
+      g.add(rider);
+      // Helmet
+      const helmet = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), new THREE.MeshStandardMaterial({ color: 0xfacc15 }));
+      helmet.position.set(0, 1.55, 0.05);
+      g.add(helmet);
+      return g;
+    }
+
+    function buildPedestrianMesh(shirtColor = 0x0284c7) {
+      const g = new THREE.Group();
+      const torso = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.7, 0.3), new THREE.MeshStandardMaterial({ color: shirtColor }));
+      torso.position.y = 1.1;
+      g.add(torso);
+      const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 12, 12), new THREE.MeshStandardMaterial({ color: 0xfde047 }));
+      head.position.y = 1.65;
+      g.add(head);
+      g.legs = [];
+      for (let lx of [-0.15, 0.15]) {
+        const p = new THREE.Group();
+        p.position.set(lx, 0.8, 0);
+        const lMesh = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 0.8), new THREE.MeshStandardMaterial({ color: 0x1e293b }));
+        lMesh.position.y = -0.4;
+        p.add(lMesh);
+        g.add(p);
+        g.legs.push(p);
+      }
+      return g;
+    }
+
+    function buildPotholeMesh() {
+      const g = new THREE.Group();
+      const crater = new THREE.Mesh(new THREE.CylinderGeometry(0.9, 0.9, 0.1, 16), new THREE.MeshStandardMaterial({ color: 0x050811, roughness: 1 }));
+      crater.position.y = 0.04;
+      g.add(crater);
+      const ringM = new THREE.Mesh(new THREE.RingGeometry(0.85, 1.1, 16), new THREE.MeshBasicMaterial({ color: 0xef4444, side: THREE.DoubleSide }));
+      ringM.rotation.x = -Math.PI / 2;
+      ringM.position.y = 0.05;
+      g.add(ringM);
+      return g;
+    }
+
+    // --- 8. MULTI-OBJECT POPULATION & AGENT MANAGER ---
+    const allEntities = [];
+    const entityGroup = new THREE.Group();
+    scene.add(entityGroup);
+
+    let nextEntityId = 1;
+    function addEntity(type, lateralX, distAhead, vz = 0, vx = 0) {
+      let mesh = null;
+      if (type === 'rickshaw') mesh = buildRickshawMesh();
+      else if (type === 'cow') mesh = buildCowMesh();
+      else if (type === 'truck') mesh = buildTruckMesh();
+      else if (type === 'bike') mesh = buildMotorcycleMesh();
+      else if (type === 'pedestrian') mesh = buildPedestrianMesh();
+      else if (type === 'pothole') mesh = buildPotholeMesh();
+
+      entityGroup.add(mesh);
+
+      // 3D Bounding Box Helper (Wireframe tracking indicator)
+      const bbox = new THREE.BoxHelper(mesh, 0x06b6d4);
+      scene.add(bbox);
+
+      const entity = {
+        id: nextEntityId++,
+        type: type,
+        mesh: mesh,
+        bbox: bbox,
+        x: lateralX,
+        z: distAhead,
+        vx: vx,
+        vz: vz, // forward speed relative to road
+        active: true
+      };
+      allEntities.push(entity);
+      return entity;
+    }
+
+    // Preset Population Initializer (Light, Medium, Heavy)
+    function populateTraffic(density = 'heavy') {
+      // Clear old
+      allEntities.forEach(e => {
+        entityGroup.remove(e.mesh);
+        scene.remove(e.bbox);
+      });
+      allEntities.length = 0;
+
+      if (density === 'light') {
+        addEntity('cow', 0.1, 35, 0, -0.1);
+        addEntity('rickshaw', -3.2, 55, 3.5, 0.4);
+        addEntity('pedestrian', 3.6, 25, 0, -0.8);
+        addEntity('pothole', 0.0, 75, 0, 0);
+      } else if (density === 'medium') {
+        addEntity('cow', 0.1, 38, 0, -0.1);
+        addEntity('rickshaw', -3.2, 28, 4.0, 0.8);
+        addEntity('pedestrian', 3.5, 22, 0, -1.2);
+        addEntity('truck', 3.2, 65, 5.5, 0);
+        addEntity('bike', -1.5, 45, 7.0, 0.2);
+        addEntity('pothole', 0.0, 85, 0, 0);
+        addEntity('rickshaw', 3.0, 95, 4.0, 0);
+        addEntity('cow', -3.5, 110, 0, 0.1);
+      } else {
+        // Indian Chaos Mode (14+ Concurrent Mixed Traffic Entities!)
+        addEntity('cow', 0.2, 34, 0, -0.15);                  // 1. Stray Cow in center lane
+        addEntity('rickshaw', -3.3, 24, 4.2, 1.2);             // 2. Auto-Rickshaw cutting in
+        addEntity('pedestrian', 3.8, 18, 0, -1.5);             // 3. Jaywalker crossing left
+        addEntity('truck', 3.2, 55, 5.0, 0.0);                 // 4. Tata Truck in right lane
+        addEntity('bike', -1.2, 42, 7.5, 0.3);                 // 5. Motorcycle lane-splitting
+        addEntity('pothole', 0.0, 70, 0.0, 0.0);               // 6. Deep Pothole in lane
+        addEntity('rickshaw', 3.1, 80, 4.5, -0.2);             // 7. Second Rickshaw ahead
+        addEntity('cow', -3.6, 90, 0.0, 0.1);                  // 8. Second Cow on shoulder
+        addEntity('pedestrian', -3.8, 105, 0.0, 0.8);          // 9. Second Pedestrian
+        addEntity('truck', -3.0, 120, 5.2, 0.0);               // 10. Second Truck in left lane
+        addEntity('bike', 1.5, 135, 8.0, -0.2);                // 11. Second Bike overtaking
+        addEntity('pothole', 2.0, 145, 0.0, 0.0);              // 12. Pothole right side
+        addEntity('rickshaw', -0.5, 160, 4.0, 0.0);            // 13. Auto in distance
+        addEntity('cow', 3.0, 175, 0.0, -0.05);                // 14. Cattle grazing
+      }
+
+      document.getElementById('txt-obj-count').textContent = `${allEntities.length} Active`;
+    }
+
+    // --- 9. PHYSICAL AUTONOMOUS SIMULATION STATE & MULTI-OBJECT PLANNING ---
+    const sim = {
+      speed: 9.72, // 35 km/h in m/s
+      targetSpeed: 9.72,
+      lateralY: 0.0,
+      heading: 0.0,
+      steerAngle: 0.0,
+      totalDistance: 0.0,
+      cameraMode: 'chase',
+      weather: 'clear',
+      density: 'heavy',
+      isPaused: false,
+      swerving: false,
+      friction: 0.85,
+      closestThreat: null
+    };
+
+    function resetSimulation() {
+      sim.speed = sim.targetSpeed;
+      sim.lateralY = 0.0;
+      sim.heading = 0.0;
+      sim.steerAngle = 0.0;
+      sim.totalDistance = 0.0;
+      sim.swerving = false;
+      populateTraffic(sim.density);
+    }
+
+    // Density Buttons
+    const densButtons = {
+      'light': document.getElementById('dens-light'),
+      'medium': document.getElementById('dens-medium'),
+      'heavy': document.getElementById('dens-heavy')
+    };
+
+    function setDensity(dens) {
+      sim.density = dens;
+      Object.keys(densButtons).forEach(k => {
+        if (k === dens) {
+          densButtons[k].className = "px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-500 to-rose-600 text-white font-bold transition shadow";
+        } else {
+          densButtons[k].className = "px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition";
+        }
+      });
+      populateTraffic(dens);
+    }
+
+    document.getElementById('dens-light').onclick = () => setDensity('light');
+    document.getElementById('dens-medium').onclick = () => setDensity('medium');
+    document.getElementById('dens-heavy').onclick = () => setDensity('heavy');
+
+    // Add Entity Quick Buttons
+    document.getElementById('btn-add-cow').onclick = () => addEntity('cow', (Math.random() - 0.5) * 6, 60 + Math.random() * 40, 0, (Math.random() - 0.5) * 0.2);
+    document.getElementById('btn-add-rickshaw').onclick = () => addEntity('rickshaw', (Math.random() - 0.5) * 6, 60 + Math.random() * 40, 4.0, (Math.random() - 0.5) * 0.5);
+    document.getElementById('btn-add-truck').onclick = () => addEntity('truck', (Math.random() > 0.5 ? 3.2 : -3.2), 70 + Math.random() * 50, 5.5, 0);
+    document.getElementById('btn-add-bike').onclick = () => addEntity('bike', (Math.random() - 0.5) * 4, 50 + Math.random() * 40, 7.5, (Math.random() - 0.5) * 0.4);
+    document.getElementById('btn-add-ped').onclick = () => addEntity('pedestrian', (Math.random() > 0.5 ? 4.0 : -4.0), 35 + Math.random() * 30, 0, (Math.random() > 0.5 ? -1.2 : 1.2));
+    document.getElementById('btn-add-pothole').onclick = () => addEntity('pothole', (Math.random() - 0.5) * 5, 50 + Math.random() * 40, 0, 0);
+
+    // Weather Switcher
+    const weatherButtons = {
+      'clear': document.getElementById('w-clear'),
+      'rain': document.getElementById('w-rain'),
+      'fog': document.getElementById('w-fog'),
+      'dust': document.getElementById('w-dust'),
+      'day': document.getElementById('w-day')
+    };
+
+    function setWeather(mode) {
+      sim.weather = mode;
+      audio.setWeather(mode);
+
+      Object.keys(weatherButtons).forEach((k) => {
+        if (k === mode) {
+          weatherButtons[k].className = "px-2.5 py-1 rounded-xl bg-cyan-600 text-white font-bold transition shadow";
+        } else {
+          weatherButtons[k].className = "px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition";
+        }
+      });
+
+      const txtPrimarySensor = document.getElementById('txt-primary-sensor');
+
+      if (mode === 'clear') {
+        scene.background.setHex(0x060913);
+        scene.fog.color.setHex(0x060913);
+        scene.fog.density = 0.010;
+        ambientLight.color.setHex(0x1e293b); ambientLight.intensity = 0.95;
+        sunMoonLight.color.setHex(0x93c5fd); sunMoonLight.intensity = 0.85; sunMoonLight.position.set(30, 60, -30);
+        roadMat.roughness = 0.82; roadMat.metalness = 0.15; roadMat.color.setHex(0x0f172a);
+        rainSystem.visible = false; dustSystem.visible = false;
+        sim.friction = 0.85; sim.targetSpeed = 9.72;
+        txtPrimarySensor.textContent = "Camera + 16-LiDAR";
+        document.getElementById('txt-target-speed').textContent = "35 KM/H";
+      } else if (mode === 'rain') {
+        scene.background.setHex(0x080e1a);
+        scene.fog.color.setHex(0x0c1527);
+        scene.fog.density = 0.022;
+        ambientLight.color.setHex(0x1e3a5f); ambientLight.intensity = 0.75;
+        sunMoonLight.color.setHex(0x60a5fa); sunMoonLight.intensity = 0.65; sunMoonLight.position.set(20, 50, -20);
+        roadMat.roughness = 0.08; roadMat.metalness = 0.82; roadMat.color.setHex(0x060b14);
+        rainSystem.visible = true; dustSystem.visible = false;
+        sim.friction = 0.52; sim.targetSpeed = 6.94;
+        txtPrimarySensor.textContent = "Radar + Filtered LiDAR";
+        document.getElementById('txt-target-speed').textContent = "25 KM/H";
+      } else if (mode === 'fog') {
+        scene.background.setHex(0x475569);
+        scene.fog.color.setHex(0x64748b);
+        scene.fog.density = 0.040;
+        ambientLight.color.setHex(0x94a3b8); ambientLight.intensity = 1.15;
+        sunMoonLight.color.setHex(0xcbd5e1); sunMoonLight.intensity = 0.45; sunMoonLight.position.set(10, 40, -10);
+        roadMat.roughness = 0.75; roadMat.metalness = 0.20; roadMat.color.setHex(0x1e293b);
+        rainSystem.visible = false; dustSystem.visible = false;
+        sim.friction = 0.70; sim.targetSpeed = 5.56;
+        txtPrimarySensor.textContent = "77 GHz mmWave Radar (Primary)";
+        document.getElementById('txt-target-speed').textContent = "20 KM/H";
+      } else if (mode === 'dust') {
+        scene.background.setHex(0x451a03);
+        scene.fog.color.setHex(0x78350f);
+        scene.fog.density = 0.032;
+        ambientLight.color.setHex(0xd97706); ambientLight.intensity = 1.05;
+        sunMoonLight.color.setHex(0xf59e0b); sunMoonLight.intensity = 0.70; sunMoonLight.position.set(40, 50, 10);
+        roadMat.roughness = 0.95; roadMat.metalness = 0.05; roadMat.color.setHex(0x271406);
+        rainSystem.visible = false; dustSystem.visible = true;
+        sim.friction = 0.62; sim.targetSpeed = 6.94;
+        txtPrimarySensor.textContent = "Radar + Multi-Hypothesis EKF";
+        document.getElementById('txt-target-speed').textContent = "25 KM/H";
+      } else if (mode === 'day') {
+        scene.background.setHex(0x38bdf8);
+        scene.fog.color.setHex(0xbae6fd);
+        scene.fog.density = 0.003;
+        ambientLight.color.setHex(0xffffff); ambientLight.intensity = 1.35;
+        sunMoonLight.color.setHex(0xfef08a); sunMoonLight.intensity = 1.85; sunMoonLight.position.set(30, 80, 20);
+        roadMat.roughness = 0.70; roadMat.metalness = 0.10; roadMat.color.setHex(0x334155);
+        rainSystem.visible = false; dustSystem.visible = false;
+        sim.friction = 0.88; sim.targetSpeed = 12.5;
+        txtPrimarySensor.textContent = "Stereo Camera + LiDAR + Radar";
+        document.getElementById('txt-target-speed').textContent = "45 KM/H";
+      }
+    }
+
+    document.getElementById('w-clear').onclick = () => setWeather('clear');
+    document.getElementById('w-rain').onclick = () => setWeather('rain');
+    document.getElementById('w-fog').onclick = () => setWeather('fog');
+    document.getElementById('w-dust').onclick = () => setWeather('dust');
+    document.getElementById('w-day').onclick = () => setWeather('day');
+
+    // --- 10. MULTI-AGENT STEP SIMULATION PHYSICS & CONTROLLERS (25 Hz) ---
+    function stepPhysics(dt) {
+      if (sim.isPaused) return;
+
+      const egoTravel = sim.speed * dt;
+      sim.totalDistance += egoTravel;
+      audio.setSpeed(sim.speed);
+
+      // 1. Step & Update All Surrounding Multi-Agents
+      let closestInCorridor = null;
+      let minThreatDist = 999;
+
+      const lookaheadAvoidance = (sim.friction < 0.6) ? 42.0 : 32.0;
+
+      allEntities.forEach(e => {
+        // Relative forward movement (Ego moving forward at sim.speed, entity moving at e.vz)
+        const relVz = e.vz - sim.speed;
+        e.z += relVz * dt;
+        e.x += e.vx * dt;
+
+        // Keep entity within road boundaries [-5.2m to +5.2m]
+        if (Math.abs(e.x) > 5.2) {
+          e.vx = -e.vx; // bounce back into roadway
+        }
+
+        // Check if entity has fallen behind ego vehicle (< -16m) -> Recycle & Respawn ahead!
+        if (e.z < -16.0) {
+          e.z = 120.0 + Math.random() * 40.0; // spawn in distance
+          e.x = (Math.random() - 0.5) * 8.0;
+        }
+
+        // Update 3D Mesh Position
+        e.mesh.position.set(-e.x, 0, e.z);
+        e.bbox.update();
+
+        // Animate legs or wheels
+        if (e.mesh.legs) {
+          const legSwing = Math.sin(sim.totalDistance * 4.5 + e.id) * 0.35;
+          e.mesh.legs.forEach((l, idx) => {
+            l.rotation.x = (idx % 2 === 0) ? legSwing : -legSwing;
+          });
+        }
+        if (e.mesh.wheels) {
+          const rotDelta = (e.vz > 0 ? e.vz : egoTravel) / 0.38;
+          e.mesh.wheels.forEach(w => w.rotation.x += rotDelta);
+        }
+
+        // 2. Collision Corridor Check for this Entity
+        // Is it ahead of us (z > 0), within lookahead, and within our corridor (|lateralDiff| < 1.9m)?
+        const lateralDist = Math.abs(e.x - sim.lateralY);
+        const inCorridor = (e.z > 0 && e.z < lookaheadAvoidance && lateralDist < 2.0);
+
+        // Update Bounding Box Color: RED if critical threat, CYAN/GREEN if safe
+        if (inCorridor) {
+          e.bbox.material.color.setHex(0xef4444);
+          if (e.z < minThreatDist) {
+            minThreatDist = e.z;
+            closestInCorridor = e;
+          }
+        } else if (e.z > 0 && e.z < 60) {
+          e.bbox.material.color.setHex(0x06b6d4);
+        } else {
+          e.bbox.material.color.setHex(0x334155);
+        }
+      });
+
+      sim.closestThreat = closestInCorridor;
+
+      // 3. Multi-Agent Reactive Frenet & Stanley Planner
+      let targetLat = 0.0;
+
+      if (closestInCorridor) {
+        if (!sim.swerving) {
+          audio.playWarning();
+        }
+        sim.swerving = true;
+
+        // Choose best evasion lane: if threat is to the right, swerve left (+2.7m); if to left, swerve right (-2.7m)
+        targetLat = (closestInCorridor.x >= sim.lateralY) ? -2.7 : 2.7;
+
+        // Decelerate smoothly
+        const decelRate = (sim.friction < 0.6) ? 2.5 : 3.8;
+        sim.speed = Math.max(4.5, sim.speed - decelRate * dt);
+
+      } else if (sim.swerving) {
+        // Path cleared ahead: return smoothly to center lane
+        targetLat = 0.0;
+        sim.speed = Math.min(sim.targetSpeed, sim.speed + 2.4 * dt);
+        if (Math.abs(sim.lateralY) < 0.3) {
+          sim.swerving = false;
+        }
+      } else {
+        targetLat = 0.0;
+        sim.speed = Math.min(sim.targetSpeed, sim.speed + 2.5 * dt);
+      }
+
+      // Stanley steering calculation:
+      const kStanley = (sim.friction < 0.6) ? 0.65 : 0.85;
+      const eps = 0.5;
+      const crossTrack = sim.lateralY - targetLat;
+      const steerDemand = -sim.heading - Math.atan((kStanley * crossTrack) / (sim.speed + eps));
+      sim.steerAngle = Math.max(-0.52, Math.min(0.52, steerDemand));
+
+      // 2-DOF Bicycle Kinematics Integration
+      const wheelbase = 2.7;
+      sim.heading += (sim.speed / wheelbase) * Math.tan(sim.steerAngle) * dt;
+      sim.heading *= 0.94;
+      sim.lateralY += sim.speed * Math.sin(sim.heading) * dt;
+      sim.lateralY = Math.max(-4.8, Math.min(4.8, sim.lateralY));
+
+      // Update Ego 3D Position & Wheel Steer
+      egoVehicle.position.set(-sim.lateralY, 0, 0);
+      egoVehicle.rotation.y = -sim.heading;
+
+      const wheelRotSpeed = (egoTravel / 0.38);
+      wheels.forEach((w) => {
+        w.tire.rotation.x += wheelRotSpeed;
+        if (w.isFront) {
+          w.group.rotation.y = -sim.steerAngle;
+        }
+      });
+
+      // Brake Taillights
+      if (sim.swerving || sim.speed < 6.0) {
+        taillightMat.color.setHex(0xff0000);
+      } else {
+        taillightMat.color.setHex(0xdc2626);
+      }
+
+      // Scroll Road Elements
+      const scrollOffset = (sim.totalDistance) % 7.0;
+      dashGroup.position.z = -scrollOffset;
+      streetlightGroup.position.z = -(sim.totalDistance % 40.0);
+
+      // Update 3D LiDAR Points
+      ring.rotation.z += 0.25;
+      const lPos = lidarGeo.attributes.position.array;
+      for (let i = 0; i < LIDAR_COUNT; i++) {
+        const theta = (i * 0.12) + ring.rotation.z;
+        const ringIdx = i % 16;
+        const rRadius = 4.0 + ringIdx * 2.2;
+        lPos[i * 3 + 0] = -sim.lateralY + Math.cos(theta) * rRadius;
+        lPos[i * 3 + 1] = 0.15 + (Math.sin(theta * 3) + 1) * 0.2;
+        lPos[i * 3 + 2] = Math.sin(theta) * (rRadius * 0.85);
+      }
+      lidarGeo.attributes.position.needsUpdate = true;
+
+      // Update 3D Frenet Ribbon Mesh
+      updateFrenetRibbon(targetLat);
+
+      // Update HUD DOM
+      updateHUDDOM(crossTrack);
+    }
+
+    function updateFrenetRibbon(targetLat) {
+      const ribbonWidth = 1.4;
+      const numSteps = 24;
+      const positions = new Float32Array(numSteps * 2 * 3);
+
+      for (let i = 0; i < numSteps; i++) {
+        const s = i * 2.0;
+        const progress = s / 48.0;
+        const lat = sim.lateralY + (targetLat - sim.lateralY) * (3 * progress * progress - 2 * progress * progress * progress);
+        const z = s;
+        const x = -lat;
+
+        positions[i * 6 + 0] = x - ribbonWidth / 2;
+        positions[i * 6 + 1] = 0.05;
+        positions[i * 6 + 2] = z;
+
+        positions[i * 6 + 3] = x + ribbonWidth / 2;
+        positions[i * 6 + 4] = 0.05;
+        positions[i * 6 + 5] = z;
+      }
+
+      trajectoryGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      trajectoryGeo.computeVertexNormals();
+    }
+
+    function updateHUDDOM(crossTrack) {
+      const kmh = (sim.speed * 3.6).toFixed(1);
+      document.getElementById('txt-speed').textContent = `${kmh} km/h`;
+      document.getElementById('txt-dist').textContent = `${sim.totalDistance.toFixed(1)} m`;
+
+      const deg = (sim.steerAngle * 57.2958).toFixed(1);
+      document.getElementById('txt-steer').textContent = `${deg}°`;
+
+      const steerPct = Math.max(5, Math.min(95, (sim.steerAngle / 0.52 + 1.0) * 50));
+      document.getElementById('bar-steer').style.width = `${steerPct}%`;
+
+      document.getElementById('txt-efa').textContent = `${crossTrack.toFixed(2)} m`;
+      document.getElementById('txt-behavior').textContent = sim.swerving ? 'AVOID HAZARD' : 'CRUISE';
+
+      const alertBanner = document.getElementById('alert-banner');
+      const threatLabel = document.getElementById('txt-closest-threat');
+
+      if (sim.closestThreat) {
+        alertBanner.classList.remove('hidden');
+        document.getElementById('alert-title').textContent = `🚨 AVOIDING ${sim.closestThreat.type.toUpperCase()}`;
+        document.getElementById('alert-sub').textContent = `Frenet planner bypass active. Distance: ${sim.closestThreat.z.toFixed(1)}m.`;
+        threatLabel.textContent = `Threat: ${sim.closestThreat.type.toUpperCase()} (${sim.closestThreat.z.toFixed(1)}m)`;
+      } else {
+        alertBanner.classList.add('hidden');
+        threatLabel.textContent = `All Lanes Monitored (${allEntities.length} agents)`;
+      }
+    }
+
+    // --- 11. CAMERA CONTROLLERS ---
+    function updateCamera() {
+      if (sim.cameraMode === 'chase') {
+        controls.enabled = false;
+        const targetCamX = egoVehicle.position.x * 0.7;
+        const targetCamY = 3.8;
+        const targetCamZ = -8.5;
+        camera.position.lerp(new THREE.Vector3(targetCamX, targetCamY, targetCamZ), 0.12);
+        camera.lookAt(egoVehicle.position.x * 0.8, 1.2, 18.0);
+      } else if (sim.cameraMode === 'cockpit') {
+        controls.enabled = false;
+        camera.position.set(egoVehicle.position.x - 0.35, 1.35, -0.2);
+        camera.lookAt(egoVehicle.position.x - 0.35, 1.2, 40.0);
+      } else if (sim.cameraMode === 'bev') {
+        controls.enabled = false;
+        camera.position.set(0, 52, 20);
+        camera.lookAt(0, 0, 20);
+      } else {
+        controls.enabled = true;
+        controls.target.set(egoVehicle.position.x, 1.0, 5.0);
+      }
+    }
+
+    const camButtons = {
+      'chase': document.getElementById('cam-chase'),
+      'cockpit': document.getElementById('cam-cockpit'),
+      'orbit': document.getElementById('cam-orbit'),
+      'bev': document.getElementById('cam-bev')
+    };
+
+    function setCamMode(mode) {
+      sim.cameraMode = mode;
+      Object.keys(camButtons).forEach((k) => {
+        if (k === mode) {
+          camButtons[k].className = "px-3 py-1.5 rounded-xl bg-cyan-600 text-white font-bold transition shadow";
+        } else {
+          camButtons[k].className = "px-3 py-1.5 rounded-xl text-slate-300 hover:text-white transition";
+        }
+      });
+      if (mode === 'orbit') {
+        camera.position.set(-12, 10, -14);
+      }
+    }
+
+    document.getElementById('cam-chase').onclick = () => setCamMode('chase');
+    document.getElementById('cam-cockpit').onclick = () => setCamMode('cockpit');
+    document.getElementById('cam-orbit').onclick = () => setCamMode('orbit');
+    document.getElementById('cam-bev').onclick = () => setCamMode('bev');
+
+    // Simulation Controls
+    const btnTogglePlay = document.getElementById('btn-toggle-play');
+    const txtPlayIcon = document.getElementById('txt-play-icon');
+    const txtPlayLabel = document.getElementById('txt-play-label');
+
+    btnTogglePlay.onclick = () => {
+      sim.isPaused = !sim.isPaused;
+      if (sim.isPaused) {
+        btnTogglePlay.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-500 text-white font-bold transition active:scale-95 shadow";
+        txtPlayIcon.textContent = "▶️";
+        txtPlayLabel.textContent = "RESUME";
+      } else {
+        btnTogglePlay.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition active:scale-95 shadow";
+        txtPlayIcon.textContent = "⏸️";
+        txtPlayLabel.textContent = "PAUSE";
+      }
+    };
+
+    document.getElementById('btn-reset-sim').onclick = () => {
+      resetSimulation();
+      if (sim.isPaused) {
+        sim.isPaused = false;
+        btnTogglePlay.className = "flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition active:scale-95 shadow";
+        txtPlayIcon.textContent = "⏸️";
+        txtPlayLabel.textContent = "PAUSE";
+      }
+    };
+
+    const speeds = [
+      { label: "25 KM/H", val: 6.94 },
+      { label: "35 KM/H", val: 9.72 },
+      { label: "50 KM/H", val: 13.89 }
+    ];
+    let speedIdx = 1;
+    document.getElementById('btn-speed-toggle').onclick = () => {
+      speedIdx = (speedIdx + 1) % speeds.length;
+      sim.targetSpeed = speeds[speedIdx].val;
+      document.getElementById('txt-target-speed').textContent = speeds[speedIdx].label;
+    };
+
+    document.getElementById('btn-sound-toggle').onclick = () => {
+      const active = audio.toggle();
+      document.getElementById('txt-sound-status').textContent = active ? "🔊 SFX ON" : "🔇 SFX OFF";
+    };
+
+    // --- 12. MAIN ANIMATION LOOP (60 FPS RENDER, 25 HZ PHYSICS) ---
+    let lastTime = performance.now();
+    let physicsAccumulator = 0;
+    const physicsDT = 0.04;
+
+    function animate(currentTime) {
+      requestAnimationFrame(animate);
+
+      const delta = Math.min(0.1, (currentTime - lastTime) / 1000);
+      lastTime = currentTime;
+
+      physicsAccumulator += delta;
+      while (physicsAccumulator >= physicsDT) {
+        stepPhysics(physicsDT);
+        physicsAccumulator -= physicsDT;
+      }
+
+      // Weather Particles (60 FPS)
+      if (sim.weather === 'rain' && rainSystem.visible) {
+        const rPos = rainGeo.attributes.position.array;
+        for (let i = 0; i < RAIN_COUNT; i++) {
+          rPos[i * 3 + 1] -= 1.1;
+          rPos[i * 3 + 0] += 0.06;
+          if (rPos[i * 3 + 1] < 0) {
+            rPos[i * 3 + 1] = 32;
+            rPos[i * 3 + 0] = -sim.lateralY + (Math.random() - 0.5) * 55;
+            rPos[i * 3 + 2] = (Math.random() - 0.5) * 80;
+          }
+        }
+        rainGeo.attributes.position.needsUpdate = true;
+      } else if (sim.weather === 'dust' && dustSystem.visible) {
+        const dPos = dustGeo.attributes.position.array;
+        for (let i = 0; i < DUST_COUNT; i++) {
+          dPos[i * 3 + 0] -= 0.65;
+          dPos[i * 3 + 1] += (Math.random() - 0.5) * 0.1;
+          if (dPos[i * 3 + 0] < -sim.lateralY - 30) {
+            dPos[i * 3 + 0] = -sim.lateralY + 30;
+            dPos[i * 3 + 1] = Math.random() * 16;
+            dPos[i * 3 + 2] = (Math.random() - 0.5) * 75;
+          }
+        }
+        dustGeo.attributes.position.needsUpdate = true;
+      }
+
+      updateCamera();
+      if (controls.enabled) controls.update();
+
+      renderer.render(scene, camera);
+    }
+
+    // Window resize
+    window.addEventListener('resize', () => {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    });
+
+    // Start with Chase Cam, Clear Weather & Heavy Indian Traffic
+    setCamMode('chase');
+    setWeather('clear');
+    populateTraffic('heavy');
+    requestAnimationFrame(animate);
+  </script>
+</body>
+</html>
