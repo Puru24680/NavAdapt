@@ -436,8 +436,8 @@
     // --- 1. SETUP THREE.JS SCENE, RENDERER & LIGHTS ---
     const container = document.getElementById('canvas-container');
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color(0x060913);
-    scene.fog = new THREE.FogExp2(0x060913, 0.010);
+    scene.background = new THREE.Color(0x0b1329);
+    scene.fog = new THREE.FogExp2(0x0b1329, 0.0022);
 
     const camera = new THREE.PerspectiveCamera(55, window.innerWidth / window.innerHeight, 0.1, 500);
     const renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: "high-performance" });
@@ -446,6 +446,7 @@
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.22;
     container.appendChild(renderer.domElement);
 
     const controls = new THREE.OrbitControls(camera, renderer.domElement);
@@ -455,12 +456,12 @@
     controls.minDistance = 2;
     controls.maxDistance = 140;
 
-    // Ambient & Directional Sun/Moonlight
-    const ambientLight = new THREE.AmbientLight(0x1e293b, 0.95);
+    // Ambient & Directional Sun/Moonlight (Bright & High Visibility)
+    const ambientLight = new THREE.AmbientLight(0x94a3b8, 1.45);
     scene.add(ambientLight);
 
-    const sunMoonLight = new THREE.DirectionalLight(0x93c5fd, 0.85);
-    sunMoonLight.position.set(30, 60, -30);
+    const sunMoonLight = new THREE.DirectionalLight(0xf1f5f9, 1.6);
+    sunMoonLight.position.set(40, 80, 25);
     sunMoonLight.castShadow = true;
     sunMoonLight.shadow.mapSize.width = 2048;
     sunMoonLight.shadow.mapSize.height = 2048;
@@ -2525,14 +2526,14 @@
       const txtPrimarySensor = document.getElementById('txt-primary-sensor');
 
       if (mode === 'clear') {
-        scene.background.setHex(0x060913);
-        scene.fog.color.setHex(0x060913);
-        scene.fog.density = 0.010;
-        ambientLight.color.setHex(0x1e293b); ambientLight.intensity = 0.95;
-        sunMoonLight.color.setHex(0x93c5fd); sunMoonLight.intensity = 0.85; sunMoonLight.position.set(30, 60, -30);
-        roadMat.roughness = 0.82; roadMat.metalness = 0.15; roadMat.color.setHex(0x0f172a);
-        terrainMat.color.setHex(0x09140c);
-        mountainMat.color.setHex(0x07111a);
+        scene.background.setHex(0x0b1329);
+        scene.fog.color.setHex(0x0b1329);
+        scene.fog.density = 0.0022;
+        ambientLight.color.setHex(0x94a3b8); ambientLight.intensity = 1.45;
+        sunMoonLight.color.setHex(0xf1f5f9); sunMoonLight.intensity = 1.6; sunMoonLight.position.set(40, 80, 25);
+        roadMat.roughness = 0.45; roadMat.metalness = 0.20; roadMat.color.setHex(0x2d3d54);
+        terrainMat.color.setHex(0x142b17);
+        mountainMat.color.setHex(0x1a2f3d);
         starField.visible = true; cloudGroup.visible = false;
         rainSystem.visible = false; dustSystem.visible = false;
         sim.friction = 0.85; sim.targetSpeed = 33.33;
@@ -3653,7 +3654,7 @@
 
       // Dynamically Scroll AR Trajectory Chevrons Down Road
       if (typeof trajectoryTex !== 'undefined' && trajectoryTex) {
-        trajectoryTex.offset.y -= dt * (sim.speed * 0.16 + 0.5);
+        trajectoryTex.offset.y -= delta * (sim.speed * 0.16 + 0.5);
       }
 
       updateCamera();
