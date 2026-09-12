@@ -185,6 +185,61 @@
 
       </div>
 
+      <!-- Safety Scenarios & IoT Handover Action Panel -->
+      <div class="flex flex-wrap items-center justify-between gap-2.5 interactive">
+        
+        <!-- Fail-Safe Mode Triggers -->
+        <div class="glass-panel px-3 py-1.5 rounded-2xl flex flex-wrap items-center gap-2 text-xs font-mono">
+          <span class="text-[10px] text-amber-400 font-bold flex items-center space-x-1">
+            <span>🛡️</span>
+            <span>SAFETY & FAIL-SAFE:</span>
+          </span>
+
+          <!-- Trigger Road End Stop -->
+          <button id="btn-trigger-road-end" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold transition shadow active:scale-95 flex items-center space-x-1.5" title="Test Road End / Dead End Barricade Detection & Controlled Safety Stop">
+            <span>🛑</span>
+            <span>Test Road End Stop</span>
+          </button>
+
+          <!-- Trigger Camera Failure & IoT Handover -->
+          <button id="btn-trigger-cam-fail" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-500 hover:to-orange-600 text-white font-bold transition shadow active:scale-95 flex items-center space-x-1.5" title="Simulate Camera Sensor Failure -> Auto-Handover to LiDAR/Radar IoT & Safe Shoulder Park">
+            <span id="txt-cam-fail-icon">📷</span>
+            <span id="txt-cam-fail-label">Trigger Camera Failure</span>
+          </button>
+
+          <!-- Recover / Resume Normal Cruise -->
+          <button id="btn-recover-all" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold transition active:scale-95 flex items-center space-x-1.5" title="Clear Faults & Resume Normal 120 km/h Autonomous Cruise">
+            <span>✅</span>
+            <span>Resume Cruise</span>
+          </button>
+        </div>
+
+        <!-- Sensor Status & Fail-Safe State Pills -->
+        <div class="glass-panel px-3 py-1.5 rounded-2xl flex items-center space-x-3 text-xs font-mono">
+          <div class="flex items-center space-x-1.5">
+            <span class="text-[9px] text-slate-400">CAMERA:</span>
+            <span id="pill-camera-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500 text-emerald-300 font-bold">
+              ONLINE (60 FPS)
+            </span>
+          </div>
+          <div class="h-4 w-[1px] bg-slate-700"></div>
+          <div class="flex items-center space-x-1.5">
+            <span class="text-[9px] text-slate-400">IOT SENSORS:</span>
+            <span id="pill-iot-status" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-400 font-bold">
+              STANDBY
+            </span>
+          </div>
+          <div class="h-4 w-[1px] bg-slate-700"></div>
+          <div class="flex items-center space-x-1.5">
+            <span class="text-[9px] text-slate-400">GEAR:</span>
+            <span id="pill-gear-status" class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-400 text-cyan-300 font-bold">
+              [D] DRIVE
+            </span>
+          </div>
+        </div>
+
+      </div>
+
     </div>
 
     <!-- Center Screen Alert Notification (Flashes on Hazard Avoidance) -->
@@ -239,6 +294,22 @@
             <span id="txt-behavior" class="text-cyan-400 font-bold text-xs">CRUISE</span>
           </div>
         </div>
+
+        <!-- Gear / EPB, Hazards & Failsafe Mode Telemetry -->
+        <div class="grid grid-cols-3 gap-1.5 text-[10px]">
+          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
+            <span class="text-slate-500 block">Gear (EPB)</span>
+            <span id="txt-gear" class="text-emerald-400 font-bold text-xs">[D] DRIVE</span>
+          </div>
+          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
+            <span class="text-slate-500 block">Hazards</span>
+            <span id="txt-hazards" class="text-slate-400 font-bold text-xs">OFF</span>
+          </div>
+          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
+            <span class="text-slate-500 block">Safety Mode</span>
+            <span id="txt-failsafe" class="text-cyan-400 font-bold text-xs">NORMAL</span>
+          </div>
+        </div>
       </div>
 
       <!-- 2. Center: Multi-Object Quick Injection (Click to inject more into scene) -->
@@ -250,7 +321,7 @@
           <span class="text-[9px] text-slate-400 font-mono">Instant spawn:</span>
         </div>
 
-        <div class="grid grid-cols-7 gap-1 font-mono text-[11px]">
+        <div class="grid grid-cols-9 gap-1 font-mono text-[11px]">
           <button id="btn-add-cow" class="p-1 rounded-xl bg-amber-950/60 border border-amber-500/70 hover:bg-amber-900/80 text-amber-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Stray Cow">
             <span class="text-base">🐄</span>
             <span class="text-[8px] font-bold mt-0.5">Cow</span>
@@ -275,9 +346,17 @@
             <span class="text-base">🕳️</span>
             <span class="text-[8px] font-bold mt-0.5">Pothole</span>
           </button>
-          <button id="btn-add-bump" class="p-1 rounded-xl bg-amber-950/70 border border-amber-400/90 hover:bg-amber-900/90 text-amber-300 transition active:scale-95 flex flex-col items-center shadow animate-pulse" title="Spawn IRC Speed Breaker (Auto Slow to 15 km/h)">
+          <button id="btn-add-bump" class="p-1 rounded-xl bg-amber-950/70 border border-amber-400/90 hover:bg-amber-900/90 text-amber-300 transition active:scale-95 flex flex-col items-center shadow" title="Spawn IRC Speed Breaker (Auto Slow to 15 km/h)">
             <span class="text-base">🚧</span>
             <span class="text-[8px] font-bold mt-0.5">Bump</span>
+          </button>
+          <button id="btn-add-road-end" class="p-1 rounded-xl bg-red-950/70 border border-red-500/90 hover:bg-red-900/90 text-red-200 transition active:scale-95 flex flex-col items-center shadow animate-pulse" title="Spawn Road End Barricade (Auto Stop With Safety Measures)">
+            <span class="text-base">🛑</span>
+            <span class="text-[8px] font-bold mt-0.5">RoadEnd</span>
+          </button>
+          <button id="btn-add-cam-fail" class="p-1 rounded-xl bg-orange-950/70 border border-orange-500/90 hover:bg-orange-900/90 text-orange-200 transition active:scale-95 flex flex-col items-center shadow" title="Simulate Camera Fail -> IoT Handover & Safe Shoulder Park">
+            <span class="text-base">📷</span>
+            <span class="text-[8px] font-bold mt-0.5">CamFail</span>
           </button>
         </div>
       </div>
@@ -286,19 +365,20 @@
       <div class="glass-panel p-3.5 rounded-2xl space-y-2 text-xs font-mono">
         <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
           <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Perception & Multi-Target Fusion</span>
-          <span id="txt-primary-sensor" class="text-[9px] text-slate-300">LiDAR + Radar</span>
+          <span id="txt-primary-sensor" class="text-[9px] text-slate-300">Camera + LiDAR + Radar</span>
         </div>
 
         <div class="flex items-center justify-between text-[11px] text-slate-300">
-          <span>16-Beam LiDAR: <span class="text-emerald-400 font-bold">1200 pts</span></span>
-          <span>Radar: <span class="text-emerald-400 font-bold">77 GHz Multi</span></span>
-          <span>Camera: <span class="text-emerald-400 font-bold">YOLOv8 60fps</span></span>
+          <span>Camera: <span id="txt-cam-fps" class="text-emerald-400 font-bold">YOLOv8 60fps</span></span>
+          <span>LiDAR: <span id="txt-lidar-pts" class="text-emerald-400 font-bold">1200 pts</span></span>
+          <span>Radar: <span id="txt-radar-status" class="text-emerald-400 font-bold">77 GHz FMCW</span></span>
         </div>
 
         <div id="can-stream" class="h-14 bg-slate-950/80 rounded-xl p-1.5 text-[9px] font-mono overflow-y-auto space-y-0.5 text-slate-400 border border-slate-800">
+          <div>[0.0s] 0x100: SYSTEM_READY — Autonomous Stack Initialized</div>
           <div>[0.0s] 0x102: STEER_ACTUATOR = 0.000 rad</div>
-          <div>[0.0s] 0x103: SPEED_DEMAND = 9.72 m/s</div>
-          <div>[0.0s] 0x205: TRACKED_TARGETS = 10 objects in FOV</div>
+          <div>[0.0s] 0x103: SPEED_DEMAND = 33.33 m/s (120 km/h)</div>
+          <div>[0.0s] 0x205: SENSORS = Camera + 16-Beam LiDAR + 77 GHz Radar</div>
         </div>
       </div>
 
@@ -436,6 +516,40 @@
           gain.connect(this.ctx.destination);
           osc.start();
           osc.stop(this.ctx.currentTime + 0.24);
+        } catch(e) {}
+      }
+      playEmergencyAlarm() {
+        if (!this.ctx || !this.enabled) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(620, this.ctx.currentTime);
+          osc.frequency.setValueAtTime(880, this.ctx.currentTime + 0.15);
+          osc.frequency.setValueAtTime(620, this.ctx.currentTime + 0.3);
+          gain.gain.setValueAtTime(0.14, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.44);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.45);
+        } catch(e) {}
+      }
+      playParkChime() {
+        if (!this.ctx || !this.enabled) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(523.25, this.ctx.currentTime); // C5
+          osc.frequency.setValueAtTime(659.25, this.ctx.currentTime + 0.14); // E5
+          osc.frequency.setValueAtTime(783.99, this.ctx.currentTime + 0.28); // G5
+          gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.48);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.5);
         } catch(e) {}
       }
       toggle() {
@@ -641,6 +755,27 @@
     const taillight = new THREE.Mesh(new THREE.BoxGeometry(1.8, 0.08, 0.1), taillightMat);
     taillight.position.set(0, 0.7, -2.31);
     egoVehicle.add(taillight);
+
+    // 4-Way Emergency Hazard Blinker Indicators (Amber Strobe Lights Front & Rear)
+    const hazardBlinkers = [];
+    const blinkerGeo = new THREE.BoxGeometry(0.24, 0.12, 0.1);
+    const blinkerPositions = [
+      { x: -0.92, y: 0.62, z: 2.26 }, // Front Left
+      { x:  0.92, y: 0.62, z: 2.26 }, // Front Right
+      { x: -0.92, y: 0.68, z: -2.28 }, // Rear Left
+      { x:  0.92, y: 0.68, z: -2.28 }  // Rear Right
+    ];
+    blinkerPositions.forEach(p => {
+      const bMat = new THREE.MeshStandardMaterial({
+        color: 0x451a03,
+        emissive: 0x000000,
+        roughness: 0.2
+      });
+      const bMesh = new THREE.Mesh(blinkerGeo, bMat);
+      bMesh.position.set(p.x, p.y, p.z);
+      egoVehicle.add(bMesh);
+      hazardBlinkers.push(bMesh);
+    });
 
     // --- 4. 16-BEAM ROTATING LIDAR POINT CLOUD PARTICLES ---
     const LIDAR_COUNT = 1200;
@@ -930,6 +1065,97 @@
       return g;
     }
 
+    function buildRoadEndMesh() {
+      // Highway Construction Barricade & Expressway Terminus Gantry
+      const g = new THREE.Group();
+      const roadW = ROAD_WIDTH;
+
+      // 1. Heavy concrete foundation base across the full roadway
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+      const base = new THREE.Mesh(new THREE.BoxGeometry(roadW, 0.9, 1.2), baseMat);
+      base.position.y = 0.45;
+      base.receiveShadow = true;
+      g.add(base);
+
+      // 2. High-visibility 16 alternating Red & White reflective chevron stripes
+      const numStripes = 16;
+      const stripeW = roadW / numStripes;
+      const redMat = new THREE.MeshStandardMaterial({
+        color: 0xef4444,
+        emissive: 0x991b1b,
+        emissiveIntensity: 0.35,
+        roughness: 0.25
+      });
+      const whiteMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.3 });
+
+      for (let i = 0; i < numStripes; i++) {
+        const isRed = (i % 2 === 0);
+        const stripe = new THREE.Mesh(
+          new THREE.BoxGeometry(stripeW * 0.95, 0.92, 1.22),
+          isRed ? redMat : whiteMat
+        );
+        stripe.position.set(-roadW / 2 + (i + 0.5) * stripeW, 0.46, 0);
+        stripe.receiveShadow = true;
+        g.add(stripe);
+      }
+
+      // 3. Heavy steel gantry truss across road
+      const gantryH = 5.2;
+      const trussMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.25 });
+
+      for (let side of [-1, 1]) {
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.18, 0.22, gantryH, 12), trussMat);
+        pillar.position.set(side * (roadW / 2 + 0.6), gantryH / 2, 0);
+        g.add(pillar);
+      }
+
+      const crossBeam = new THREE.Mesh(new THREE.BoxGeometry(roadW + 1.6, 0.35, 0.35), trussMat);
+      crossBeam.position.set(0, gantryH, 0);
+      g.add(crossBeam);
+
+      // 4. Large Illuminated Overhead Sign: "🛑 ROAD CLOSED — EXPRESSWAY TERMINUS"
+      const signBoard = new THREE.Mesh(
+        new THREE.BoxGeometry(7.8, 1.4, 0.15),
+        new THREE.MeshStandardMaterial({ color: 0x991b1b, emissive: 0x7f1d1d, emissiveIntensity: 0.6, roughness: 0.2 })
+      );
+      signBoard.position.set(0, gantryH, 0.1);
+      g.add(signBoard);
+
+      const textBorder = new THREE.Mesh(
+        new THREE.BoxGeometry(7.4, 1.0, 0.18),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      textBorder.position.set(0, gantryH, 0.11);
+      g.add(textBorder);
+
+      const textFill = new THREE.Mesh(
+        new THREE.BoxGeometry(7.1, 0.8, 0.2),
+        new THREE.MeshBasicMaterial({ color: 0xdc2626 })
+      );
+      textFill.position.set(0, gantryH, 0.12);
+      g.add(textFill);
+
+      // 5. Strobe Warning Beacons on Gantry and Barricades
+      g.beacons = [];
+      const beaconGeo = new THREE.SphereGeometry(0.2, 12, 12);
+      const beaconMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+      const bPositions = [
+        { x: -3.2, y: gantryH + 0.8, z: 0 },
+        { x: 0.0, y: gantryH + 0.8, z: 0 },
+        { x: 3.2, y: gantryH + 0.8, z: 0 },
+        { x: -roadW / 2 + 0.6, y: 1.1, z: 0 },
+        { x: roadW / 2 - 0.6, y: 1.1, z: 0 }
+      ];
+      bPositions.forEach(p => {
+        const beacon = new THREE.Mesh(beaconGeo, beaconMat.clone());
+        beacon.position.set(p.x, p.y, p.z);
+        g.add(beacon);
+        g.beacons.push(beacon);
+      });
+
+      return g;
+    }
+
     // --- 8. MULTI-OBJECT POPULATION & AGENT MANAGER ---
     const allEntities = [];
     const entityGroup = new THREE.Group();
@@ -945,6 +1171,7 @@
       else if (type === 'pedestrian') mesh = buildPedestrianMesh();
       else if (type === 'pothole') mesh = buildPotholeMesh();
       else if (type === 'speed_breaker') mesh = buildSpeedBreakerMesh();
+      else if (type === 'road_end') mesh = buildRoadEndMesh();
 
       entityGroup.add(mesh);
 
@@ -962,6 +1189,7 @@
         vx: vx,
         vz: vz, // forward speed relative to road
         isSpeedBreaker: (type === 'speed_breaker'),
+        isRoadEnd: (type === 'road_end'),
         thumpPlayed: false,
         active: true
       };
@@ -1015,7 +1243,18 @@
       swerving: false,
       speedBreakerActive: false,
       friction: 0.85,
-      closestThreat: null
+      closestThreat: null,
+      // Road End Detection & Safety Stop
+      roadEndActive: false,
+      activeRoadEnd: null,
+      roadEndDist: 999,
+      // Camera Failure & IoT Handover / Pull-Over
+      cameraFailed: false,
+      cameraFailState: 'none', // 'none' | 'handover_slowing' | 'pulling_over' | 'parked'
+      // Vehicle Security Controls
+      gear: 'D', // 'D' or 'P'
+      hazardBlinkers: false,
+      electronicParkingBrake: false
     };
 
     function resetSimulation() {
@@ -1027,6 +1266,14 @@
       sim.totalDistance = 0.0;
       sim.swerving = false;
       sim.speedBreakerActive = false;
+      sim.roadEndActive = false;
+      sim.activeRoadEnd = null;
+      sim.roadEndDist = 999;
+      sim.cameraFailed = false;
+      sim.cameraFailState = 'none';
+      sim.gear = 'D';
+      sim.hazardBlinkers = false;
+      sim.electronicParkingBrake = false;
       sim.accuracy = 99.7;
       carBody.position.y = 0.65;
       carBody.rotation.x = 0;
@@ -1056,6 +1303,79 @@
     document.getElementById('dens-medium').onclick = () => setDensity('medium');
     document.getElementById('dens-heavy').onclick = () => setDensity('heavy');
 
+    // CAN Bus Message Logger
+    function logCAN(msg) {
+      const can = document.getElementById('can-stream');
+      if (!can) return;
+      const t = (performance.now() / 1000).toFixed(1);
+      const row = document.createElement('div');
+      row.textContent = `[${t}s] ${msg}`;
+      can.prepend(row);
+      while (can.children.length > 20) {
+        can.removeChild(can.lastChild);
+      }
+    }
+
+    // Safety Scenario: Road End Barricade Detection & Controlled Stop
+    function triggerRoadEndStop() {
+      let re = allEntities.find(e => e.type === 'road_end');
+      if (!re) {
+        re = addEntity('road_end', 0.0, 75.0, 0, 0);
+      } else {
+        re.z = 75.0;
+      }
+      sim.roadEndActive = true;
+      sim.activeRoadEnd = re;
+      sim.roadEndDist = 75.0;
+      sim.hazardBlinkers = true;
+      audio.playEmergencyAlarm();
+      logCAN("0x280: ROAD_END_DETECTED — Highway terminus barricade 75m ahead");
+      logCAN("0x281: FAILSAFE_STOP — 4-Way hazard blinkers ON, controlled stop initiated");
+    }
+
+    // Safety Scenario: Camera Sensor Failure & IoT Multi-Sensor Handover (LiDAR+Radar)
+    function triggerCameraFailure() {
+      sim.cameraFailed = !sim.cameraFailed;
+      if (sim.cameraFailed) {
+        sim.cameraFailState = 'handover_slowing';
+        sim.hazardBlinkers = true;
+        audio.playEmergencyAlarm();
+        logCAN("0x300: SENSOR_FAULT — Primary Camera feed OFFLINE (CRC Error)");
+        logCAN("0x301: IOT_HANDOVER — Transferred to 16-Beam LiDAR + 77 GHz FMCW Radar");
+        logCAN("0x302: MRM_ACTIVE — Decelerating to 15 km/h & executing safe shoulder park");
+        document.getElementById('txt-cam-fail-label').textContent = "Restore Camera";
+        document.getElementById('txt-cam-fail-icon').textContent = "✅";
+      } else {
+        recoverAll();
+      }
+    }
+
+    function recoverAll() {
+      sim.cameraFailed = false;
+      sim.cameraFailState = 'none';
+      sim.roadEndActive = false;
+      sim.gear = 'D';
+      sim.hazardBlinkers = false;
+      sim.electronicParkingBrake = false;
+      // Remove any road_end objects
+      for (let i = allEntities.length - 1; i >= 0; i--) {
+        if (allEntities[i].type === 'road_end') {
+          entityGroup.remove(allEntities[i].mesh);
+          scene.remove(allEntities[i].bbox);
+          allEntities.splice(i, 1);
+        }
+      }
+      sim.activeRoadEnd = null;
+      document.getElementById('txt-cam-fail-label').textContent = "Trigger Camera Failure";
+      document.getElementById('txt-cam-fail-icon').textContent = "📷";
+      logCAN("0x101: SYSTEM_RESTORE — All perception sensors operational, cruise resumed");
+    }
+
+    // Safety & Fail-Safe Button Bindings
+    document.getElementById('btn-trigger-road-end').onclick = () => triggerRoadEndStop();
+    document.getElementById('btn-trigger-cam-fail').onclick = () => triggerCameraFailure();
+    document.getElementById('btn-recover-all').onclick = () => recoverAll();
+
     // Add Entity Quick Buttons
     document.getElementById('btn-add-cow').onclick = () => addEntity('cow', (Math.random() - 0.5) * 6, 60 + Math.random() * 40, 0, (Math.random() - 0.5) * 0.2);
     document.getElementById('btn-add-rickshaw').onclick = () => addEntity('rickshaw', (Math.random() - 0.5) * 6, 60 + Math.random() * 40, 4.0, (Math.random() - 0.5) * 0.5);
@@ -1064,6 +1384,8 @@
     document.getElementById('btn-add-ped').onclick = () => addEntity('pedestrian', (Math.random() > 0.5 ? 4.0 : -4.0), 35 + Math.random() * 30, 0, (Math.random() > 0.5 ? -1.2 : 1.2));
     document.getElementById('btn-add-pothole').onclick = () => addEntity('pothole', (Math.random() - 0.5) * 5, 50 + Math.random() * 40, 0, 0);
     document.getElementById('btn-add-bump').onclick = () => addEntity('speed_breaker', 0.0, 55 + Math.random() * 25, 0, 0);
+    document.getElementById('btn-add-road-end').onclick = () => triggerRoadEndStop();
+    document.getElementById('btn-add-cam-fail').onclick = () => triggerCameraFailure();
 
     // Weather Switcher
     const weatherButtons = {
@@ -1165,6 +1487,8 @@
       let minThreatDist = 999;
       let activeSpeedBreaker = null;
       let bumpDist = 999;
+      let activeRoadEnd = null;
+      let roadEndDist = 999;
 
       const lookaheadAvoidance = (sim.friction < 0.6) ? 45.0 : 35.0;
 
@@ -1175,7 +1499,7 @@
         e.x += e.vx * dt;
 
         // Keep dynamic entities within road boundaries [-5.2m to +5.2m]
-        if (e.type !== 'speed_breaker') {
+        if (e.type !== 'speed_breaker' && e.type !== 'road_end') {
           if (Math.abs(e.x) > 5.2) {
             e.vx = -e.vx; // bounce back into roadway
           }
@@ -1183,12 +1507,16 @@
 
         // Check if entity has fallen behind ego vehicle (< -18m) -> Recycle & Respawn in distant corridor!
         if (e.z < -18.0) {
-          e.z = 240.0 + Math.random() * 80.0; // spawn in far distance
-          if (e.type === 'speed_breaker') {
-            e.x = 0; // speed breakers span entire road
-            e.thumpPlayed = false;
+          if (e.type === 'road_end') {
+            // Keep road end in place when active
           } else {
-            e.x = (Math.random() - 0.5) * 7.0;
+            e.z = 240.0 + Math.random() * 80.0; // spawn in far distance
+            if (e.type === 'speed_breaker') {
+              e.x = 0; // speed breakers span entire road
+              e.thumpPlayed = false;
+            } else {
+              e.x = (Math.random() - 0.5) * 7.0;
+            }
           }
         }
 
@@ -1219,6 +1547,21 @@
           return; // Speed breaker spans entire road, avoid lateral steering evasion
         }
 
+        // Check if this is Road End Barricade
+        if (e.type === 'road_end') {
+          if (e.z > -10.0 && e.z < 120.0) {
+            if (e.z < roadEndDist) {
+              roadEndDist = e.z;
+              activeRoadEnd = e;
+            }
+          }
+          if (e.mesh.beacons) {
+            const isRedOn = Math.sin(performance.now() * 0.008) > 0;
+            e.mesh.beacons.forEach(b => b.material.color.setHex(isRedOn ? 0xef4444 : 0x450a0a));
+          }
+          return; // Spans whole road, handled by longitudinal safety stop
+        }
+
         // 2. Collision Corridor Check for other Entities (Obstacles)
         const lateralDist = Math.abs(e.x - sim.lateralY);
         const inCorridor = (e.z > 0 && e.z < lookaheadAvoidance && lateralDist < 2.0);
@@ -1240,10 +1583,15 @@
       sim.closestThreat = closestInCorridor;
       sim.activeSpeedBreaker = activeSpeedBreaker;
       sim.bumpDist = bumpDist;
+      sim.activeRoadEnd = activeRoadEnd;
+      sim.roadEndDist = roadEndDist;
+      if (activeRoadEnd) {
+        sim.roadEndActive = true;
+      }
 
       // 2. Speed Breaker Longitudinal Controller & Suspension Physics
       let speedBreakerEngaged = false;
-      if (activeSpeedBreaker) {
+      if (activeSpeedBreaker && !sim.cameraFailed && !activeRoadEnd) {
         speedBreakerEngaged = true;
         const safeSpeed = 4.17; // 15 km/h safe crawl speed for speed breaker
 
@@ -1283,10 +1631,71 @@
         sim.speedBreakerActive = false;
       }
 
-      // 3. Multi-Agent Reactive Frenet & Stanley Planner with Smooth Trajectory Evasion
+      // 3. Fail-Safe State Machine & Multi-Agent Reactive Frenet Planner
       let targetLat = 0.0;
 
-      if (closestInCorridor) {
+      if (sim.cameraFailed) {
+        // --- FAIL-SAFE PROTOCOL A: CAMERA FAULT -> IOT SENSOR HANDOVER & SHOULDER PARK ---
+        sim.hazardBlinkers = true;
+
+        if (sim.cameraFailState === 'handover_slowing') {
+          // Phase 1: Smoothly lower speed down to safe crawl (15 km/h)
+          const crawlSpeed = 4.17;
+          sim.speed = Math.max(crawlSpeed, sim.speed - 6.5 * dt);
+          targetLat = 0.0;
+          if (sim.speed <= crawlSpeed + 0.5) {
+            sim.cameraFailState = 'pulling_over';
+            logCAN("0x304: LATERAL_PLANNER — Smooth lane change towards shoulder verge (X = -4.2m)");
+          }
+        } else if (sim.cameraFailState === 'pulling_over') {
+          // Phase 2: Steer to shoulder verge at 15 km/h crawl
+          const crawlSpeed = 3.8;
+          sim.speed = Math.max(2.2, Math.min(crawlSpeed, sim.speed));
+          targetLat = -4.2; // Left road shoulder safe zone
+          if (Math.abs(sim.lateralY - (-4.2)) < 0.28) {
+            sim.cameraFailState = 'parked';
+            audio.playParkChime();
+            logCAN("0x305: SHOULDER_REACHED — Commencing final standstill deceleration");
+          }
+        } else if (sim.cameraFailState === 'parked') {
+          // Phase 3: Complete stop & secure vehicle
+          sim.speed = Math.max(0.0, sim.speed - 4.5 * dt);
+          targetLat = -4.2;
+          if (sim.speed <= 0.06) {
+            sim.speed = 0.0;
+            sim.gear = 'P';
+            sim.electronicParkingBrake = true;
+          }
+        }
+
+      } else if (activeRoadEnd || sim.roadEndActive) {
+        // --- FAIL-SAFE PROTOCOL B: ROAD END / TERMINUS DETECTED -> CONTROLLED SAFETY STOP ---
+        sim.hazardBlinkers = true;
+        targetLat = 0.0; // Stay centered in lane
+        const stopMargin = 4.8; // Stop 4.8m before barricade
+        const distToStop = (activeRoadEnd ? activeRoadEnd.z : sim.roadEndDist) - stopMargin;
+
+        if (distToStop > 0.4) {
+          const decelRequired = (sim.speed * sim.speed) / (2 * Math.max(0.8, distToStop));
+          const maxDecel = (sim.friction < 0.6) ? 4.8 : 7.5;
+          const applyDecel = Math.max(3.2, Math.min(maxDecel, decelRequired));
+          sim.speed = Math.max(0.0, sim.speed - applyDecel * dt);
+          if (sim.speed <= 0.1 && distToStop < 1.5) {
+            sim.speed = 0.0;
+            sim.gear = 'P';
+            sim.electronicParkingBrake = true;
+            audio.playParkChime();
+            logCAN("0x282: CONTROLLED_STOP_COMPLETE — Vehicle safely halted 4.8m from barricade");
+            logCAN("0x283: EPB_ENGAGED — Transmission in [P] Park, EPB secured");
+          }
+        } else {
+          sim.speed = 0.0;
+          sim.gear = 'P';
+          sim.electronicParkingBrake = true;
+        }
+
+      } else if (closestInCorridor) {
+        // --- NORMAL EVASION: CORRIDOR OBSTACLE DETECTED ---
         if (!sim.swerving) {
           audio.playWarning();
         }
@@ -1307,12 +1716,15 @@
           sim.swerving = false;
         }
       } else {
+        // --- NORMAL CRUISE: ACCELERATE TO TARGET SPEED (UP TO 120 KM/H) ---
         targetLat = 0.0;
         if (!speedBreakerEngaged) {
-          // Accelerate back up to target cruise speed (up to 120 km/h)
           const accelRate = (sim.speed < 12.0) ? 5.5 : (sim.speed < 22.0 ? 4.0 : 2.6);
           sim.speed = Math.min(sim.targetSpeed, sim.speed + accelRate * dt);
         }
+        sim.hazardBlinkers = false;
+        sim.gear = 'D';
+        sim.electronicParkingBrake = false;
       }
 
       // Smooth target lateral position filter (exponential moving average for fluid lane change)
@@ -1423,7 +1835,103 @@
       document.getElementById('bar-steer').style.width = `${steerPct}%`;
 
       document.getElementById('txt-efa').textContent = `${crossTrack.toFixed(2)} m`;
-      document.getElementById('txt-behavior').textContent = sim.swerving ? 'AVOID HAZARD' : 'CRUISE';
+
+      // Gear, EPB & Hazard Blinkers Telemetry
+      const gearElem = document.getElementById('txt-gear');
+      const pillGear = document.getElementById('pill-gear-status');
+      if (sim.electronicParkingBrake || sim.gear === 'P') {
+        if (gearElem) gearElem.textContent = '[P] PARK (EPB)';
+        if (gearElem) gearElem.className = 'text-amber-400 font-bold text-xs';
+        if (pillGear) {
+          pillGear.textContent = '[P] PARK (EPB)';
+          pillGear.className = 'text-[10px] px-2 py-0.5 rounded-full bg-amber-950 border border-amber-500 text-amber-300 font-bold';
+        }
+      } else {
+        if (gearElem) gearElem.textContent = '[D] DRIVE';
+        if (gearElem) gearElem.className = 'text-emerald-400 font-bold text-xs';
+        if (pillGear) {
+          pillGear.textContent = '[D] DRIVE';
+          pillGear.className = 'text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-400 text-cyan-300 font-bold';
+        }
+      }
+
+      const hazardElem = document.getElementById('txt-hazards');
+      if (hazardElem) {
+        hazardElem.textContent = sim.hazardBlinkers ? '⚠️ 4-WAY ON' : 'OFF';
+        hazardElem.className = sim.hazardBlinkers ? 'text-amber-400 font-bold text-xs animate-pulse' : 'text-slate-400 font-bold text-xs';
+      }
+
+      const failSafeElem = document.getElementById('txt-failsafe');
+      const pillCam = document.getElementById('pill-camera-status');
+      const pillIot = document.getElementById('pill-iot-status');
+      const txtPrimarySensor = document.getElementById('txt-primary-sensor');
+      const txtCamFps = document.getElementById('txt-cam-fps');
+      const txtLidarPts = document.getElementById('txt-lidar-pts');
+      const txtRadarStatus = document.getElementById('txt-radar-status');
+
+      if (sim.cameraFailed) {
+        if (pillCam) {
+          pillCam.textContent = 'OFFLINE (FAULT)';
+          pillCam.className = 'text-[10px] px-2 py-0.5 rounded-full bg-red-950 border border-red-500 text-red-300 font-bold animate-pulse';
+        }
+        if (pillIot) {
+          pillIot.textContent = 'ACTIVE (LIDAR+RADAR)';
+          pillIot.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-400 text-emerald-300 font-bold shadow';
+        }
+        if (txtPrimarySensor) txtPrimarySensor.textContent = '⚠️ IoT Fail-Safe: 16-LiDAR + 77GHz Radar';
+        if (txtCamFps) {
+          txtCamFps.textContent = 'OFFLINE (0 fps)';
+          txtCamFps.className = 'text-red-400 font-bold';
+        }
+        if (txtLidarPts) {
+          txtLidarPts.textContent = '1200 pts (PRIMARY)';
+          txtLidarPts.className = 'text-cyan-400 font-bold';
+        }
+        if (txtRadarStatus) {
+          txtRadarStatus.textContent = '77 GHz (PRIMARY)';
+          txtRadarStatus.className = 'text-cyan-400 font-bold';
+        }
+        if (failSafeElem) {
+          failSafeElem.textContent = (sim.cameraFailState === 'parked') ? 'PARKED (SHOULDER)' : 'PULLING OVER';
+          failSafeElem.className = 'text-amber-400 font-bold text-xs';
+        }
+        document.getElementById('txt-behavior').textContent = (sim.cameraFailState === 'parked') ? 'PARKED (SHOULDER)' : 'PULLING OVER';
+
+      } else {
+        if (pillCam) {
+          pillCam.textContent = 'ONLINE (60 FPS)';
+          pillCam.className = 'text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500 text-emerald-300 font-bold';
+        }
+        if (pillIot) {
+          pillIot.textContent = 'STANDBY';
+          pillIot.className = 'text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-400 font-bold';
+        }
+        if (txtCamFps) {
+          txtCamFps.textContent = 'YOLOv8 60fps';
+          txtCamFps.className = 'text-emerald-400 font-bold';
+        }
+        if (txtLidarPts) {
+          txtLidarPts.textContent = '1200 pts';
+          txtLidarPts.className = 'text-emerald-400 font-bold';
+        }
+        if (txtRadarStatus) {
+          txtRadarStatus.textContent = '77 GHz FMCW';
+          txtRadarStatus.className = 'text-emerald-400 font-bold';
+        }
+        if (failSafeElem) {
+          failSafeElem.textContent = sim.roadEndActive ? 'ROAD END STOP' : 'NORMAL';
+          failSafeElem.className = sim.roadEndActive ? 'text-rose-400 font-bold text-xs' : 'text-cyan-400 font-bold text-xs';
+        }
+        if (sim.roadEndActive) {
+          document.getElementById('txt-behavior').textContent = (sim.speed <= 0.1) ? 'ROAD END STOP' : 'BRAKING TO STOP';
+        } else if (sim.speedBreakerActive) {
+          document.getElementById('txt-behavior').textContent = 'SPEED BREAKER';
+        } else if (sim.swerving) {
+          document.getElementById('txt-behavior').textContent = 'AVOID HAZARD';
+        } else {
+          document.getElementById('txt-behavior').textContent = 'CRUISE';
+        }
+      }
 
       // Dynamic AI Trajectory Accuracy Display
       const accVal = sim.accuracy.toFixed(1);
@@ -1443,15 +1951,41 @@
         accSub.textContent = `${accVal}%`;
       }
 
+      // HUD Alert Banners & Threat Indicator
       const alertBanner = document.getElementById('alert-banner');
       const threatLabel = document.getElementById('txt-closest-threat');
 
-      if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0) {
+      if (sim.cameraFailed) {
+        alertBanner.classList.remove('hidden');
+        if (sim.cameraFailState === 'parked') {
+          document.getElementById('alert-title').textContent = '🅿️ SAFE EMERGENCY PULL-OVER COMPLETE';
+          document.getElementById('alert-sub').textContent = 'Parked safely on road shoulder (X = -4.2m). EPB engaged, 4-way hazards active, LiDAR+Radar perimeter live.';
+          threatLabel.textContent = 'Safe Shoulder Parked | Camera Offline | IoT Guard Active';
+        } else if (sim.cameraFailState === 'pulling_over') {
+          document.getElementById('alert-title').textContent = '⚠️ CAMERA OFFLINE — IOT SENSOR HANDOVER ACTIVE';
+          document.getElementById('alert-sub').textContent = 'Primary camera lost. Switched to 16-Beam LiDAR + 77 GHz Radar. Smoothly steering towards shoulder verge.';
+          threatLabel.textContent = 'Maneuver: Pulling Over to Shoulder (-4.2m)';
+        } else {
+          document.getElementById('alert-title').textContent = '⚠️ CAMERA SENSOR FAULT DETECTED';
+          document.getElementById('alert-sub').textContent = 'Speed reducing from ' + document.getElementById('txt-target-speed').textContent + ' to safe 15 km/h crawl before shoulder parking.';
+          threatLabel.textContent = 'IoT Handover: Decelerating to 15 km/h Crawl';
+        }
+      } else if (sim.roadEndActive || (sim.activeRoadEnd && sim.roadEndDist < 90.0)) {
+        alertBanner.classList.remove('hidden');
+        if (sim.speed <= 0.2) {
+          document.getElementById('alert-title').textContent = '🛑 ROAD TERMINUS REACHED — CONTROLLED STOP COMPLETE';
+          document.getElementById('alert-sub').textContent = 'Vehicle halted safely 4.8m before barricade. Transmission shifted to [P] Park, EPB locked, 4-way hazards active.';
+          threatLabel.textContent = 'Road End Stop Complete | 0.0 km/h | EPB Secured';
+        } else {
+          document.getElementById('alert-title').textContent = '🛑 ROAD END / TERMINUS BARRICADE DETECTED';
+          document.getElementById('alert-sub').textContent = 'Emergency controlled stop initiated. Braking to 0.0 km/h with 4-way hazard blinkers active.';
+          threatLabel.textContent = `Road End Barricade (${Math.max(0, sim.roadEndDist).toFixed(1)}m) -> Controlled Stop`;
+        }
+      } else if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0) {
         alertBanner.classList.remove('hidden');
         document.getElementById('alert-title').textContent = '⚠️ IRC-99 SPEED BREAKER DETECTED';
         document.getElementById('alert-sub').textContent = `Speed reduced from ${document.getElementById('txt-target-speed').textContent} to 15 km/h. Bump in ${Math.max(0, sim.bumpDist).toFixed(1)}m.`;
         threatLabel.textContent = `Speed Breaker (${Math.max(0, sim.bumpDist).toFixed(1)}m) -> 15 km/h Crawl`;
-        document.getElementById('txt-behavior').textContent = 'SPEED BREAKER';
       } else if (sim.closestThreat) {
         alertBanner.classList.remove('hidden');
         document.getElementById('alert-title').textContent = `🚨 AVOIDING ${sim.closestThreat.type.toUpperCase()}`;
@@ -1627,6 +2161,20 @@
           }
         }
         dustGeo.attributes.position.needsUpdate = true;
+      }
+
+      // Animate 4-Way Hazard Blinkers on Ego Vehicle
+      if (sim.hazardBlinkers) {
+        const blinkPhase = Math.sin(currentTime * 0.012) > 0;
+        hazardBlinkers.forEach(b => {
+          b.material.color.setHex(blinkPhase ? 0xf59e0b : 0x3b1502);
+          b.material.emissive.setHex(blinkPhase ? 0xd97706 : 0x000000);
+        });
+      } else {
+        hazardBlinkers.forEach(b => {
+          b.material.color.setHex(0x3b1502);
+          b.material.emissive.setHex(0x000000);
+        });
       }
 
       updateCamera();
