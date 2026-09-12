@@ -64,28 +64,28 @@
       <div id="ai-pipeline-bar" class="flex items-center space-x-1.5 px-2.5 py-1 bg-slate-950/90 rounded-xl border border-cyan-500/50 text-[11px] font-mono shadow-inner overflow-x-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden max-w-[50vw]">
         <!-- 1. IDENTIFY OBJECT -->
         <div class="flex items-center space-x-1 whitespace-nowrap">
-          <span class="text-[8px] px-1 py-0.2 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-500/40">1. IDENTIFY</span>
+          <span class="text-[8px] px-1 py-0.2 rounded bg-cyan-950 text-cyan-300 font-bold border border-cyan-500/40">1. 140m RADAR</span>
           <span id="pipe-obj" class="font-bold text-white text-[11px]">ALL CLEAR</span>
         </div>
         <span class="text-cyan-400 font-bold">➔</span>
 
         <!-- 2. TRACK VELOCITY -->
         <div class="flex items-center space-x-1 whitespace-nowrap">
-          <span class="text-[8px] px-1 py-0.2 rounded bg-blue-950 text-blue-300 font-bold border border-blue-500/40">2. VELOCITY</span>
+          <span class="text-[8px] px-1 py-0.2 rounded bg-blue-950 text-blue-300 font-bold border border-blue-500/40">2. PREDICT VELOCITY</span>
           <span id="pipe-vel" class="font-bold text-cyan-300 text-[11px]">Δv 0.0 m/s</span>
         </div>
         <span class="text-cyan-400 font-bold">➔</span>
 
         <!-- 3. CALCULATE RISK -->
         <div class="flex items-center space-x-1 whitespace-nowrap">
-          <span class="text-[8px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 font-bold border border-indigo-500/40">3. RISK</span>
+          <span class="text-[8px] px-1 py-0.2 rounded bg-indigo-950 text-indigo-300 font-bold border border-indigo-500/40">3. TRAJECTORY RISK</span>
           <span id="pipe-risk" class="font-bold text-emerald-400 text-[11px]">0% [SAFE]</span>
         </div>
         <span class="text-cyan-400 font-bold">➔</span>
 
         <!-- 4. CHANGE TRAJECTORY -->
         <div class="flex items-center space-x-1 whitespace-nowrap">
-          <span class="text-[8px] px-1 py-0.2 rounded bg-emerald-950 text-emerald-300 font-bold border border-emerald-500/40">4. TRAJECTORY</span>
+          <span class="text-[8px] px-1 py-0.2 rounded bg-emerald-950 text-emerald-300 font-bold border border-emerald-500/40">4. FREE-SPACE PATH</span>
           <span id="pipe-traj" class="font-bold text-emerald-400 text-[11px]">LANE KEEP (0.0m)</span>
         </div>
 
@@ -1907,27 +1907,44 @@
     const trajectoryRibbon = new THREE.Mesh(trajectoryGeo, trajectoryMat);
     scene.add(trajectoryRibbon);
 
-    // Candidate Evaluation Lane Guides (Visualizing Discrete 3-Lane Cost Evaluation)
-    const candidateGuideGroup = new THREE.Group();
-    [-3.4, 0.0, 3.4].forEach(laneX => {
-      const guideGeo = new THREE.BufferGeometry();
-      const guidePts = [];
-      for (let z = 0; z <= 100; z += 4) {
-        guidePts.push(new THREE.Vector3(-laneX, 0.04, z));
+    // 140m PREDICTION RADAR BEAM & DYNAMIC FREE-SPACE SCAN FIELD
+    const radarScanGroup = new THREE.Group();
+    const radarArcs = [];
+    [35, 70, 105, 140].forEach((distZ, idx) => {
+      const arcGeo = new THREE.BufferGeometry();
+      const arcPts = [];
+      const arcWidth = 14.0;
+      for (let x = -arcWidth / 2; x <= arcWidth / 2; x += 0.5) {
+        const curveOffset = Math.cos((x / (arcWidth / 2)) * (Math.PI / 2)) * 1.8;
+        arcPts.push(new THREE.Vector3(x, 0.035, distZ + curveOffset));
       }
-      guideGeo.setFromPoints(guidePts);
-      const guideMat = new THREE.LineDashedMaterial({
-        color: 0x0284c7,
-        dashSize: 2.0,
-        gapSize: 2.5,
+      arcGeo.setFromPoints(arcPts);
+      const arcMat = new THREE.LineBasicMaterial({
+        color: (idx === 3) ? 0x38bdf8 : 0x0284c7,
         transparent: true,
-        opacity: 0.35
+        opacity: (idx === 3) ? 0.70 : 0.35
       });
-      const guideLine = new THREE.Line(guideGeo, guideMat);
-      guideLine.computeLineDistances();
-      candidateGuideGroup.add(guideLine);
+      const arcLine = new THREE.Line(arcGeo, arcMat);
+      radarScanGroup.add(arcLine);
+      radarArcs.push(arcLine);
     });
-    scene.add(candidateGuideGroup);
+
+    // Continuous Radar Scan Wavefront (Travels smoothly from 0 to 140m)
+    const scanWaveGeo = new THREE.PlaneGeometry(14.0, 3.5);
+    const scanWaveMat = new THREE.MeshBasicMaterial({
+      color: 0x06b6d4,
+      transparent: true,
+      opacity: 0.25,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
+    });
+    const scanWaveMesh = new THREE.Mesh(scanWaveGeo, scanWaveMat);
+    scanWaveMesh.rotation.x = -Math.PI / 2;
+    scanWaveMesh.position.set(0, 0.04, 0);
+    radarScanGroup.add(scanWaveMesh);
+
+    scene.add(radarScanGroup);
 
     // --- 6. 3D WEATHER PARTICLE SYSTEMS ---
     // Rain
@@ -3228,148 +3245,170 @@
         stopProfileName = (sim.speed < 0.2) ? "MANUAL STANDSTILL" : (isS ? "MANUAL BRAKING" : "MANUAL THROTTLE");
 
       } else {
-        // --- TESLA AUTOPILOT MODE (Full Multi-Candidate & Kinematic AEB Envelope) ---
+        // --- TESLA AUTOPILOT MODE (140m Prediction Radar & Continuous Free-Space Trajectory) ---
         targetLat = 0.0;
         evasionActive = false;
         safeSpeedCap = sim.targetSpeed;
         stopProfileName = "EXPRESSWAY CRUISE";
         isStoppingToZero = false;
 
-      // Adaptive Scenario-Specific Candidate Lanes & Physical Free-Space Boundaries
-      const candidateLanes = currentMeta.candidateLanes;
-      let bestLane = 0.0;
-      let minLaneCost = Infinity;
+      // =========================================================================
+      // 140m PREDICTION RADAR & CONTINUOUS FREE-SPACE TRAJECTORY PLANNER
+      // (NO RIGID LANES — CONTINUOUS DRIVABLE CORRIDOR OPTIMIZATION ACROSS 140m RADAR)
+      // =========================================================================
+      const radarHorizon = 140.0;
+      const roadLeft = currentMeta.lateralBounds[0] + 0.35;
+      const roadRight = currentMeta.lateralBounds[1] - 0.35;
 
-      // Detect Pedestrian Crossing or Active Road Block Ahead
-      let activeCrossingPedestrian = null;
-      let activeCorridorBlocker = null;
+      // Track & predict 2D future coordinates for all obstacles in the 140m radar beam
+      const predictedObstacles = [];
+      let closestCriticalThreat = null;
+      let minThreatDist = 999;
 
       for (const e of allEntities) {
         if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
-        if (e.z > -1.0 && e.z < 65.0) {
-          const latDist = Math.abs(e.x - sim.lateralY);
-          if (e.behaviorType === 'pedestrian' && e.crossingState === 'crossing' && Math.abs(e.x) < maxRoadExtent) {
-            if (!activeCrossingPedestrian || e.z < activeCrossingPedestrian.z) {
-              activeCrossingPedestrian = e;
-            }
-          }
-          if (latDist < 2.3 && (!activeCorridorBlocker || e.z < activeCorridorBlocker.z)) {
-            activeCorridorBlocker = e;
+        if (e.z > -4.0 && e.z < radarHorizon) {
+          const timeToReach = Math.max(0.1, (e.z - 2.0) / Math.max(3.0, sim.speed));
+          // Projected lateral position when ego vehicle reaches this distance:
+          const predX = e.x + (e.vx * Math.min(3.0, timeToReach));
+
+          // Exact physical lateral clearance required for clean, safe bypass
+          let reqClearance = 1.65; // default
+          if (e.type === 'truck') reqClearance = 2.25;
+          else if (e.type === 'rickshaw') reqClearance = 1.70;
+          else if (e.type === 'cow') reqClearance = 1.60;
+          else if (e.type === 'pedestrian') reqClearance = 1.45;
+          else if (e.type === 'bike') reqClearance = 1.50;
+
+          const obsInfo = {
+            entity: e,
+            id: e.id,
+            type: e.type,
+            x: e.x,
+            z: e.z,
+            vx: e.vx,
+            vz: e.vz,
+            predX: predX,
+            reqClearance: reqClearance,
+            timeToReach: timeToReach,
+            behaviorType: e.behaviorType,
+            crossingState: e.crossingState
+          };
+          predictedObstacles.push(obsInfo);
+
+          if (e.z > -1.0 && e.z < minThreatDist) {
+            minThreatDist = e.z;
+            closestCriticalThreat = obsInfo;
           }
         }
       }
 
-      for (const lane of candidateLanes) {
-        let cost = Math.abs(lane) * 0.40; // preference for road center
-        if (Math.abs(lane - sim.targetLatSmooth) < 0.4) {
-          cost -= 1.2; // hysteresis to prevent lane oscillation
+      // Sample 41 continuous lateral trajectory candidates across the full road width
+      const NUM_CANDIDATES = 41;
+      let bestPathX = sim.lateralY;
+      let minTrajectoryCost = Infinity;
+
+      for (let i = 0; i < NUM_CANDIDATES; i++) {
+        const candX = roadLeft + (i / (NUM_CANDIDATES - 1)) * (roadRight - roadLeft);
+
+        // 1. Smoothness Cost: Prefers staying close to current lateral position (Zero Steering Jerk)
+        let cost = Math.abs(candX - sim.lateralY) * 0.35 + Math.abs(candX) * 0.08;
+
+        // 2. Soft Road Edge Penalty: Disfavors riding on the edge of dirt shoulders or market stalls
+        const edgeDist = Math.min(candX - roadLeft, roadRight - candX);
+        if (edgeDist < 0.45) {
+          cost += 25.0 / (edgeDist + 0.1);
         }
 
-        // Road edge penalty (disfavor swerving close to dirt verges / market stalls)
-        if (Math.abs(lane) > currentMeta.lateralBounds[1] - 0.4) {
-          cost += 250.0;
-        }
+        // 3. 140m Radar Obstacle Avoidance Cost
+        for (const obs of predictedObstacles) {
+          // Check lateral clearance to both current and predicted future position
+          const latDist = Math.min(Math.abs(candX - obs.predX), Math.abs(candX - obs.x));
 
-        for (const e of allEntities) {
-          if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
-          if (e.z > -4.5 && e.z < lookaheadHorizon) {
-            // Predict future position if entity has unpredictable lateral velocity
-            const predLookaheadTime = Math.min(2.5, Math.max(0.2, (e.z - 2.0) / Math.max(1.0, sim.speed)));
-            const predEx = e.x + (e.vx * predLookaheadTime);
-            const latDist = Math.min(Math.abs(e.x - lane), Math.abs(predEx - lane));
+          // Hard constraint: NEVER swerve into oncoming vehicle headlights (Scenario 5 oncoming truck)
+          if (obs.vz < -2.0 && Math.abs(candX - obs.x) < 2.3 && obs.z < 85.0) {
+            cost += 99999.0;
+          }
 
-            let eRadius = 1.0;
-            if (e.type === 'truck') eRadius = 1.65;
-            else if (e.type === 'rickshaw' || e.type === 'cow') eRadius = 1.35;
-            else if (e.type === 'pedestrian' || e.type === 'bike') eRadius = 0.9;
-
-            const egoHalfWidth = 1.0;
-            const requiredClearance = eRadius + egoHalfWidth + 0.65;
-
-            // Opposing traffic constraint (e.g. oncoming truck in Scenario 5)
-            if (e.vz < -2.0 && Math.abs(e.x - lane) < 2.5 && e.z < 80.0) {
-              cost += 80000.0; // NEVER swerve head-on into oncoming vehicle!
-            }
-
-            // Crossing Pedestrian Constraint: If pedestrian is crossing, do NOT attempt risky swerve past their crossing trajectory!
-            if (e.behaviorType === 'pedestrian' && e.crossingState === 'crossing' && e.z < 45.0) {
-              cost += 50000.0; // Enforce courteous yield & stop!
-            }
-
-            if (latDist < requiredClearance) {
-              const proximityWeight = Math.max(1.0, (lookaheadHorizon - Math.max(0, e.z)) / 5.0);
-              const overlap = requiredClearance - latDist;
-              cost += 25000.0 * proximityWeight * (overlap + 1.5);
-            } else if (latDist < requiredClearance + 1.2) {
-              cost += 150.0 / Math.max(0.1, latDist - requiredClearance);
-            }
+          if (latDist < obs.reqClearance) {
+            // Direct collision conflict with this candidate path!
+            const proximityFactor = Math.max(1.0, (radarHorizon - Math.max(0, obs.z)) / 8.0);
+            const overlap = obs.reqClearance - latDist;
+            cost += 12000.0 * proximityFactor * (overlap + 1.2);
+          } else if (latDist < obs.reqClearance + 1.0) {
+            // Soft safety clearance buffer
+            cost += 60.0 / Math.max(0.1, latDist - obs.reqClearance);
           }
         }
 
-        if (cost < minLaneCost) {
-          minLaneCost = cost;
-          bestLane = lane;
+        if (cost < minTrajectoryCost) {
+          minTrajectoryCost = cost;
+          bestPathX = candX;
         }
       }
 
-      // --- AUTONOMOUS BEHAVIORAL DECISION LOGIC ---
-      if (activeCrossingPedestrian && activeCrossingPedestrian.z < 48.0) {
-        // 1. COURTEOUS PEDESTRIAN YIELD & STANDSTILL WAITING
-        evasionActive = false;
-        targetLat = sim.lateralY;
-        isStoppingToZero = true;
-        const distToPed = Math.max(0.1, activeCrossingPedestrian.z - 5.0); // Stop comfortably 5.0m before pedestrian
-        const safeKinematicV = Math.sqrt(2.0 * 2.5 * distToPed);
-        safeSpeedCap = Math.min(safeSpeedCap, safeKinematicV);
+      // --- SMOOTH CONTINUOUS TRAJECTORY DECISION ENGINE ---
+      // Primary Philosophy: Avoid collisions by changing trajectory smoothly across continuous free space WITHOUT STOPPING!
+      if (minTrajectoryCost < 6000.0) {
+        // A smooth continuous free-space path is available!
+        targetLat = bestPathX;
+        evasionActive = Math.abs(bestPathX - sim.lateralY) > 0.25;
+        isStoppingToZero = false;
 
-        if (activeCrossingPedestrian.z <= 5.5 || sim.speed < 0.25) {
-          safeSpeedCap = 0.0;
-          stopProfileName = "WAITING FOR PEDESTRIAN TO CROSS";
+        if (evasionActive) {
+          stopProfileName = "140m RADAR: CONTINUOUS EVASION";
+          if (!sim.swerving) {
+            sim.swerving = true;
+            audio.playSwerve();
+            logCAN(`0x203: FREE_SPACE_TRAJECTORY — Radar Lookahead 140m -> Smooth Curve Target X = ${bestPathX.toFixed(2)}m`);
+          }
         } else {
-          stopProfileName = "YIELDING TO CROSSING PEDESTRIAN";
+          stopProfileName = "EXPRESSWAY CRUISE";
+          sim.swerving = false;
         }
 
-      } else if (minLaneCost > 12000.0 && closestThreat && closestThreat.z < 55.0) {
-        // 2. ALL LANES BLOCKED OR ONCOMING VEHICLE CONSTRAINT -> CHAUFFEUR AEB STOP
-        evasionActive = false;
-        targetLat = sim.lateralY;
-        isStoppingToZero = true;
-        const distToStop = Math.max(0.1, closestThreat.z - 4.2);
-        const safeKinematicV = Math.sqrt(2.0 * 3.2 * distToStop);
-        safeSpeedCap = Math.min(safeSpeedCap, safeKinematicV);
-
-        if (closestThreat.type === 'cow') {
-          stopProfileName = (sim.speed < 0.25) ? "WAITING FOR CATTLE TO CLEAR" : "CHAUFFEUR STOP (CATTLE IN PATH)";
-        } else {
-          stopProfileName = (sim.speed < 0.25) ? "PREDICTIVE AEB STANDSTILL" : "PREDICTIVE CHAUFFEUR AEB STOP";
-        }
-
-      } else if (Math.abs(bestLane) > 0.3 || minLaneCost > 10.0) {
-        // 3. SAFE CANDIDATE LANE AVAILABLE -> EXECUTE DYNAMIC S-CURVE PATH CHANGE
-        evasionActive = true;
-        targetLat = bestLane;
-        // Adaptive following speed cap if approaching a moving lead vehicle in lane
-        if (closestThreat && closestThreat.z < 28.0 && Math.abs(closestThreat.x - bestLane) < 1.8) {
+        // Slower Lead Vehicle Speed Matching (Gentle glide if following a slow truck in lane)
+        if (closestCriticalThreat && closestCriticalThreat.z < 28.0 && Math.abs(closestCriticalThreat.predX - bestPathX) < 1.4) {
           const followBuffer = 8.0;
-          const distToLead = Math.max(0.1, closestThreat.z - followBuffer);
-          const matchLeadSpeed = Math.max(0.0, closestThreat.vz) + Math.sqrt(2.0 * 2.0 * distToLead);
+          const distToLead = Math.max(0.1, closestCriticalThreat.z - followBuffer);
+          const matchLeadSpeed = Math.max(0.0, closestCriticalThreat.vz) + Math.sqrt(2.0 * 1.5 * distToLead);
           safeSpeedCap = Math.min(safeSpeedCap, matchLeadSpeed);
         }
+
       } else {
-        // 4. FREE CORRIDOR CRUISE
-        targetLat = 0.0;
+        // ROAD IS PHYSICALLY 100% BLOCKED (No free space on either side, e.g. barricade or cow incursion with oncoming car)
+        // Since radar detects from 140m away, initiate ultra-smooth progressive comfort glide (Zero Jerk!)
+        targetLat = sim.lateralY;
+        evasionActive = false;
+        isStoppingToZero = true;
+
+        const stopBuffer = (closestCriticalThreat && closestCriticalThreat.type === 'pedestrian') ? 4.5 : 3.5;
+        const availableDecelDist = Math.max(0.1, minThreatDist - stopBuffer);
+
+        // Gentle progressive comfort decel (1.5 m/s^2 comfort glide) over long distance
+        const gentleComfortV = Math.sqrt(2.0 * 1.5 * availableDecelDist);
+        safeSpeedCap = Math.min(safeSpeedCap, gentleComfortV);
+
+        if (minThreatDist <= stopBuffer + 0.6 || sim.speed < 0.25) {
+          safeSpeedCap = 0.0;
+          stopProfileName = (closestCriticalThreat && closestCriticalThreat.type === 'pedestrian')
+            ? "WAITING FOR PEDESTRIAN TO CROSS"
+            : (closestCriticalThreat && closestCriticalThreat.type === 'cow' ? "WAITING FOR CATTLE TO CLEAR" : "FREE-SPACE BLOCKED (STANDSTILL)");
+        } else {
+          stopProfileName = "PROGRESSIVE CHAUFFEUR GLIDE (-0.15 G)";
+        }
       }
 
-      // Lateral Repulsion Guard: Prevent swerving into vehicles currently alongside ego vehicle
+      // Lateral Repulsion Guard: Prevent steering into vehicles currently alongside ego car
       for (const e of allEntities) {
         if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
         if (e.z > -2.5 && e.z < 3.5) {
           const latDelta = e.x - sim.lateralY;
-          if (Math.abs(latDelta) < 2.3) {
-            if (latDelta > 0 && targetLat > sim.lateralY - 0.3) {
-              targetLat = Math.max(currentMeta.lateralBounds[0], sim.lateralY - 0.7);
-            } else if (latDelta < 0 && targetLat < sim.lateralY + 0.3) {
-              targetLat = Math.min(currentMeta.lateralBounds[1], sim.lateralY + 0.7);
+          if (Math.abs(latDelta) < 2.0) {
+            if (latDelta > 0 && targetLat > sim.lateralY - 0.25) {
+              targetLat = Math.max(currentMeta.lateralBounds[0], sim.lateralY - 0.60);
+            } else if (latDelta < 0 && targetLat < sim.lateralY + 0.25) {
+              targetLat = Math.min(currentMeta.lateralBounds[1], sim.lateralY + 0.60);
             }
           }
         }
@@ -3447,12 +3486,6 @@
         }
 
       } else if (evasionActive) {
-        // --- OBSTACLE EVASION: SMOOTH LATERAL SWERVE ---
-        if (!sim.swerving) {
-          sim.swerving = true;
-          audio.playSwerve();
-          logCAN(`0x203: TRAJECTORY_CHANGE — Lateral Evasion Target X = ${targetLat.toFixed(2)}m`);
-        }
         stopProfileName = "DYNAMIC EVASION SWERVE";
       } else if (!isStoppingToZero) {
         stopProfileName = "EXPRESSWAY CRUISE";
@@ -3463,69 +3496,49 @@
       }
 
       // =========================================================================
-      // ABSOLUTE 100% PHYSICAL ZERO-COLLISION ENFORCEMENT & KINEMATIC BARRIER
+      // PHYSICAL ZERO-COLLISION ENFORCEMENT & SAFETY BARRIER
       // =========================================================================
-      // Enforces both early predictive comfort braking and an impenetrable hard barrier
-      // guaranteeing that ego front bumper NEVER breaches the safety buffer of any entity!
-      const egoBumperFrontZ = 2.2; // Front bumper boundary offset
-      const egoHalfWidth = 1.05;
-
+      // If and only if an obstacle directly blocks the car's PLANNED trajectory path ahead,
+      // enforce safe approach speed and physical standstill at the buffer.
+      // If the car is successfully curving around it, allow smooth cruising!
+      const egoBumperFrontZ = 2.2;
       for (const e of allEntities) {
-        if (e.type === 'speed_breaker') continue; // Driven over smoothly
+        if (e.type === 'speed_breaker') continue;
 
-        // Exact physical collision bounding extents
-        let entLongRadius = 1.1;
-        let entLatRadius = 1.1;
-        if (e.type === 'truck') { entLongRadius = 2.4; entLatRadius = 1.45; }
-        else if (e.type === 'rickshaw') { entLongRadius = 1.4; entLatRadius = 1.15; }
-        else if (e.type === 'cow') { entLongRadius = 1.3; entLatRadius = 1.1; }
-        else if (e.type === 'pedestrian') { entLongRadius = 0.55; entLatRadius = 0.6; }
-        else if (e.type === 'bike') { entLongRadius = 0.9; entLatRadius = 0.65; }
-        else if (e.type === 'pothole') { entLongRadius = 0.7; entLatRadius = 0.7; }
+        let entLongRadius = 1.0;
+        let entLatRadius = 0.50;
+        if (e.type === 'truck') { entLongRadius = 2.2; entLatRadius = 1.05; }
+        else if (e.type === 'rickshaw') { entLongRadius = 1.2; entLatRadius = 0.60; }
+        else if (e.type === 'cow') { entLongRadius = 1.1; entLatRadius = 0.45; }
+        else if (e.type === 'pedestrian') { entLongRadius = 0.4; entLatRadius = 0.30; }
+        else if (e.type === 'bike') { entLongRadius = 0.7; entLatRadius = 0.35; }
         else if (e.type === 'road_end') { entLongRadius = 1.0; entLatRadius = 4.5; }
 
-        // Check lateral overlap with ego vehicle current position and near-term target
+        const reqClearance = 0.85 + entLatRadius + 0.15;
+        // Check if BOTH the current position and the planned target path conflict with the obstacle
         const curLatDist = Math.abs(e.x - sim.lateralY);
         const tgtLatDist = Math.abs(e.x - (sim.targetLatSmooth || 0.0));
-        const predLatDist = Math.abs((e.x + e.vx * 0.4) - sim.lateralY);
-        const minLatDist = Math.min(curLatDist, tgtLatDist, predLatDist);
-        const reqLatClearance = egoHalfWidth + entLatRadius + 0.35;
+        const plannedLatDist = Math.abs(e.x - targetLat);
 
-        if (minLatDist < reqLatClearance) {
-          // Unavoidable longitudinal corridor overlap!
-          const bumperToObstacleDist = e.z - egoBumperFrontZ - entLongRadius;
-          const stopBufferMargin = (e.type === 'pedestrian') ? 4.5 : ((e.type === 'cow') ? 3.8 : 2.5);
+        // Path conflict only exists if the car CANNOT steer clear
+        const isPathConflict = (curLatDist < reqClearance && tgtLatDist < reqClearance && plannedLatDist < reqClearance);
 
-          if (bumperToObstacleDist < 120.0 && bumperToObstacleDist > -2.0) {
-            const availableDecelRoom = Math.max(0.0, bumperToObstacleDist - stopBufferMargin);
+        if (isPathConflict && e.z > -1.5 && e.z < 60.0) {
+          const physicalGap = e.z - egoBumperFrontZ - entLongRadius;
+          const stopBufferMargin = (e.type === 'pedestrian') ? 4.5 : ((e.type === 'cow') ? 3.5 : 2.5);
 
-            // Layer 1: Predictive Comfort Deceleration Envelope
-            const safeKinematicSpeed = Math.sqrt(2.0 * 3.2 * availableDecelRoom);
-            safeSpeedCap = Math.min(safeSpeedCap, safeKinematicSpeed);
+          if (physicalGap < 45.0 && physicalGap > -1.0) {
+            const decelRoom = Math.max(0.0, physicalGap - stopBufferMargin);
+            const safeApproachSpeed = Math.sqrt(2.0 * 2.5 * decelRoom);
+            safeSpeedCap = Math.min(safeSpeedCap, safeApproachSpeed);
 
-            // Layer 2: HARD KINEMATIC STOPPING BARRIER
-            // Maximum speed allowed this frame to physically prevent entering the buffer:
-            const maxAllowedSpeedThisDt = availableDecelRoom / Math.max(0.001, dt);
-            if (sim.speed > maxAllowedSpeedThisDt) {
-              sim.speed = maxAllowedSpeedThisDt;
-              sim.currentAccel = -7.5; // Instant maximum emergency AEB force without jerk lag
-            }
-
-            // Layer 3: Absolute Standstill Enforcement at Safety Buffer
-            if (bumperToObstacleDist <= stopBufferMargin) {
+            if (physicalGap <= stopBufferMargin) {
               safeSpeedCap = 0.0;
               sim.speed = 0.0;
               sim.currentAccel = 0.0;
               isStoppingToZero = true;
               sim.gear = 'P';
               sim.electronicParkingBrake = true;
-              if (e.behaviorType === 'pedestrian') {
-                stopProfileName = "WAITING FOR PEDESTRIAN TO CROSS";
-              } else if (e.type === 'cow') {
-                stopProfileName = "WAITING FOR CATTLE TO CLEAR";
-              } else {
-                stopProfileName = "PREDICTIVE AEB STANDSTILL (BUFFER ENFORCED)";
-              }
             }
           }
         }
@@ -3556,7 +3569,8 @@
       }
 
       // Strict Jerk Limiter (|da/dt| <= maxJerk)
-      const maxJerk = (isStoppingToZero && sim.speed < 2.2) ? 1.4 : 2.0; // m/s^3
+      // Smooth Comfort Jerk Limiter (Strictly avoids sudden brake slam or passenger jerk!)
+      const maxJerk = (isStoppingToZero && sim.speed < 2.0) ? 1.2 : 1.6; // m/s^3
       const accelDelta = desiredAccel - sim.currentAccel;
       sim.currentAccel += Math.max(-maxJerk * dt, Math.min(maxJerk * dt, accelDelta));
 
@@ -3624,14 +3638,16 @@
 
       // 6. Responsive Lateral Controller (Stanley Steering & Kinematics)
       if (sim.driveMode !== 'manual') {
-        sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, 14.0 * dt);
-        const kStanley = 1.35;
+        // Silky-Smooth Continuous Lateral Target Tracking (rate = 3.6 rad/s, Zero Steering Jerk!)
+        sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, 3.6 * dt);
+        const kStanley = 1.15;
         const eps = 0.4;
         crossTrack = sim.lateralY - sim.targetLatSmooth;
         const steerDemand = -sim.heading - Math.atan((kStanley * crossTrack) / (sim.speed + eps));
-        const maxSteerForSpeed = (sim.speed > 28.0) ? 0.36 : (sim.speed > 16.0 ? 0.46 : 0.55);
+        const maxSteerForSpeed = (sim.speed > 28.0) ? 0.32 : (sim.speed > 16.0 ? 0.42 : 0.50);
         const clampedSteer = Math.max(-maxSteerForSpeed, Math.min(maxSteerForSpeed, steerDemand));
-        sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, 20.0 * dt);
+        // Smooth progressive steering wheel rotation (rate = 6.5 rad/s, Zero twitch!)
+        sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, 6.5 * dt);
 
         const wheelbase = 2.7;
         sim.heading += (sim.speed / wheelbase) * Math.tan(sim.steerAngle) * dt;
@@ -3960,7 +3976,7 @@
             pipeTraj.textContent = 'PREDICTIVE CHAUFFEUR AEB STOP';
           } else {
             const latDir = (sim.targetLatSmooth > 0.3) ? `SWERVE RIGHT (+${sim.targetLatSmooth.toFixed(1)}m)` : ((sim.targetLatSmooth < -0.3) ? `SWERVE LEFT (${sim.targetLatSmooth.toFixed(1)}m)` : 'LANE KEEP');
-            pipeTraj.textContent = latDir;
+            pipeTraj.textContent = (sim.targetLatSmooth > 0.25) ? `FREE-SPACE CURVE RIGHT (+${sim.targetLatSmooth.toFixed(1)}m)` : ((sim.targetLatSmooth < -0.25) ? `FREE-SPACE CURVE LEFT (${sim.targetLatSmooth.toFixed(1)}m)` : 'FREE-SPACE CRUISE (0.0m)');
           }
         }
       } else if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0) {
@@ -4514,7 +4530,12 @@
       updateCamera();
       if (controls.enabled) controls.update();
 
-      renderer.render(scene, camera);
+      if (typeof scanWaveMesh !== 'undefined' && scanWaveMesh) {
+            const waveZ = (performance.now() * 0.055) % 140.0;
+            scanWaveMesh.position.z = waveZ;
+            scanWaveMat.opacity = 0.30 * (1.0 - (waveZ / 140.0));
+          }
+          renderer.render(scene, camera);
     }
 
     // Window resize
