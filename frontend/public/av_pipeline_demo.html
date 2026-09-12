@@ -619,10 +619,24 @@
     sunMoonLight.shadow.camera.bottom = -35;
     scene.add(sunMoonLight);
 
-    // --- 2. ENDLESS 3D ROAD & HIGHWAY CORRIDOR ---
-    const ROAD_WIDTH = 13.0; // 3 standard lanes + shoulders
+    // --- 2. ENDLESS 3D REALISTIC INDIAN HIGHWAY & VIBRANT ENVIRONMENT ---
+    const ROAD_WIDTH = 14.0; // 3 lanes + paved emergency shoulders
     const ROAD_LENGTH = 500.0;
 
+    // Helper: Generate crisp procedural 2D canvas textures
+    function makeCanvasTexture(width, height, drawFn) {
+      const c = document.createElement('canvas');
+      c.width = width;
+      c.height = height;
+      const ctx = c.getContext('2d');
+      drawFn(ctx, width, height);
+      const tex = new THREE.CanvasTexture(c);
+      tex.magFilter = THREE.LinearFilter;
+      tex.minFilter = THREE.LinearMipmapLinearFilter;
+      return tex;
+    }
+
+    // A. Asphalt Highway Roadbed
     const roadGeo = new THREE.PlaneGeometry(ROAD_WIDTH, ROAD_LENGTH, 1, 60);
     const roadMat = new THREE.MeshStandardMaterial({
       color: 0x0f172a,
@@ -634,52 +648,544 @@
     road.receiveShadow = true;
     scene.add(road);
 
-    // Curbs
-    const curbGeo = new THREE.BoxGeometry(0.8, 0.3, ROAD_LENGTH);
-    const curbMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.9 });
+    // B. Expansive Natural Countryside Terrain (Lush Verges & Embankments)
+    const terrainMat = new THREE.MeshStandardMaterial({
+      color: 0x09140c,
+      roughness: 0.96,
+      metalness: 0.04
+    });
+    const terrainGeo = new THREE.PlaneGeometry(180.0, ROAD_LENGTH, 12, 30);
+
+    const leftTerrain = new THREE.Mesh(terrainGeo, terrainMat);
+    leftTerrain.rotation.x = -Math.PI / 2;
+    leftTerrain.position.set(-ROAD_WIDTH / 2 - 90.0, -0.02, 0);
+    leftTerrain.receiveShadow = true;
+    scene.add(leftTerrain);
+
+    const rightTerrain = new THREE.Mesh(terrainGeo, terrainMat);
+    rightTerrain.rotation.x = -Math.PI / 2;
+    rightTerrain.position.set(ROAD_WIDTH / 2 + 90.0, -0.02, 0);
+    rightTerrain.receiveShadow = true;
+    scene.add(rightTerrain);
+
+    // C. Paved Emergency Breakdown Shoulders & Kerbs
+    const shoulderMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.90 });
+    const shoulderGeo = new THREE.PlaneGeometry(1.8, ROAD_LENGTH);
+
+    const leftShoulder = new THREE.Mesh(shoulderGeo, shoulderMat);
+    leftShoulder.rotation.x = -Math.PI / 2;
+    leftShoulder.position.set(-ROAD_WIDTH / 2 - 0.9, 0.005, 0);
+    leftShoulder.receiveShadow = true;
+    scene.add(leftShoulder);
+
+    const rightShoulder = new THREE.Mesh(shoulderGeo, shoulderMat);
+    rightShoulder.rotation.x = -Math.PI / 2;
+    rightShoulder.position.set(ROAD_WIDTH / 2 + 0.9, 0.005, 0);
+    rightShoulder.receiveShadow = true;
+    scene.add(rightShoulder);
+
+    // Granite Kerb Barrier Stones
+    const curbGeo = new THREE.BoxGeometry(0.5, 0.22, ROAD_LENGTH);
+    const curbMat = new THREE.MeshStandardMaterial({ color: 0x475569, roughness: 0.88 });
     const leftCurb = new THREE.Mesh(curbGeo, curbMat);
-    leftCurb.position.set(-ROAD_WIDTH / 2 - 0.4, 0.15, 0);
+    leftCurb.position.set(-ROAD_WIDTH / 2 - 2.05, 0.11, 0);
     leftCurb.receiveShadow = true;
     scene.add(leftCurb);
 
     const rightCurb = new THREE.Mesh(curbGeo, curbMat);
-    rightCurb.position.set(ROAD_WIDTH / 2 + 0.4, 0.15, 0);
+    rightCurb.position.set(ROAD_WIDTH / 2 + 2.05, 0.11, 0);
     rightCurb.receiveShadow = true;
     scene.add(rightCurb);
 
-    // Center Dashed White Lines
+    // D. IRC Highway Edge Lines & 3-Lane White Dashes
+    const solidLineGeo = new THREE.PlaneGeometry(0.22, ROAD_LENGTH);
+    const yellowLineMat = new THREE.MeshBasicMaterial({ color: 0xfacc15 });
+    const whiteLineMat = new THREE.MeshBasicMaterial({ color: 0xf8fafc });
+
+    // Left Solid Yellow Shoulder Edge Line
+    const leftEdgeLine = new THREE.Mesh(solidLineGeo, yellowLineMat);
+    leftEdgeLine.rotation.x = -Math.PI / 2;
+    leftEdgeLine.position.set(-ROAD_WIDTH / 2 + 0.5, 0.02, 0);
+    scene.add(leftEdgeLine);
+
+    // Right Solid White Shoulder Edge Line
+    const rightEdgeLine = new THREE.Mesh(solidLineGeo, whiteLineMat);
+    rightEdgeLine.rotation.x = -Math.PI / 2;
+    rightEdgeLine.position.set(ROAD_WIDTH / 2 - 0.5, 0.02, 0);
+    scene.add(rightEdgeLine);
+
+    // 3 Highway Lanes (Dividers at X = -2.25m and X = +2.25m)
     const dashGroup = new THREE.Group();
-    const dashGeo = new THREE.PlaneGeometry(0.22, 3.8);
-    const dashMat = new THREE.MeshBasicMaterial({ color: 0xe2e8f0 });
-    for (let z = -ROAD_LENGTH / 2; z < ROAD_LENGTH / 2; z += 7.0) {
-      const d1 = new THREE.Mesh(dashGeo, dashMat);
+    const dashGeo = new THREE.PlaneGeometry(0.22, 4.2);
+    for (let z = -ROAD_LENGTH / 2; z < ROAD_LENGTH / 2; z += 8.0) {
+      const d1 = new THREE.Mesh(dashGeo, whiteLineMat);
       d1.rotation.x = -Math.PI / 2;
-      d1.position.set(-2.2, 0.02, z);
+      d1.position.set(-2.25, 0.02, z);
       dashGroup.add(d1);
 
-      const d2 = new THREE.Mesh(dashGeo, dashMat);
+      const d2 = new THREE.Mesh(dashGeo, whiteLineMat);
       d2.rotation.x = -Math.PI / 2;
-      d2.position.set(2.2, 0.02, z);
+      d2.position.set(2.25, 0.02, z);
       dashGroup.add(d2);
     }
     scene.add(dashGroup);
 
-    // Streetlights
+    // E. Continuous Galvanized Steel W-Beam Crash Barriers (Guardrails) with Reflectors
+    const guardrailGroup = new THREE.Group();
+    const wBeamMat = new THREE.MeshStandardMaterial({
+      color: 0x94a3b8,
+      metalness: 0.85,
+      roughness: 0.28
+    });
+    const postMat = new THREE.MeshStandardMaterial({ color: 0x64748b, metalness: 0.6 });
+    const redReflectMat = new THREE.MeshBasicMaterial({ color: 0xef4444 });
+    const whiteReflectMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+
+    const railGeo = new THREE.BoxGeometry(0.12, 0.42, ROAD_LENGTH);
+    const leftRail = new THREE.Mesh(railGeo, wBeamMat);
+    leftRail.position.set(-ROAD_WIDTH / 2 - 2.35, 0.72, 0);
+    leftRail.castShadow = true;
+    guardrailGroup.add(leftRail);
+
+    const rightRail = new THREE.Mesh(railGeo, wBeamMat);
+    rightRail.position.set(ROAD_WIDTH / 2 + 2.35, 0.72, 0);
+    rightRail.castShadow = true;
+    guardrailGroup.add(rightRail);
+
+    // Support posts & cat-eye reflectors every 8m
+    for (let z = -ROAD_LENGTH / 2; z < ROAD_LENGTH / 2; z += 4.0) {
+      const postGeo = new THREE.BoxGeometry(0.14, 0.95, 0.14);
+      const postL = new THREE.Mesh(postGeo, postMat);
+      postL.position.set(-ROAD_WIDTH / 2 - 2.35, 0.48, z);
+      guardrailGroup.add(postL);
+
+      const postR = new THREE.Mesh(postGeo, postMat);
+      postR.position.set(ROAD_WIDTH / 2 + 2.35, 0.48, z);
+      guardrailGroup.add(postR);
+
+      if (Math.abs(z % 8.0) < 0.1) {
+        const refMat = (z % 16.0 === 0) ? redReflectMat : whiteReflectMat;
+        const refGeo = new THREE.BoxGeometry(0.04, 0.16, 0.08);
+        const refL = new THREE.Mesh(refGeo, refMat);
+        refL.position.set(-ROAD_WIDTH / 2 - 2.27, 0.72, z);
+        guardrailGroup.add(refL);
+
+        const refR = new THREE.Mesh(refGeo, refMat);
+        refR.position.set(ROAD_WIDTH / 2 + 2.27, 0.72, z);
+        guardrailGroup.add(refR);
+      }
+    }
+    scene.add(guardrailGroup);
+
+    // F. Cantilever LED Highway Streetlights with Light Cones
     const streetlightGroup = new THREE.Group();
     for (let z = -ROAD_LENGTH / 2; z < ROAD_LENGTH / 2; z += 40.0) {
-      const poleGeo = new THREE.CylinderGeometry(0.1, 0.12, 7, 8);
-      const poleMat = new THREE.MeshStandardMaterial({ color: 0x475569 });
+      const poleGeo = new THREE.CylinderGeometry(0.12, 0.16, 8.5, 8);
+      const poleMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.5 });
       const pole = new THREE.Mesh(poleGeo, poleMat);
-      pole.position.set(-ROAD_WIDTH / 2 - 1.5, 3.5, z);
+      pole.position.set(-ROAD_WIDTH / 2 - 3.2, 4.25, z);
       streetlightGroup.add(pole);
 
-      const lampLight = new THREE.SpotLight(0xfef08a, 1.3, 35, Math.PI / 4, 0.5, 1.2);
-      lampLight.position.set(-ROAD_WIDTH / 2 - 1.0, 6.8, z);
+      // Cantilever arm extending over highway
+      const arm = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.1, 0.1), poleMat);
+      arm.position.set(-ROAD_WIDTH / 2 - 2.0, 8.4, z);
+      streetlightGroup.add(arm);
+
+      // Luminaire head
+      const luminaire = new THREE.Mesh(
+        new THREE.BoxGeometry(0.8, 0.12, 0.35),
+        new THREE.MeshBasicMaterial({ color: 0xfef08a })
+      );
+      luminaire.position.set(-ROAD_WIDTH / 2 - 0.8, 8.35, z);
+      streetlightGroup.add(luminaire);
+
+      const lampLight = new THREE.SpotLight(0xfef08a, 1.35, 38, Math.PI / 3.8, 0.5, 1.2);
+      lampLight.position.set(-ROAD_WIDTH / 2 - 0.8, 8.2, z);
       lampLight.target.position.set(0, 0, z);
       scene.add(lampLight.target);
       streetlightGroup.add(lampLight);
     }
     scene.add(streetlightGroup);
+
+    // G. Procedural Indian Scenery Assets: Trees, Palms, Milestones, Gantries & Dhaba
+    const sceneryGroup = new THREE.Group();
+    scene.add(sceneryGroup);
+
+    // 1. Reusable Tree Builder (Indian Neem / Shade Tree)
+    function createNeemTree(scale = 1.0) {
+      const tree = new THREE.Group();
+      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x422006, roughness: 0.9 });
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(0.35 * scale, 0.48 * scale, 4.0 * scale, 8), trunkMat);
+      trunk.position.y = 2.0 * scale;
+      trunk.castShadow = true;
+      tree.add(trunk);
+
+      const foliageMat1 = new THREE.MeshStandardMaterial({ color: 0x166534, roughness: 0.85 });
+      const foliageMat2 = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.85 });
+      const foliageMat3 = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.85 });
+
+      const c1 = new THREE.Mesh(new THREE.DodecahedronGeometry(2.0 * scale, 1), foliageMat1);
+      c1.position.set(0, 4.8 * scale, 0);
+      c1.castShadow = true;
+      tree.add(c1);
+
+      const c2 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.5 * scale, 1), foliageMat2);
+      c2.position.set(-1.1 * scale, 4.2 * scale, 0.6 * scale);
+      c2.castShadow = true;
+      tree.add(c2);
+
+      const c3 = new THREE.Mesh(new THREE.DodecahedronGeometry(1.6 * scale, 1), foliageMat3);
+      c3.position.set(1.0 * scale, 4.5 * scale, -0.5 * scale);
+      c3.castShadow = true;
+      tree.add(c3);
+
+      return tree;
+    }
+
+    // 2. Reusable Indian Royal Palm Tree Builder
+    function createPalmTree(scale = 1.0) {
+      const palm = new THREE.Group();
+      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.95 });
+
+      // Curved segmented trunk
+      for (let i = 0; i < 5; i++) {
+        const seg = new THREE.Mesh(new THREE.CylinderGeometry((0.26 - i * 0.02) * scale, (0.30 - i * 0.02) * scale, 1.8 * scale, 7), trunkMat);
+        seg.position.set(Math.sin(i * 0.15) * 0.3 * scale, (0.9 + i * 1.6) * scale, 0);
+        seg.rotation.z = -0.06 * scale;
+        seg.castShadow = true;
+        palm.add(seg);
+      }
+
+      // Radiating drooping palm fronds
+      const leafMat = new THREE.MeshStandardMaterial({ color: 0x15803d, roughness: 0.7, side: THREE.DoubleSide });
+      const crownY = 8.5 * scale;
+      const numFronds = 8;
+      for (let f = 0; f < numFronds; f++) {
+        const angle = (f / numFronds) * Math.PI * 2;
+        const frond = new THREE.Mesh(new THREE.BoxGeometry(0.35 * scale, 0.04 * scale, 2.5 * scale), leafMat);
+        frond.position.set(Math.cos(angle) * 1.2 * scale, crownY - 0.3 * scale, Math.sin(angle) * 1.2 * scale);
+        frond.rotation.y = angle;
+        frond.rotation.x = 0.35; // droop downward
+        frond.castShadow = true;
+        palm.add(frond);
+      }
+      return palm;
+    }
+
+    // 3. Indian Highway Milestone Stone (IRC:26 Standard)
+    function createMilestone(nh, km) {
+      const ms = new THREE.Group();
+      // White body cylinder
+      const bodyMat = new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.8 });
+      const body = new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.8, 16), bodyMat);
+      body.position.y = 0.4;
+      body.castShadow = true;
+      ms.add(body);
+
+      // Yellow top dome
+      const topMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b, roughness: 0.6 });
+      const dome = new THREE.Mesh(new THREE.SphereGeometry(0.28, 16, 8, 0, Math.PI * 2, 0, Math.PI / 2), topMat);
+      dome.position.y = 0.8;
+      dome.castShadow = true;
+      ms.add(dome);
+
+      // Milestone text texture plate
+      const msTex = makeCanvasTexture(128, 256, (ctx) => {
+        ctx.fillStyle = '#f59e0b'; ctx.fillRect(0, 0, 128, 90);
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 90, 128, 166);
+        ctx.fillStyle = '#111827'; ctx.font = 'bold 26px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(nh, 64, 55);
+        ctx.font = 'bold 36px sans-serif'; ctx.fillText(km, 64, 165);
+        ctx.font = 'bold 18px sans-serif'; ctx.fillText('KM', 64, 205);
+      });
+      const label = new THREE.Mesh(new THREE.PlaneGeometry(0.42, 0.84), new THREE.MeshBasicMaterial({ map: msTex }));
+      label.position.set(0.281, 0.42, 0);
+      label.rotation.y = Math.PI / 2;
+      ms.add(label);
+
+      return ms;
+    }
+
+    // 4. Overhead Indian Expressway Gantry Signboard Bridge
+    const gantryBeacons = [];
+    function createOverheadGantry(title, subtitle, distText) {
+      const gantry = new THREE.Group();
+      const steelMat = new THREE.MeshStandardMaterial({ color: 0x475569, metalness: 0.8, roughness: 0.3 });
+
+      // Left & Right upright lattice pillars
+      const pillarGeo = new THREE.BoxGeometry(0.4, 7.8, 0.4);
+      const pL = new THREE.Mesh(pillarGeo, steelMat);
+      pL.position.set(-ROAD_WIDTH / 2 - 2.8, 3.9, 0);
+      pL.castShadow = true;
+      gantry.add(pL);
+
+      const pR = new THREE.Mesh(pillarGeo, steelMat);
+      pR.position.set(ROAD_WIDTH / 2 + 2.8, 3.9, 0);
+      pR.castShadow = true;
+      gantry.add(pR);
+
+      // Cross span truss beam
+      const truss = new THREE.Mesh(new THREE.BoxGeometry(ROAD_WIDTH + 6.0, 0.7, 0.6), steelMat);
+      truss.position.set(0, 7.2, 0);
+      truss.castShadow = true;
+      gantry.add(truss);
+
+      // Primary Green Destination Signboard
+      const signTex = makeCanvasTexture(512, 160, (ctx) => {
+        ctx.fillStyle = '#14532d'; ctx.fillRect(0, 0, 512, 160);
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 6; ctx.strokeRect(8, 8, 496, 144);
+        ctx.fillStyle = '#facc15'; ctx.font = 'bold 24px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText(title, 256, 48);
+        ctx.fillStyle = '#ffffff'; ctx.font = 'bold 20px sans-serif';
+        ctx.fillText(subtitle, 256, 95);
+        ctx.fillStyle = '#86efac'; ctx.font = 'bold 18px sans-serif';
+        ctx.fillText(distText, 256, 134);
+      });
+      const signMesh = new THREE.Mesh(new THREE.PlaneGeometry(10.0, 3.1), new THREE.MeshBasicMaterial({ map: signTex }));
+      signMesh.position.set(0, 7.0, 0.35);
+      gantry.add(signMesh);
+
+      // Flashing amber safety beacons atop gantry
+      [-4.0, 0.0, 4.0].forEach(bx => {
+        const beacon = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.12, 0.12, 0.22, 10),
+          new THREE.MeshStandardMaterial({ color: 0xf59e0b, emissive: 0xd97706, roughness: 0.1 })
+        );
+        beacon.position.set(bx, 7.7, 0);
+        gantry.add(beacon);
+        gantryBeacons.push(beacon);
+      });
+
+      return gantry;
+    }
+
+    // 5. Authentic Indian Highway Dhaba ("SHER-E-PUNJAB DHABA 24x7")
+    const dhabaFairyLights = [];
+    function createHighwayDhaba() {
+      const dhaba = new THREE.Group();
+
+      // Main brick dhaba structure
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x991b1b, roughness: 0.9 });
+      const building = new THREE.Mesh(new THREE.BoxGeometry(16.0, 4.5, 10.0), wallMat);
+      building.position.set(0, 2.25, 0);
+      building.castShadow = true;
+      building.receiveShadow = true;
+      dhaba.add(building);
+
+      // Corrugated red pitched roof
+      const roofMat = new THREE.MeshStandardMaterial({ color: 0x7f1d1d, roughness: 0.6 });
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(13.0, 2.2, 4), roofMat);
+      roof.position.set(0, 5.6, 0);
+      roof.rotation.y = Math.PI / 4;
+      roof.castShadow = true;
+      dhaba.add(roof);
+
+      // Verandah awning canopy
+      const awningMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.7 });
+      const awning = new THREE.Mesh(new THREE.BoxGeometry(17.0, 0.15, 4.5), awningMat);
+      awning.position.set(0, 3.2, 5.5);
+      awning.rotation.x = 0.15;
+      dhaba.add(awning);
+
+      // Verandah wooden support pillars
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.9 });
+      [-7.0, -2.5, 2.5, 7.0].forEach(px => {
+        const pillar = new THREE.Mesh(new THREE.CylinderGeometry(0.12, 0.12, 3.2, 8), woodMat);
+        pillar.position.set(px, 1.6, 7.2);
+        pillar.castShadow = true;
+        dhaba.add(pillar);
+      });
+
+      // Iconic illuminated Dhaba Signboard
+      const dhabaTex = makeCanvasTexture(512, 128, (ctx) => {
+        ctx.fillStyle = '#7f1d1d'; ctx.fillRect(0, 0, 512, 128);
+        ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 6; ctx.strokeRect(6, 6, 500, 116);
+        ctx.fillStyle = '#fbbf24'; ctx.font = 'bold 30px sans-serif'; ctx.textAlign = 'center';
+        ctx.fillText('SHER-E-PUNJAB DHABA', 256, 52);
+        ctx.fillStyle = '#fef08a'; ctx.font = 'bold 20px sans-serif';
+        ctx.fillText('🍛 24x7 PURE VEG • CHAI • TANDOORI ROTI ☕', 256, 96);
+      });
+      const dhabaSign = new THREE.Mesh(new THREE.PlaneGeometry(8.5, 2.1), new THREE.MeshBasicMaterial({ map: dhabaTex }));
+      dhabaSign.position.set(0, 4.3, 5.1);
+      dhaba.add(dhabaSign);
+
+      // Warm glowing fairy light bulbs under verandah
+      [-6.0, -3.5, -1.0, 1.5, 4.0, 6.5].forEach(lx => {
+        const bulb = new THREE.Mesh(
+          new THREE.SphereGeometry(0.1, 8, 8),
+          new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
+        );
+        bulb.position.set(lx, 2.9, 7.1);
+        dhaba.add(bulb);
+        dhabaFairyLights.push(bulb);
+      });
+
+      // Dhaba Warm Ambient Lantern
+      const lanternLight = new THREE.PointLight(0xf59e0b, 1.6, 25, 1.2);
+      lanternLight.position.set(0, 3.2, 8.0);
+      dhaba.add(lanternLight);
+
+      // Outdoor Charpai (Wooden Cots)
+      [-4.0, 0.0, 4.0].forEach(cx => {
+        const charpai = new THREE.Group();
+        const frame = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.1, 1.2), woodMat);
+        frame.position.y = 0.45;
+        charpai.add(frame);
+        // Legs
+        [-0.95, 0.95].forEach(lx => {
+          [-0.45, 0.45].forEach(lz => {
+            const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.45, 6), woodMat);
+            leg.position.set(lx, 0.22, lz);
+            charpai.add(leg);
+          });
+        });
+        charpai.position.set(cx, 0, 9.5);
+        dhaba.add(charpai);
+      });
+
+      return dhaba;
+    }
+
+    // 6. Cell Tower with Aircraft Warning Red Beacon
+    let cellBeacon = null;
+    function createCellTower() {
+      const tower = new THREE.Group();
+      const mastMat = new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9, roughness: 0.3 });
+
+      // Steel lattice spire
+      const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 2.2, 34.0, 4), mastMat);
+      spire.position.y = 17.0;
+      tower.add(spire);
+
+      // Red flashing aviation light
+      cellBeacon = new THREE.Mesh(
+        new THREE.SphereGeometry(0.45, 10, 10),
+        new THREE.MeshStandardMaterial({ color: 0xef4444, emissive: 0xdc2626, roughness: 0.1 })
+      );
+      cellBeacon.position.y = 34.2;
+      tower.add(cellBeacon);
+
+      return tower;
+    }
+
+    // Populate Scenery along a 360m Highway Horizon Span
+    // Trees along left & right shoulders
+    const treePositions = [
+      { x: -12.5, z: -160, type: 'neem', scale: 1.1 },
+      { x:  12.5, z: -145, type: 'palm', scale: 1.0 },
+      { x: -14.0, z: -120, type: 'palm', scale: 1.15 },
+      { x:  13.2, z: -100, type: 'neem', scale: 0.95 },
+      { x: -13.0, z:  -80, type: 'neem', scale: 1.05 },
+      { x:  14.5, z:  -60, type: 'palm', scale: 1.1 },
+      { x: -15.0, z:  -30, type: 'palm', scale: 1.0 },
+      { x:  13.0, z:  -15, type: 'neem', scale: 1.2 },
+      { x: -13.5, z:   15, type: 'neem', scale: 1.0 },
+      { x:  14.0, z:   35, type: 'palm', scale: 1.1 },
+      { x: -14.0, z:   65, type: 'palm', scale: 0.9 },
+      { x:  13.5, z:   85, type: 'neem', scale: 1.15 },
+      { x: -13.0, z:  110, type: 'neem', scale: 1.0 },
+      { x:  14.0, z:  135, type: 'palm', scale: 1.2 },
+      { x: -14.5, z:  155, type: 'palm', scale: 1.05 },
+      { x:  13.0, z:  175, type: 'neem', scale: 1.1 }
+    ];
+
+    treePositions.forEach(tp => {
+      const tree = (tp.type === 'neem') ? createNeemTree(tp.scale) : createPalmTree(tp.scale);
+      tree.position.set(tp.x, 0, tp.z);
+      sceneryGroup.add(tree);
+    });
+
+    // Indian Milestones along left shoulder
+    const m1 = createMilestone('NH 48', '145');
+    m1.position.set(-ROAD_WIDTH / 2 - 2.8, 0, -110);
+    sceneryGroup.add(m1);
+
+    const m2 = createMilestone('NH 48', '144');
+    m2.position.set(-ROAD_WIDTH / 2 - 2.8, 0, 10);
+    sceneryGroup.add(m2);
+
+    const m3 = createMilestone('NH 48', '143');
+    m3.position.set(-ROAD_WIDTH / 2 - 2.8, 0, 130);
+    sceneryGroup.add(m3);
+
+    // Overhead Gantry Signboards
+    const gantry1 = createOverheadGantry('NH-48 EXPRESSWAY • DELHI - JAIPUR', 'LANE 1: FAST / OVERTAKING • SPEED LIMIT 120 KM/H', 'DELHI: 145 KM • JAIPUR: 118 KM • AJMER: 245 KM');
+    gantry1.position.set(0, 0, -50.0);
+    sceneryGroup.add(gantry1);
+
+    const gantry2 = createOverheadGantry('SPEED MONITORED BY RADAR 📷 • WEAR SEATBELTS', 'LANE DISCIPLINE SAVES LIVES • MAINTAIN SAFE GAP', 'NHAI HELPLINE: 1033 • AMBULANCE: 108');
+    gantry2.position.set(0, 0, 130.0);
+    sceneryGroup.add(gantry2);
+
+    // Roadside Highway Dhaba on Left Verge
+    const dhabaMesh = createHighwayDhaba();
+    dhabaMesh.position.set(-28.0, 0, 45.0);
+    dhabaMesh.rotation.y = 0.12;
+    sceneryGroup.add(dhabaMesh);
+
+    // Cell Tower on Right Verge
+    const towerMesh = createCellTower();
+    towerMesh.position.set(38.0, 0, 95.0);
+    sceneryGroup.add(towerMesh);
+
+    // H. Distant Horizon Mountain Silhouettes
+    const mountainMat = new THREE.MeshStandardMaterial({
+      color: 0x07111a,
+      roughness: 0.98,
+      metalness: 0.02
+    });
+    const mountainGeo = new THREE.ConeGeometry(120, 60, 7);
+    const mountainRidge = new THREE.Group();
+
+    [-300, -180, -60, 60, 180, 300].forEach((mx, idx) => {
+      const hScale = 0.8 + (idx % 3) * 0.25;
+      const mCone = new THREE.Mesh(mountainGeo, mountainMat);
+      mCone.position.set(mx, 25 * hScale, 360);
+      mCone.scale.set(1.4, hScale, 1.0);
+      mountainRidge.add(mCone);
+    });
+    scene.add(mountainRidge);
+
+    // I. Night Starfield Sky Dome (750 Sparkling Stars)
+    const STAR_COUNT = 750;
+    const starGeo = new THREE.BufferGeometry();
+    const starPositions = new Float32Array(STAR_COUNT * 3);
+    for (let i = 0; i < STAR_COUNT; i++) {
+      const u = Math.random();
+      const v = Math.random();
+      const theta = u * 2.0 * Math.PI;
+      const phi = Math.acos(2.0 * v - 1.0);
+      const r = 380;
+      starPositions[i * 3 + 0] = r * Math.sin(phi) * Math.cos(theta);
+      starPositions[i * 3 + 1] = Math.abs(r * Math.cos(phi)) + 15; // Upper hemisphere
+      starPositions[i * 3 + 2] = r * Math.sin(phi) * Math.sin(theta);
+    }
+    starGeo.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
+    const starMat = new THREE.PointsMaterial({ color: 0xffffff, size: 2.2, transparent: true, opacity: 0.95 });
+    const starField = new THREE.Points(starGeo, starMat);
+    scene.add(starField);
+
+    // J. Daylight Procedural 3D Cumulus Clouds
+    const cloudGroup = new THREE.Group();
+    const cloudMat = new THREE.MeshStandardMaterial({
+      color: 0xffffff,
+      roughness: 0.95,
+      metalness: 0.05,
+      transparent: true,
+      opacity: 0.85
+    });
+    for (let i = 0; i < 14; i++) {
+      const cloud = new THREE.Group();
+      for (let p = 0; p < 5; p++) {
+        const puff = new THREE.Mesh(new THREE.DodecahedronGeometry(8 + Math.random() * 6, 1), cloudMat);
+        puff.position.set((p - 2) * 6 + Math.random() * 3, Math.random() * 3, Math.random() * 4);
+        cloud.add(puff);
+      }
+      cloud.position.set((Math.random() - 0.5) * 320, 55 + Math.random() * 25, (Math.random() - 0.5) * 360);
+      cloudGroup.add(cloud);
+    }
+    cloudGroup.visible = false; // Enabled in Day weather
+    scene.add(cloudGroup);
 
     // --- 3. 3D EGO AUTONOMOUS VEHICLE ---
     const egoVehicle = new THREE.Group();
@@ -1500,6 +2006,9 @@
         ambientLight.color.setHex(0x1e293b); ambientLight.intensity = 0.95;
         sunMoonLight.color.setHex(0x93c5fd); sunMoonLight.intensity = 0.85; sunMoonLight.position.set(30, 60, -30);
         roadMat.roughness = 0.82; roadMat.metalness = 0.15; roadMat.color.setHex(0x0f172a);
+        terrainMat.color.setHex(0x09140c);
+        mountainMat.color.setHex(0x07111a);
+        starField.visible = true; cloudGroup.visible = false;
         rainSystem.visible = false; dustSystem.visible = false;
         sim.friction = 0.85; sim.targetSpeed = 33.33;
         txtPrimarySensor.textContent = "Camera + 16-LiDAR";
@@ -1510,7 +2019,10 @@
         scene.fog.density = 0.022;
         ambientLight.color.setHex(0x1e3a5f); ambientLight.intensity = 0.75;
         sunMoonLight.color.setHex(0x60a5fa); sunMoonLight.intensity = 0.65; sunMoonLight.position.set(20, 50, -20);
-        roadMat.roughness = 0.08; roadMat.metalness = 0.82; roadMat.color.setHex(0x060b14);
+        roadMat.roughness = 0.06; roadMat.metalness = 0.88; roadMat.color.setHex(0x060b14);
+        terrainMat.color.setHex(0x0a1d0e);
+        mountainMat.color.setHex(0x0b1722);
+        starField.visible = false; cloudGroup.visible = false;
         rainSystem.visible = true; dustSystem.visible = false;
         sim.friction = 0.52; sim.targetSpeed = 22.22;
         txtPrimarySensor.textContent = "Radar + Filtered LiDAR";
@@ -1522,6 +2034,9 @@
         ambientLight.color.setHex(0x94a3b8); ambientLight.intensity = 1.15;
         sunMoonLight.color.setHex(0xcbd5e1); sunMoonLight.intensity = 0.45; sunMoonLight.position.set(10, 40, -10);
         roadMat.roughness = 0.75; roadMat.metalness = 0.20; roadMat.color.setHex(0x1e293b);
+        terrainMat.color.setHex(0x1e2e20);
+        mountainMat.color.setHex(0x333f47);
+        starField.visible = false; cloudGroup.visible = false;
         rainSystem.visible = false; dustSystem.visible = false;
         sim.friction = 0.70; sim.targetSpeed = 13.89;
         txtPrimarySensor.textContent = "77 GHz mmWave Radar (Primary)";
@@ -1533,6 +2048,9 @@
         ambientLight.color.setHex(0xd97706); ambientLight.intensity = 1.05;
         sunMoonLight.color.setHex(0xf59e0b); sunMoonLight.intensity = 0.70; sunMoonLight.position.set(40, 50, 10);
         roadMat.roughness = 0.95; roadMat.metalness = 0.05; roadMat.color.setHex(0x271406);
+        terrainMat.color.setHex(0x4a2e12);
+        mountainMat.color.setHex(0x452309);
+        starField.visible = false; cloudGroup.visible = false;
         rainSystem.visible = false; dustSystem.visible = true;
         sim.friction = 0.62; sim.targetSpeed = 16.67;
         txtPrimarySensor.textContent = "Radar + Multi-Hypothesis EKF";
@@ -1544,6 +2062,9 @@
         ambientLight.color.setHex(0xffffff); ambientLight.intensity = 1.35;
         sunMoonLight.color.setHex(0xfef08a); sunMoonLight.intensity = 1.85; sunMoonLight.position.set(30, 80, 20);
         roadMat.roughness = 0.70; roadMat.metalness = 0.10; roadMat.color.setHex(0x334155);
+        terrainMat.color.setHex(0x22541d); // Lush vibrant Indian countryside green!
+        mountainMat.color.setHex(0x3b6b55);
+        starField.visible = false; cloudGroup.visible = true;
         rainSystem.visible = false; dustSystem.visible = false;
         sim.friction = 0.88; sim.targetSpeed = 33.33;
         txtPrimarySensor.textContent = "Stereo Camera + LiDAR + Radar";
@@ -1998,10 +2519,12 @@
         taillightMat.color.setHex(0xdc2626);
       }
 
-      // Scroll Road Elements
-      const scrollOffset = (sim.totalDistance) % 7.0;
+      // Scroll Road & Environment Elements
+      const scrollOffset = (sim.totalDistance) % 8.0;
       dashGroup.position.z = -scrollOffset;
       streetlightGroup.position.z = -(sim.totalDistance % 40.0);
+      guardrailGroup.position.z = -(sim.totalDistance % 8.0);
+      sceneryGroup.position.z = -(sim.totalDistance % 360.0);
 
       // Update 3D LiDAR Points
       ring.rotation.z += 0.25;
@@ -2456,6 +2979,35 @@
         hazardBlinkers.forEach(b => {
           b.material.color.setHex(0x3b1502);
           b.material.emissive.setHex(0x000000);
+        });
+      }
+
+      // Animate Environment Life & Dynamic Atmosphere
+      if (typeof gantryBeacons !== 'undefined' && gantryBeacons.length > 0) {
+        const gantryFlash = Math.sin(currentTime * 0.007) > 0;
+        gantryBeacons.forEach(b => {
+          b.material.color.setHex(gantryFlash ? 0xf59e0b : 0x451a03);
+          b.material.emissive.setHex(gantryFlash ? 0xd97706 : 0x000000);
+        });
+      }
+
+      if (cellBeacon) {
+        const towerFlash = Math.sin(currentTime * 0.009) > 0.2;
+        cellBeacon.material.color.setHex(towerFlash ? 0xef4444 : 0x450a0a);
+        cellBeacon.material.emissive.setHex(towerFlash ? 0xdc2626 : 0x000000);
+      }
+
+      if (typeof dhabaFairyLights !== 'undefined' && dhabaFairyLights.length > 0) {
+        dhabaFairyLights.forEach((bulb, idx) => {
+          const twinkle = (Math.sin(currentTime * 0.006 + idx * 1.3) + 1.0) * 0.5;
+          bulb.material.color.setRGB(0.98, 0.70 + twinkle * 0.28, 0.15);
+        });
+      }
+
+      if (cloudGroup && cloudGroup.visible) {
+        cloudGroup.children.forEach(c => {
+          c.position.x += 0.04;
+          if (c.position.x > 180) c.position.x = -180;
         });
       }
 
