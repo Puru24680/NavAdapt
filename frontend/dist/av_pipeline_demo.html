@@ -50,13 +50,13 @@
           <span class="text-[9px] bg-slate-900/60 px-1 py-0.2 rounded border border-white/20 text-slate-200">SPACE</span>
         </button>
 
-        <!-- 5 Scenarios Quick Switch -->
+        <!-- 5 Exact SIH Indian Road Benchmark Scenarios -->
         <div class="hidden xl:flex items-center space-x-1 text-[11px] font-mono">
-          <button id="scen-btn-1" onclick="switchScenario('scenario_1')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="Scenario 01: Rural Gramin Sadak">🌾 Rural</button>
-          <button id="scen-btn-2" onclick="switchScenario('scenario_2')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="Scenario 02: Urban Metropolis (Dubai/LA)">🏙️ Dubai</button>
-          <button id="scen-btn-3" onclick="switchScenario('scenario_3')" class="px-2 py-0.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold transition shadow" title="Scenario 03: NH-48 Indian Expressway">🛣️ NH-48</button>
-          <button id="scen-btn-4" onclick="switchScenario('scenario_4')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="Scenario 04: Dense Indian Bazaar">🎪 Bazaar</button>
-          <button id="scen-btn-5" onclick="switchScenario('scenario_5')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="Scenario 05: Suburban Arterial">🏡 Suburban</button>
+          <button id="scen-btn-1" onclick="switchScenario('scenario_1')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="01 Rural Arterial Without Lane Markings (5.5m Road, Cattle, Potholes, Oncoming Bike)">🌾 01 Gramin Sadak</button>
+          <button id="scen-btn-2" onclick="switchScenario('scenario_2')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="02 Chaotic Multi-Directional Chowk (9.0m 4-Way Junction, Auto Cut-Ins, Diagonal Bikes)">🚦 02 Urban Chowk</button>
+          <button id="scen-btn-3" onclick="switchScenario('scenario_3')" class="px-2 py-0.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold transition shadow" title="03 High-Velocity Mixed Traffic Corridor (12.0m NH-48 Merge, Slow Truck, Lane-Splitters)">🛣️ 03 NH-48 Merge</button>
+          <button id="scen-btn-4" onclick="switchScenario('scenario_4')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="04 Sub-4m Street with Encroachments (4.2m Dense Bazaar, Pushcarts, Darting Pedestrians)">🎪 04 Dense Bazaar</button>
+          <button id="scen-btn-5" onclick="switchScenario('scenario_5')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="05 Sudden Cattle Crossing (8.0m Suburban Arterial, Concealed Cow Incursion at 22m)">🐄 05 Cow Incursion</button>
         </div>
       </div>
 
@@ -144,6 +144,23 @@
       <span class="text-base">🕹️</span>
       <span class="font-bold">MANUAL DRIVE ACTIVE:</span>
       <span>[W] Throttle • [S] Brake • [A/D] Steer • Press [SPACE] for Tesla Autopilot</span>
+    </div>
+
+    <!-- SCENARIO ACTIVE BRIEFING HUD CARD (Displays Difficulty, Road Width & Unpredictable Hazards) -->
+    <div id="scenario-briefing-card" class="fixed top-14 left-1/2 -translate-x-1/2 z-30 px-4 py-2 glass-panel rounded-2xl border border-cyan-500/60 shadow-2xl text-xs font-mono max-w-xl text-center pointer-events-auto transition-all duration-300">
+      <div class="flex items-center justify-between gap-3 mb-1">
+        <span id="scen-card-title" class="font-black text-cyan-300 text-xs sm:text-sm tracking-wide">03 High-Velocity Mixed Traffic Corridor (NH-48 Merge)</span>
+        <div class="flex items-center space-x-2">
+          <span id="scen-card-diff" class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 font-bold border border-cyan-500">DIFFICULTY: MEDIUM</span>
+          <button onclick="document.getElementById('scenario-briefing-card').classList.add('hidden')" class="text-slate-400 hover:text-white px-1.5 py-0.5 rounded-md hover:bg-slate-800 text-xs font-bold transition" title="Dismiss Briefing">✕</button>
+        </div>
+      </div>
+      <div class="text-[11px] text-slate-300 mb-1" id="scen-card-subtitle">National Highway Semi-Structured Merge • Overloaded Slow Truck (6 m/s) • Lane-Splitting Bikes</div>
+      <div class="flex flex-wrap items-center justify-center gap-2 text-[10px] text-slate-400">
+        <span>ROAD WIDTH: <b id="scen-card-width" class="text-amber-400">12.0m</b></span>
+        <span>•</span>
+        <span>KEY HAZARDS: <span id="scen-card-hazards" class="text-emerald-300">Overloaded Truck, Agile Motorcycles, Merge Taper</span></span>
+      </div>
     </div>
 
     <!-- HIDDEN BACKWARD-COMPATIBLE ALERT BANNER (Preserves DOM IDs without blocking screen) -->
@@ -1386,82 +1403,89 @@
         sceneryGroup.remove(sceneryGroup.children[0]);
       }
 
-      if (scenarioId === 'scenario_2') {
-        // --- SCENARIO 02: URBAN METROPOLIS (LA / DUBAI SKYSCRAPERS) ---
-        if (typeof dashGroup !== 'undefined') dashGroup.visible = true;
-        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = true;
-        scene.background = new THREE.Color(0x040814); // Sleek Dubai night sky
-        scene.fog.color.setHex(0x040814);
-        scene.fog.density = 0.0035;
-
-        const leftTowerDefs = [
-          { z: -140, h: 110, w: 26, d: 26, col: 0x0284c7, acc: 0x38bdf8, style: 'spire' },
-          { z:  -80, h:  85, w: 22, d: 24, col: 0x0f766e, acc: 0x2dd4bf, style: 'billboard' },
-          { z:  -20, h: 140, w: 30, d: 30, col: 0x1e3a8a, acc: 0x60a5fa, style: 'spire' },
-          { z:   40, h:  95, w: 24, d: 24, col: 0x0369a1, acc: 0x38bdf8, style: 'flat' },
-          { z:  100, h: 125, w: 28, d: 28, col: 0x0f172a, acc: 0x06b6d4, style: 'billboard' },
-          { z:  160, h:  80, w: 22, d: 22, col: 0x047857, acc: 0x34d399, style: 'spire' },
-          { z:  220, h: 135, w: 28, d: 28, col: 0x0284c7, acc: 0x38bdf8, style: 'spire' }
-        ];
-
-        leftTowerDefs.forEach(td => {
-          const tower = createSkyscraper(td.h, td.w, td.d, td.col, td.acc, td.style);
-          tower.position.set(-ROAD_WIDTH / 2 - 24.0, 0, td.z);
-          sceneryGroup.add(tower);
-        });
-
-        const rightTowerDefs = [
-          { z: -120, h: 130, w: 28, d: 28, col: 0x0e7490, acc: 0x22d3ee, style: 'billboard' },
-          { z:  -60, h:  90, w: 24, d: 24, col: 0x1e293b, acc: 0x38bdf8, style: 'spire' },
-          { z:    0, h: 145, w: 32, d: 32, col: 0x0369a1, acc: 0x67e8f9, style: 'spire' },
-          { z:   60, h: 100, w: 26, d: 26, col: 0x047857, acc: 0x10b981, style: 'billboard' },
-          { z:  120, h:  75, w: 22, d: 22, col: 0x1e3a8a, acc: 0x93c5fd, style: 'flat' },
-          { z:  180, h: 120, w: 26, d: 26, col: 0x0284c7, acc: 0x38bdf8, style: 'spire' },
-          { z:  240, h:  95, w: 24, d: 24, col: 0x0f172a, acc: 0x06b6d4, style: 'spire' }
-        ];
-
-        rightTowerDefs.forEach(td => {
-          const tower = createSkyscraper(td.h, td.w, td.d, td.col, td.acc, td.style);
-          tower.position.set(ROAD_WIDTH / 2 + 24.0, 0, td.z);
-          sceneryGroup.add(tower);
-        });
-
-        const flyover = createFlyoverBridge();
-        flyover.position.set(0, 0, 60.0);
-        sceneryGroup.add(flyover);
-
-      } else if (scenarioId === 'scenario_1') {
-        // --- SCENARIO 01: UNMARKED VILLAGE ROAD (GRAMIN SADAK) ---
-        if (typeof dashGroup !== 'undefined') dashGroup.visible = false;
-        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = false;
+      if (scenarioId === 'scenario_1') {
+        // --- 01. RURAL ARTERIAL WITHOUT LANE MARKINGS (GRAMIN SADAK) ---
+        // Road Width: 5.5m • Mud huts, haystacks, banyan/neem trees, zero lane paint, dirt verges
         scene.background = new THREE.Color(0x1a1208);
         scene.fog.color.setHex(0x1a1208);
         scene.fog.density = 0.004;
 
         [-130, -70, -10, 50, 110, 170].forEach((z, idx) => {
           const hut = (idx % 2 === 0) ? createVillageHut() : createVillageHouse();
-          hut.position.set(-ROAD_WIDTH / 2 - 8.5, 0, z);
+          hut.position.set(-5.5 / 2 - 6.5, 0, z);
           sceneryGroup.add(hut);
 
           const hay = createHaystack();
-          hay.position.set(-ROAD_WIDTH / 2 - 14.5, 0, z + 12);
+          hay.position.set(-5.5 / 2 - 11.5, 0, z + 12);
           sceneryGroup.add(hay);
         });
 
         [-110, -50, 10, 70, 130, 190].forEach((z, idx) => {
           const house = (idx % 2 === 0) ? createVillageHouse() : createVillageHut();
-          house.position.set(ROAD_WIDTH / 2 + 8.5, 0, z);
+          house.position.set(5.5 / 2 + 6.5, 0, z);
           sceneryGroup.add(house);
 
           const tree = (idx % 2 === 0) ? createBanyanTree() : createNeemTree(1.3);
-          tree.position.set(ROAD_WIDTH / 2 + 13.5, 0, z + 16);
+          tree.position.set(5.5 / 2 + 10.5, 0, z + 16);
           sceneryGroup.add(tree);
         });
 
+      } else if (scenarioId === 'scenario_2') {
+        // --- 02. CHAOTIC MULTI-DIRECTIONAL CHOWK (UNSIGNALIZED 4-WAY JUNCTION) ---
+        // Road Width: 9.0m • 4-Way Junction, informal right-of-way, cross-streets, chai tapris
+        scene.background = new THREE.Color(0x060c1c);
+        scene.fog.color.setHex(0x060c1c);
+        scene.fog.density = 0.0035;
+
+        // Perpendicular Cross-Street Intersection at Z = 45m
+        const crossRoadGeo = new THREE.PlaneGeometry(120.0, 14.0);
+        const crossRoadMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.6 });
+        const crossRoad = new THREE.Mesh(crossRoadGeo, crossRoadMat);
+        crossRoad.rotation.x = -Math.PI / 2;
+        crossRoad.position.set(0, 0.002, 45.0);
+        crossRoad.receiveShadow = true;
+        sceneryGroup.add(crossRoad);
+
+        // Zebra Crossing Stripes on Chowk Approaches
+        const zebraMat = new THREE.MeshBasicMaterial({ color: 0xf1f5f9 });
+        for (let zOffset of [37.0, 53.0]) {
+          for (let zx = -4.0; zx <= 4.0; zx += 1.0) {
+            const zStripe = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 2.2), zebraMat);
+            zStripe.rotation.x = -Math.PI / 2;
+            zStripe.position.set(zx, 0.015, zOffset);
+            sceneryGroup.add(zStripe);
+          }
+        }
+
+        // Chowk Traffic Island / Heritage Monument on Corner
+        const monumentMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.5 });
+        const monument = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.4, 6.5, 16), monumentMat);
+        monument.position.set(9.0 / 2 + 3.2, 3.25, 45.0);
+        sceneryGroup.add(monument);
+
+        // Indian Chai Tapri & Street Food Vendor on Chowk Corner
+        const tapri = createBazaarShop(0xd97706, 0xdc2626, "SHARMA CHAI TAPRI");
+        tapri.position.set(-9.0 / 2 - 4.5, 0, 36.0);
+        sceneryGroup.add(tapri);
+
+        // Urban city buildings around junction
+        const leftTowers = [-110, -50, 90, 150, 210];
+        leftTowers.forEach(z => {
+          const tower = createSkyscraper(65 + Math.random() * 40, 22, 22, 0x0f172a, 0x0284c7, 'billboard');
+          tower.position.set(-9.0 / 2 - 18.0, 0, z);
+          sceneryGroup.add(tower);
+        });
+
+        const rightTowers = [-90, -30, 80, 140, 200];
+        rightTowers.forEach(z => {
+          const tower = createSkyscraper(60 + Math.random() * 45, 22, 22, 0x1e293b, 0x38bdf8, 'spire');
+          tower.position.set(9.0 / 2 + 18.0, 0, z);
+          sceneryGroup.add(tower);
+        });
+
       } else if (scenarioId === 'scenario_4') {
-        // --- SCENARIO 04: DENSE BAZAAR / MARKET STREET ---
-        if (typeof dashGroup !== 'undefined') dashGroup.visible = false;
-        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = false;
+        // --- 04. SUB-4M STREET WITH ENCROACHMENTS & PEDESTRIANS (DENSE BAZAAR) ---
+        // Road Width: 4.2m • Hand pushcarts partially blocking lane, protruding stalls
         scene.background = new THREE.Color(0x140a05);
         scene.fog.color.setHex(0x140a05);
         scene.fog.density = 0.004;
@@ -1469,54 +1493,68 @@
         const shopNames = ["GUPTA SWEETS", "CHAI CORNER", "SARI PALACE", "SPICE BAZAAR", "DELHI JEWELLERS", "KASHI SILK", "ROYAL BAKERY"];
         const shopColors = [0xd97706, 0xb91c1c, 0x047857, 0x4338ca, 0x7c2d12, 0x0284c7];
 
-        for (let z = -140; z <= 240; z += 35) {
-          const sName = shopNames[Math.abs(Math.floor(z / 35)) % shopNames.length];
-          const sCol = shopColors[Math.abs(Math.floor(z / 35)) % shopColors.length];
+        for (let z = -140; z <= 240; z += 32) {
+          const sName = shopNames[Math.abs(Math.floor(z / 32)) % shopNames.length];
+          const sCol = shopColors[Math.abs(Math.floor(z / 32)) % shopColors.length];
 
+          // Left Shop right on the constricted edge
           const leftShop = createBazaarShop(sCol, 0xdc2626, sName);
-          leftShop.position.set(-ROAD_WIDTH / 2 - 4.5, 0, z);
+          leftShop.position.set(-4.2 / 2 - 2.8, 0, z);
           sceneryGroup.add(leftShop);
 
+          // Vegetable Hand Pushcart (Thela) partially encroaching into the 4.2m carriageway!
           const leftCart = createPushcartThela();
-          leftCart.position.set(-ROAD_WIDTH / 2 - 0.5, 0, z + 14);
+          leftCart.position.set(-4.2 / 2 - 0.2, 0, z + 12);
           sceneryGroup.add(leftCart);
 
+          // Right Shop
           const rightShop = createBazaarShop(sCol, 0x2563eb, sName);
-          rightShop.position.set(ROAD_WIDTH / 2 + 4.5, 0, z + 16);
+          rightShop.position.set(4.2 / 2 + 2.8, 0, z + 15);
           rightShop.rotation.y = Math.PI;
           sceneryGroup.add(rightShop);
 
           const rightCart = createPushcartThela();
-          rightCart.position.set(ROAD_WIDTH / 2 + 0.5, 0, z + 28);
+          rightCart.position.set(4.2 / 2 + 0.2, 0, z + 26);
           sceneryGroup.add(rightCart);
         }
 
       } else if (scenarioId === 'scenario_5') {
-        // --- SCENARIO 05: SUBURBAN ARTERIAL (VILLAS & CATTLE INCURSION) ---
-        if (typeof dashGroup !== 'undefined') dashGroup.visible = true;
-        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = true;
+        // --- 05. HIGH-SPEED SUB-URBAN ARTERIAL INCURSION (SUDDEN CATTLE CROSSING) ---
+        // Road Width: 8.0m • Concealed stray cattle behind roadside visual occlusion (delivery van at Z=28m)
         scene.background = new THREE.Color(0x061526);
         scene.fog.color.setHex(0x061526);
         scene.fog.density = 0.0035;
 
+        // Visual Occlusion: Parked Delivery Van on Right Verge at Z = 28m
+        const vanMat = new THREE.MeshStandardMaterial({ color: 0x0284c7, roughness: 0.4 });
+        const vanBody = new THREE.Mesh(new THREE.BoxGeometry(2.2, 2.4, 5.0), vanMat);
+        vanBody.position.set(8.0 / 2 + 0.8, 1.2, 28.0);
+        vanBody.castShadow = true;
+        sceneryGroup.add(vanBody);
+
+        // Signboard atop delivery van: "DELHI COLD STORAGE"
+        const vanSign = new THREE.Mesh(new THREE.BoxGeometry(2.0, 0.4, 0.1), new THREE.MeshBasicMaterial({ color: 0xfacc15 }));
+        vanSign.position.set(8.0 / 2 + 0.8, 2.6, 28.0);
+        sceneryGroup.add(vanSign);
+
+        // Suburban Villas & Palm Trees
         for (let z = -130; z <= 230; z += 55) {
           const villaL = createSuburbanVilla(0xf1f5f9, 0x0284c7);
-          villaL.position.set(-ROAD_WIDTH / 2 - 12.0, 0, z);
+          villaL.position.set(-8.0 / 2 - 9.0, 0, z);
           sceneryGroup.add(villaL);
 
           const villaR = createSuburbanVilla(0xfef08a, 0x059669);
-          villaR.position.set(ROAD_WIDTH / 2 + 12.0, 0, z + 26);
+          villaR.position.set(8.0 / 2 + 9.0, 0, z + 26);
           sceneryGroup.add(villaR);
 
           const palm = createPalmTree(1.15);
-          palm.position.set(ROAD_WIDTH / 2 + 8.0, 0, z + 48);
+          palm.position.set(8.0 / 2 + 6.0, 0, z + 48);
           sceneryGroup.add(palm);
         }
 
       } else {
-        // --- SCENARIO 03: NATIONAL HIGHWAY NH-48 (EXPRESSWAY) ---
-        if (typeof dashGroup !== 'undefined') dashGroup.visible = true;
-        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = true;
+        // --- 03. HIGH-VELOCITY MIXED TRAFFIC CORRIDOR (NH-48 MERGE) ---
+        // Road Width: 12.0m • 3 Lanes, Sher-E-Punjab Dhaba, Milestone, Overhead Gantry
         scene.background = new THREE.Color(0x020617);
         scene.fog.color.setHex(0x020617);
         scene.fog.density = 0.003;
@@ -1533,27 +1571,13 @@
         [-110, 10, 130].forEach((z, idx) => {
           const km = (145 - idx).toString();
           const m = createMilestone('NH 48', km);
-          m.position.set(-ROAD_WIDTH / 2 - 2.8, 0, z);
+          m.position.set(-12.0 / 2 - 2.8, 0, z);
           sceneryGroup.add(m);
         });
 
         const g1 = createOverheadGantry('NH-48 EXPRESSWAY • DELHI - JAIPUR', 'LANE 1: FAST / OVERTAKING • SPEED LIMIT 120 KM/H', 'DELHI: 145 KM • JAIPUR: 118 KM • AJMER: 245 KM');
-        g1.position.set(0, 0, -50.0);
+        g1.position.set(0, 0, 80.0);
         sceneryGroup.add(g1);
-
-        const g2 = createOverheadGantry('SPEED MONITORED BY RADAR 📷 • WEAR SEATBELTS', 'LANE DISCIPLINE SAVES LIVES • MAINTAIN SAFE GAP', 'NHAI HELPLINE: 1033 • AMBULANCE: 108');
-        g2.position.set(0, 0, 130.0);
-        sceneryGroup.add(g2);
-
-        [-160, -120, -80, -30, 15, 65, 110, 155].forEach((z, idx) => {
-          const tree = (idx % 2 === 0) ? createNeemTree(1.1) : createPalmTree(1.1);
-          tree.position.set(-13.5, 0, z);
-          sceneryGroup.add(tree);
-
-          const rTree = (idx % 2 === 0) ? createPalmTree(1.1) : createNeemTree(1.15);
-          rTree.position.set(13.5, 0, z + 15);
-          sceneryGroup.add(rTree);
-        });
       }
     }
 
@@ -2382,6 +2406,10 @@
         vz: vz, // forward speed relative to road
         isSpeedBreaker: (type === 'speed_breaker'),
         isRoadEnd: (type === 'road_end'),
+        behaviorType: 'normal', // 'erratic_wander', 'erratic_cutin', 'diagonal_filter', 'concealed_incursion', 'oncoming_drift', 'pushcart'
+        stochasticTimer: 1.5 + Math.random() * 2.5,
+        isPathDiverging: false,
+        uncertaintyIndex: (type === 'cow') ? 'HIGH (ANIMAL)' : (type === 'rickshaw' ? 'EXTREME (CUT-IN)' : (type === 'bike' ? 'HIGH (FILTER)' : 'LOW')),
         thumpPlayed: false,
         active: true
       };
@@ -2402,56 +2430,107 @@
       allEntities.length = 0;
 
       if (scenarioId === 'scenario_1') {
-        // --- 01. UNMARKED VILLAGE ROAD (GRAMIN SADAK) ---
-        addEntity('cow', 0.2, 95, 0, -0.04);
-        addEntity('pothole', -0.5, 175, 0, 0);
-        addEntity('bike', -2.2, 255, 6.0, 0);
+        // --- 01. RURAL ARTERIAL WITHOUT LANE MARKINGS (GRAMIN SADAK) ---
+        // Road Width: 5.5m • Missing centerlines, natural dirt shoulders, roaming cattle, potholes, oncoming two-wheeler
+        const cow1 = addEntity('cow', 0.6, 65, 0.2, -0.15);
+        cow1.behaviorType = 'erratic_wander';
+
+        const pot1 = addEntity('pothole', -0.5, 120, 0, 0);
+
+        // Oncoming two-wheeler drifting unpredictably across the unmarked center
+        const bike1 = addEntity('bike', -1.2, 190, -5.5, 0.22);
+        bike1.behaviorType = 'oncoming_drift';
+
         if (density === 'heavy') {
-          addEntity('cow', -1.2, 330, 0, 0.03);
-          addEntity('pothole', 0.4, 395, 0, 0);
+          const cow2 = addEntity('cow', -1.4, 270, 0, 0.1);
+          cow2.behaviorType = 'erratic_wander';
+          addEntity('pothole', 0.4, 340, 0, 0);
         }
 
       } else if (scenarioId === 'scenario_2') {
-        // --- 02. URBAN METROPOLIS (LA / DUBAI SKYSCRAPERS) ---
-        addEntity('rickshaw', -0.2, 110, 8.5, 0.22);
-        addEntity('truck', 3.2, 185, 12.5, 0);
-        addEntity('bike', -3.2, 260, 11.0, 0);
+        // --- 02. CHAOTIC MULTI-DIRECTIONAL CHOWK (UNSIGNALIZED JUNCTION) ---
+        // Road Width: 9.0m • Informal merging, turning auto cut-in, diagonal bikes, pedestrians, occluded bus
+        const rick1 = addEntity('rickshaw', 2.4, 48, 5.0, -1.5);
+        rick1.behaviorType = 'erratic_cutin';
+
+        const bike1 = addEntity('bike', -2.2, 75, 6.5, 0.8);
+        bike1.behaviorType = 'diagonal_filter';
+
+        const ped1 = addEntity('pedestrian', 3.4, 34, 0.8, -1.2);
+        ped1.behaviorType = 'pedestrian';
+
+        const bus1 = addEntity('truck', -2.8, 110, 4.5, 0.1);
+        bus1.behaviorType = 'overloaded_truck';
+
         if (density === 'heavy') {
-          addEntity('speed_breaker', 0.0, 330, 0, 0);
-          addEntity('rickshaw', 3.2, 410, 9.0, 0);
+          const rick2 = addEntity('rickshaw', -1.8, 170, 5.5, 0.9);
+          rick2.behaviorType = 'erratic_cutin';
+          addEntity('pedestrian', -3.2, 140, 0.7, 1.1);
         }
 
       } else if (scenarioId === 'scenario_4') {
-        // --- 04. DENSE BAZAAR / MARKET STREET ---
-        addEntity('pedestrian', 1.2, 85, 0.8, -0.25);
-        addEntity('rickshaw', -1.8, 150, 4.0, 0.1);
-        addEntity('pothole', 0.1, 215, 0, 0);
+        // --- 04. SUB-4M STREET WITH ENCROACHMENTS & PEDESTRIANS (DENSE BAZAAR) ---
+        // Road Width: 4.2m • Hand pushcarts partially blocking lane, protruding bikes, darting pedestrians
+        const ped1 = addEntity('pedestrian', 1.8, 30, 0.6, -1.1);
+        ped1.behaviorType = 'pedestrian';
+
+        // Pothole / drain grating in narrow market
+        addEntity('pothole', 0.2, 75, 0, 0);
+
+        // Protruding parked motorcycle along market verge
+        const bike1 = addEntity('bike', -1.3, 110, 0, 0);
+
+        // Slow auto rickshaw trying to squeeze through
+        const rick1 = addEntity('rickshaw', 0.4, 160, 3.2, 0.05);
+        rick1.behaviorType = 'erratic_cutin';
+
         if (density === 'heavy') {
-          addEntity('pedestrian', -0.8, 290, 0.6, 0.2);
-          addEntity('rickshaw', 1.8, 360, 4.5, 0);
+          const ped2 = addEntity('pedestrian', -1.6, 210, 0.5, 0.9);
+          ped2.behaviorType = 'pedestrian';
         }
 
       } else if (scenarioId === 'scenario_5') {
-        // --- 05. SUBURBAN ARTERIAL (SUDDEN CATTLE CROSSING) ---
-        addEntity('cow', 0.6, 95, 0.6, -0.45);
-        addEntity('speed_breaker', 0.0, 195, 0, 0);
-        addEntity('bike', -3.2, 275, 8.5, 0);
+        // --- 05. HIGH-SPEED SUB-URBAN ARTERIAL INCURSION (SUDDEN CATTLE CROSSING) ---
+        // Road Width: 8.0m • Cruising at 40 km/h (11 m/s), stray cow concealed behind roadside visual occlusion steps out at 22m!
+        // Oncoming car constraint on opposite lane prevents wide swerve!
+        const cowIncursion = addEntity('cow', 3.2, 25.0, 0.0, 0.0);
+        cowIncursion.behaviorType = 'concealed_incursion';
+        cowIncursion.isPathDiverging = false;
+
+        // Oncoming vehicle in opposing lane (X = -2.4m) moving towards ego
+        const oncomingCar = addEntity('truck', -2.4, 60.0, -8.5, 0.0);
+        oncomingCar.behaviorType = 'oncoming_drift';
+
+        // Secondary hazard down the road
+        addEntity('speed_breaker', 0.0, 160.0, 0, 0);
+
         if (density === 'heavy') {
-          addEntity('truck', 3.2, 355, 9.0, 0);
-          addEntity('cow', -0.5, 430, 0, 0.02);
+          const bike1 = addEntity('bike', 2.8, 220.0, 7.0, 0);
         }
 
       } else {
-        // --- 03. NATIONAL HIGHWAY NH-48 (EXPRESSWAY CRUISE) ---
-        addEntity('truck', 3.2, 135, 7.5, 0);
-        addEntity('speed_breaker', 0.0, 230, 0, 0);
-        addEntity('rickshaw', -3.2, 310, 5.0, 0.1);
+        // --- 03. HIGH-VELOCITY MIXED TRAFFIC CORRIDOR (NH-48 MERGE) ---
+        // Road Width: 12.0m • Overloaded slow truck (6 m/s), lane-splitting motorcycles, ramp taper
+        const slowTruck = addEntity('truck', 2.8, 70.0, 6.0, 0);
+        slowTruck.behaviorType = 'overloaded_truck';
+
+        const fastBike = addEntity('bike', -0.5, 120.0, 12.0, 0.6);
+        fastBike.behaviorType = 'diagonal_filter';
+
+        // Merging vehicle from ramp taper
+        const mergeCar = addEntity('rickshaw', -3.2, 180.0, 7.5, 0.2);
+        mergeCar.behaviorType = 'erratic_cutin';
+
+        addEntity('speed_breaker', 0.0, 260.0, 0, 0);
+
         if (density === 'heavy') {
-          addEntity('truck', -3.2, 390, 8.5, 0);
-          addEntity('bike', 3.2, 460, 11.0, 0);
+          const trk2 = addEntity('truck', -3.2, 330.0, 7.0, 0);
+          addEntity('bike', 3.2, 400.0, 13.0, 0);
         }
       }
 
+      const countElem = document.getElementById('txt-traffic-count');
+      if (countElem) countElem.textContent = `${allEntities.length} Active`;
       const objCountElem = document.getElementById('txt-obj-count');
       if (objCountElem) objCountElem.textContent = `${allEntities.length} Active`;
     }
@@ -2812,30 +2891,37 @@
       ctx.fill();
       ctx.stroke();
 
-      // 1. IDENTIFY
+      // 1. IDENTIFY (Perceives object & classifies Indian road unpredictability)
       ctx.fillStyle = statusColor;
-      ctx.font = 'bold 20px monospace';
-      ctx.fillText(`[ ${e.type.toUpperCase()} #${e.id} ]  ${distance.toFixed(0)}m`, 14, 28);
+      ctx.font = 'bold 18px monospace';
+      const unpTag = e.isPathDiverging ? '⚠ PATH DIVERGENCE' : (e.type === 'cow' ? 'STRAY ANIMAL' : (e.type === 'rickshaw' ? 'ERRATIC AUTO' : (e.type === 'bike' ? 'LANE SPLITTER' : e.type.toUpperCase())));
+      ctx.fillText(`[${unpTag} #${e.id}] ${distance.toFixed(0)}m`, 12, 26);
 
-      // 2. TRACK VELOCITY
+      // 2. TRACK VELOCITY (Tracks 2D vector & stochastic lateral drift)
       ctx.fillStyle = '#94a3b8';
-      ctx.font = '15px monospace';
+      ctx.font = '13px monospace';
       const absSpeedKmh = (e.vz * 3.6).toFixed(0);
-      ctx.fillText(`VEL: ${absSpeedKmh} km/h (CLOSURE: ${closureRate.toFixed(1)} m/s)`, 14, 54);
+      const latDriftStr = Math.abs(e.vx) > 0.3 ? ` | LAT: ${e.vx > 0 ? '+' : ''}${e.vx.toFixed(1)}m/s [UNPREDICTABLE]` : ` | CLOSURE: ${closureRate.toFixed(1)}m/s`;
+      ctx.fillText(`v: ${absSpeedKmh} km/h${latDriftStr}`, 12, 52);
 
-      // 3. CALCULATE RISK
-      ctx.fillStyle = statusColor;
-      ctx.font = 'bold 16px monospace';
+      // 3. CALCULATE RISK (Stochastic collision probability & TTCE envelope)
+      ctx.fillStyle = (e.isPathDiverging || riskPct > 70) ? '#ef4444' : statusColor;
+      ctx.font = 'bold 15px monospace';
       const ttcStr = (ttc < 20) ? `${ttc.toFixed(1)}s` : '>10s';
-      ctx.fillText(`RISK: ${riskPct}% [${riskStatus}] • TTC: ${ttcStr}`, 14, 82);
+      const riskLabel = (e.isPathDiverging && distance < 45.0) ? `98% [SUDDEN INCURSION]` : `${riskPct}% [${riskStatus}]`;
+      ctx.fillText(`RISK: ${riskLabel} • TTC: ${ttcStr}`, 12, 78);
 
-      // 4. CHANGE TRAJECTORY
+      // 4. CHANGE TRAJECTORY (Dynamic evasion or Chauffeur AEB stopping)
       ctx.fillStyle = '#e2e8f0';
-      ctx.font = '14px monospace';
-      if (sim.swerving || latDistToTarget >= 2.6) {
-        ctx.fillText(`TRAJ: SWERVING TO OPEN LANE ➔`, 14, 108);
+      ctx.font = 'bold 13px monospace';
+      if (sim.speed < 1.0 && distance < 12.0) {
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText(`TRAJ: CHAUFFEUR AEB STANDSTILL (0 JERK)`, 12, 104);
+      } else if (sim.swerving || latDistToTarget >= 2.2) {
+        const swDir = (sim.targetLatSmooth > 0.4) ? 'RIGHT (+3.4m)' : 'LEFT (-3.4m)';
+        ctx.fillText(`TRAJ: DYNAMIC SWERVE ${swDir} ➔`, 12, 104);
       } else {
-        ctx.fillText(`TRAJ: PATH CLEAR ➔ CRUISE`, 14, 108);
+        ctx.fillText(`TRAJ: LANE KEEP • LOOKAHEAD CLEAR`, 12, 104);
       }
 
       ctx.restore();
@@ -2860,30 +2946,86 @@
       // Extended Preview Horizon (up to 180m for highway speeds)
       const lookaheadHorizon = 180.0;
 
+      const currentMeta = scenarioMetadata[sim.scenarioId] || scenarioMetadata['scenario_3'];
+      const maxRoadExtent = (currentMeta.roadWidth / 2) - 0.3;
+
       allEntities.forEach(e => {
+        // --- INDIAN ROAD STOCHASTIC UNPREDICTABILITY DYNAMICS ---
+        if (e.behaviorType === 'erratic_wander') {
+          // Stray cattle behavior: wanders, stops, changes path every 2-4 seconds
+          e.stochasticTimer -= dt;
+          if (e.stochasticTimer <= 0) {
+            e.stochasticTimer = 2.0 + Math.random() * 3.0;
+            const rChoice = Math.random();
+            if (rChoice < 0.35) {
+              e.vx = 0.0;
+              e.isPathDiverging = false;
+            } else if (rChoice < 0.70) {
+              e.vx = (e.x > 0 ? -0.55 : 0.55);
+              e.isPathDiverging = true;
+            } else {
+              e.vx = (Math.random() - 0.5) * 0.35;
+              e.isPathDiverging = false;
+            }
+          }
+        } else if (e.behaviorType === 'erratic_cutin') {
+          // Auto-rickshaw sudden cut-in without indicator
+          e.stochasticTimer -= dt;
+          if (e.stochasticTimer <= 0) {
+            e.stochasticTimer = 3.5 + Math.random() * 3.0;
+            e.vx = (e.x > 0.2 ? -1.4 : 1.4);
+            e.isPathDiverging = true;
+          }
+        } else if (e.behaviorType === 'diagonal_filter') {
+          // Lane-splitting motorcycle weaving through traffic
+          e.vx = Math.sin(sim.totalDistance * 0.38 + e.id) * 1.1;
+          e.isPathDiverging = (Math.abs(e.vx) > 0.6);
+        } else if (e.behaviorType === 'concealed_incursion') {
+          // Scenario 5: Stray cow concealed behind roadside delivery van steps out at 22m!
+          if (e.z > 28.0) {
+            e.x = 3.2; // hidden behind delivery van
+            e.vx = 0.0;
+            e.isPathDiverging = false;
+          } else if (e.z <= 28.0 && e.z > -4.0) {
+            e.vx = -1.65; // Sudden incursion directly into vehicle corridor
+            e.isPathDiverging = true;
+          }
+        } else if (e.behaviorType === 'oncoming_drift') {
+          // Oncoming vehicle in opposite lane
+          e.vx = Math.sin(sim.totalDistance * 0.2 + e.id) * 0.18;
+          e.isPathDiverging = false;
+        } else if (e.behaviorType === 'pedestrian') {
+          e.isPathDiverging = (Math.abs(e.x - sim.lateralY) < 1.8 && e.z < 45.0);
+        }
+
         // Relative forward movement
         const relVz = e.vz - sim.speed;
         e.z += relVz * dt;
         e.x += e.vx * dt;
 
-        // Boundary bounce for dynamic entities
+        // Physical road boundary clamp for dynamic entities
         if (e.type !== 'speed_breaker' && e.type !== 'road_end') {
-          if (Math.abs(e.x) > 5.2) {
-            e.vx = -e.vx;
+          if (Math.abs(e.x) > maxRoadExtent) {
+            e.x = Math.max(-maxRoadExtent, Math.min(maxRoadExtent, e.x));
+            e.vx = -e.vx * 0.6;
           }
         }
 
-        // Recycle entity far behind ego car (< -25m) -> Respawn 260m-360m in distant corridor!
+        // Recycle entity far behind ego car (< -25m) -> Respawn in distant corridor!
         if (e.z < -25.0) {
           if (e.type === 'road_end') {
             // Keep road end in place
           } else {
-            e.z = 260.0 + Math.random() * 90.0;
+            e.z = 240.0 + Math.random() * 80.0;
             if (e.type === 'speed_breaker') {
               e.x = 0;
               e.thumpPlayed = false;
+            } else if (e.behaviorType === 'concealed_incursion') {
+              e.x = 3.2;
+              e.vx = 0;
+              e.isPathDiverging = false;
             } else {
-              e.x = (Math.random() - 0.5) * 6.8;
+              e.x = (Math.random() - 0.5) * (maxRoadExtent * 1.6);
             }
           }
         }
@@ -3060,35 +3202,49 @@
         stopProfileName = "EXPRESSWAY CRUISE";
         isStoppingToZero = false;
 
-      // Candidate Lateral Lanes: Left (-3.4m), Center (0.0m), Right (+3.4m)
-      const candidateLanes = [-3.4, 0.0, 3.4];
+      // Adaptive Scenario-Specific Candidate Lanes & Physical Free-Space Boundaries
+      const candidateLanes = currentMeta.candidateLanes;
       let bestLane = 0.0;
       let minLaneCost = Infinity;
 
       for (const lane of candidateLanes) {
-        let cost = Math.abs(lane) * 0.35; // base preference for center lane
-        if (Math.abs(lane - sim.targetLatSmooth) < 0.6) {
-          cost -= 0.8; // hysteresis to prevent lane flapping
+        let cost = Math.abs(lane) * 0.40; // preference for road center
+        if (Math.abs(lane - sim.targetLatSmooth) < 0.4) {
+          cost -= 1.2; // hysteresis to prevent lane oscillation
+        }
+
+        // Road edge penalty (disfavor swerving close to dirt verges / market stalls)
+        if (Math.abs(lane) > currentMeta.lateralBounds[1] - 0.4) {
+          cost += 250.0;
         }
 
         for (const e of allEntities) {
           if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
           if (e.z > -4.5 && e.z < lookaheadHorizon) {
-            const latDist = Math.abs(e.x - lane);
+            // Predict future position if entity has unpredictable lateral velocity
+            const predLookaheadTime = Math.min(2.5, Math.max(0.2, (e.z - 2.0) / Math.max(1.0, sim.speed)));
+            const predEx = e.x + (e.vx * predLookaheadTime);
+            const latDist = Math.min(Math.abs(e.x - lane), Math.abs(predEx - lane));
+
             let eRadius = 1.0;
             if (e.type === 'truck') eRadius = 1.65;
             else if (e.type === 'rickshaw' || e.type === 'cow') eRadius = 1.35;
             else if (e.type === 'pedestrian' || e.type === 'bike') eRadius = 0.9;
 
             const egoHalfWidth = 1.0;
-            const requiredClearance = eRadius + egoHalfWidth + 0.7; // ~2.6m to 3.3m buffer
+            const requiredClearance = eRadius + egoHalfWidth + 0.65;
+
+            // Opposing traffic constraint (e.g. oncoming truck in Scenario 5)
+            if (e.vz < -2.0 && Math.abs(e.x - lane) < 2.5 && e.z < 80.0) {
+              cost += 80000.0; // NEVER swerve head-on into oncoming vehicle!
+            }
 
             if (latDist < requiredClearance) {
-              const proximityWeight = Math.max(1.0, (lookaheadHorizon - Math.max(0, e.z)) / 6.0);
+              const proximityWeight = Math.max(1.0, (lookaheadHorizon - Math.max(0, e.z)) / 5.0);
               const overlap = requiredClearance - latDist;
-              cost += 15000.0 * proximityWeight * (overlap + 1.2);
+              cost += 20000.0 * proximityWeight * (overlap + 1.5);
             } else if (latDist < requiredClearance + 1.2) {
-              cost += 80.0 / Math.max(0.1, latDist - requiredClearance);
+              cost += 120.0 / Math.max(0.1, latDist - requiredClearance);
             }
           }
         }
@@ -3099,7 +3255,17 @@
         }
       }
 
-      if (Math.abs(bestLane) > 0.5 || minLaneCost > 10.0) {
+      // If all candidate lanes are blocked (e.g. narrow bazaar or cow incursion with oncoming car),
+      // command emergency Chauffeur AEB stop to prevent collision!
+      if (minLaneCost > 12000.0 && closestThreat && closestThreat.z < 45.0) {
+        evasionActive = false;
+        targetLat = sim.lateralY; // hold current lane safely
+        isStoppingToZero = true;
+        const distToStop = Math.max(0.1, closestThreat.z - 3.2);
+        const safeKinematicV = Math.sqrt(2.0 * 3.2 * distToStop);
+        safeSpeedCap = Math.min(safeSpeedCap, safeKinematicV);
+        stopProfileName = "PREDICTIVE CHAUFFEUR AEB STOP";
+      } else if (Math.abs(bestLane) > 0.3 || minLaneCost > 10.0) {
         evasionActive = true;
         targetLat = bestLane;
       } else {
@@ -3332,7 +3498,7 @@
         sim.heading += (sim.speed / wheelbase) * Math.tan(sim.steerAngle) * dt;
         sim.heading *= 0.985;
         sim.lateralY += sim.speed * Math.sin(sim.heading) * dt;
-        sim.lateralY = Math.max(-4.8, Math.min(4.8, sim.lateralY));
+        sim.lateralY = Math.max(currentMeta.lateralBounds[0], Math.min(currentMeta.lateralBounds[1], sim.lateralY));
       }
 
       // Dynamic AI Trajectory Tracking & Planning Ultra-High Accuracy (99.5% - 99.9%)
@@ -3623,10 +3789,15 @@
         const latDistToEgo = Math.abs(t.x - sim.lateralY);
         const isConflict = (latDistToEgo < 2.3 && t.z < 75.0);
 
-        if (pipeObj) pipeObj.textContent = `${t.type.toUpperCase()} #${t.id} (${t.z.toFixed(0)}m)`;
-        if (pipeVel) pipeVel.textContent = `Δv -${closureRate.toFixed(1)} m/s (${(t.vz * 3.6).toFixed(0)}km/h)`;
+        const unpTag = t.isPathDiverging ? '⚠ ERRATIC ' : '';
+        if (pipeObj) pipeObj.textContent = `${unpTag}${t.type.toUpperCase()} #${t.id} (${t.z.toFixed(0)}m)`;
+        const latInfo = Math.abs(t.vx) > 0.3 ? ` | LAT ${t.vx > 0 ? '+' : ''}${t.vx.toFixed(1)}m/s [DRIFT]` : '';
+        if (pipeVel) pipeVel.textContent = `Δv -${closureRate.toFixed(1)} m/s (${(t.vz * 3.6).toFixed(0)}km/h${latInfo})`;
         if (pipeRisk) {
-          if (isConflict && !sim.swerving) {
+          if (t.isPathDiverging && t.z < 45.0) {
+            pipeRisk.className = "font-bold text-red-400 text-[11px] animate-pulse";
+            pipeRisk.textContent = `98% [SUDDEN INCURSION TTC ${ttc}]`;
+          } else if (isConflict && !sim.swerving) {
             pipeRisk.className = "font-bold text-red-400 text-[11px] animate-pulse";
             pipeRisk.textContent = `94% [CRITICAL TTC ${ttc}]`;
           } else if (sim.swerving) {
@@ -3638,8 +3809,14 @@
           }
         }
         if (pipeTraj) {
-          const latDir = (sim.targetLatSmooth > 0.4) ? 'SWERVE RIGHT (+3.4m)' : ((sim.targetLatSmooth < -0.4) ? 'SWERVE LEFT (-3.4m)' : 'LANE KEEP');
-          pipeTraj.textContent = latDir;
+          if (sim.speed < 1.0 && t.z < 15.0) {
+            pipeTraj.textContent = 'CHAUFFEUR AEB STANDSTILL (0 JERK)';
+          } else if (sim.stopProfile && sim.stopProfile.includes("AEB")) {
+            pipeTraj.textContent = 'PREDICTIVE CHAUFFEUR AEB STOP';
+          } else {
+            const latDir = (sim.targetLatSmooth > 0.3) ? `SWERVE RIGHT (+${sim.targetLatSmooth.toFixed(1)}m)` : ((sim.targetLatSmooth < -0.3) ? `SWERVE LEFT (${sim.targetLatSmooth.toFixed(1)}m)` : 'LANE KEEP');
+            pipeTraj.textContent = latDir;
+          }
         }
       } else if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0) {
         if (pipeObj) pipeObj.textContent = `SPEED BREAKER (${Math.max(0, sim.bumpDist).toFixed(0)}m)`;
@@ -3930,44 +4107,73 @@
     // =========================================================================
     // 5-SCENARIO SWITCHER & BENCHMARK SUITE CONTROLLER
     // =========================================================================
+    // =========================================================================
+    // 5 EXACT SIH INDIAN ROAD BENCHMARK SCENARIOS & ROAD SPECIFICATIONS
+    // =========================================================================
     const scenarioMetadata = {
       'scenario_1': {
-        name: 'Unmarked Village Road (Gramin Sadak)',
-        subtitle: 'Single-Lane Rural • Mud Huts • Cattle • Potholes',
+        name: 'Rural Arterial Without Lane Markings (Gramin Sadak)',
+        subtitle: 'Single-lane rural corridor with zero lane paint, undulating unpaved verges, roaming cattle on the shoulder, oncoming motorcycles drifting across center, and surface potholes requiring free-space evasion.',
+        difficulty: 'HIGH',
+        roadWidth: 5.5,
         speed: 12.5, // 45 km/h
-        speedLabel: '45 KM/H'
+        speedLabel: '45 KM/H',
+        hazards: ['Missing Centerlines', 'Natural Dirt Shoulder', 'Roaming Cattle', 'Severe Potholes', 'Oncoming Two-Wheeler'],
+        lateralBounds: [-2.35, 2.35],
+        candidateLanes: [-1.4, 0.0, 1.4]
       },
       'scenario_2': {
-        name: 'Urban Metropolis (Dubai / LA)',
-        subtitle: 'Skyscrapers • Digital Billboards • Neon Skyline',
-        speed: 16.67, // 60 km/h
-        speedLabel: '60 KM/H'
+        name: 'Chaotic Multi-Directional Chowk (Busy Unsignalized Urban Intersection)',
+        subtitle: 'High-density urban junction devoid of traffic lights. Road users enter concurrently from 4 approaches with informal merging, turning auto-rickshaws, and filtering motorcycles cutting diagonally across ego path.',
+        difficulty: 'EXTREME',
+        roadWidth: 9.0,
+        speed: 8.33, // 30 km/h (cautious intersection crawl)
+        speedLabel: '30 KM/H',
+        hazards: ['Informal Right-of-Way', 'Auto-Rickshaw Cut-In', 'Diagonal Two-Wheelers', 'Crossing Pedestrians', 'Occluded Busses'],
+        lateralBounds: [-3.9, 3.9],
+        candidateLanes: [-2.6, 0.0, 2.6]
       },
       'scenario_3': {
-        name: 'NH-48 National Highway Expressway',
-        subtitle: '3-Lane Arterial • Sher-E-Punjab Dhaba • 120 km/h Cruise',
+        name: 'High-Velocity Mixed Traffic Corridor (National Highway NH-48 Merge)',
+        subtitle: 'Ego merges from entry ramp into high-speed arterial with slow-moving overloaded commercial truck in the slow lane, agile lane-splitting motorcycles, and fast traffic in the passing lane.',
+        difficulty: 'MEDIUM',
+        roadWidth: 12.0,
         speed: 33.33, // 120 km/h
-        speedLabel: '120 KM/H'
+        speedLabel: '120 KM/H',
+        hazards: ['Overloaded Slow Truck (6 m/s)', 'High Speed Differentials', 'Lane-Splitting Motorcycles', 'Ramp Taper Incursion'],
+        lateralBounds: [-5.2, 5.2],
+        candidateLanes: [-3.4, 0.0, 3.4]
       },
       'scenario_4': {
-        name: 'Dense Indian Bazaar / Market Street',
-        subtitle: 'Sub-4m Market • Striped Awnings • Pushcarts & Pedestrians',
-        speed: 6.94, // 25 km/h
-        speedLabel: '25 KM/H'
+        name: 'Sub-4m Street with Encroachments & Pedestrians (Dense Bazaar)',
+        subtitle: 'Extremely constricted market corridor with vegetable hand pushcarts partially blocking the drivable space, parked motorcycles protruding into traffic, and pedestrians stepping out from behind stalls.',
+        difficulty: 'EXTREME',
+        roadWidth: 4.2,
+        speed: 5.56, // 20 km/h (market creep)
+        speedLabel: '20 KM/H',
+        hazards: ['Sub-4m Width', 'Hand Pushcarts', 'Sudden Darting Pedestrians', 'Parked Two-Wheelers Protruding', 'Frequent Occlusions'],
+        lateralBounds: [-1.6, 1.6],
+        candidateLanes: [-0.85, 0.0, 0.85]
       },
       'scenario_5': {
-        name: 'Suburban Arterial (Cattle Incursion)',
-        subtitle: 'Modern Villas • Bougainvillea Hedges • Sudden Crossing',
-        speed: 13.88, // 50 km/h
-        speedLabel: '50 KM/H'
+        name: 'High-Speed Sub-Urban Arterial Incursion (Sudden Cattle Crossing)',
+        subtitle: 'Vehicle cruising normally at 40 km/h (11 m/s) when a stray cow concealed behind roadside visual occlusion suddenly steps directly into the vehicle’s corridor at 22m distance. Oncoming car constraints opposite lane.',
+        difficulty: 'HIGH',
+        roadWidth: 8.0,
+        speed: 11.11, // 40 km/h
+        speedLabel: '40 KM/H',
+        hazards: ['Concealed Stray Cattle', 'Zero Reaction Margin', 'High Initial Speed (40 km/h)', 'Oncoming Car Constraint'],
+        lateralBounds: [-3.4, 3.4],
+        candidateLanes: [-2.2, 0.0, 2.2]
       }
     };
 
+    let briefingTimer = null;
     function switchScenario(scenarioId) {
       sim.scenarioId = scenarioId;
       const meta = scenarioMetadata[scenarioId] || scenarioMetadata['scenario_3'];
 
-      // Update Scenario Buttons UI
+      // 1. Update Scenario Selection Buttons in Header
       for (let i = 1; i <= 5; i++) {
         const btn = document.getElementById(`scen-btn-${i}`);
         if (btn) {
@@ -3979,17 +4185,91 @@
         }
       }
 
-      // Rebuild 3D Scenery & Traffic for this Scenario
+      // 2. Dynamically Scale Road Width & Geometric Boundaries
+      const targetW = meta.roadWidth;
+      if (typeof road !== 'undefined' && road) {
+        road.scale.x = targetW / 14.0;
+      }
+      if (typeof leftShoulder !== 'undefined' && leftShoulder) {
+        leftShoulder.position.x = -targetW / 2 - 0.9;
+        rightShoulder.position.x = targetW / 2 + 0.9;
+      }
+      if (typeof leftCurb !== 'undefined' && leftCurb) {
+        leftCurb.position.x = -targetW / 2 - 2.05;
+        rightCurb.position.x = targetW / 2 + 2.05;
+      }
+      if (typeof leftTerrain !== 'undefined' && leftTerrain) {
+        leftTerrain.position.x = -targetW / 2 - 90.0;
+        rightTerrain.position.x = targetW / 2 + 90.0;
+      }
+
+      // 3. Lane Markings, Road Paint & Crash Barrier Visibility
+      if (scenarioId === 'scenario_1' || scenarioId === 'scenario_4') {
+        // Gramin Sadak & Dense Bazaar: Zero lane paint!
+        if (typeof dashGroup !== 'undefined') dashGroup.visible = false;
+        if (typeof leftEdgeLine !== 'undefined') leftEdgeLine.visible = false;
+        if (typeof rightEdgeLine !== 'undefined') rightEdgeLine.visible = false;
+        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = false;
+        if (typeof leftCurb !== 'undefined') { leftCurb.visible = false; rightCurb.visible = false; }
+      } else {
+        if (typeof dashGroup !== 'undefined') dashGroup.visible = true;
+        if (typeof leftEdgeLine !== 'undefined') {
+          leftEdgeLine.visible = true;
+          leftEdgeLine.position.x = -targetW / 2 + 0.5;
+        }
+        if (typeof rightEdgeLine !== 'undefined') {
+          rightEdgeLine.visible = true;
+          rightEdgeLine.position.x = targetW / 2 - 0.5;
+        }
+        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = (scenarioId === 'scenario_3' || scenarioId === 'scenario_5');
+        if (typeof leftCurb !== 'undefined') { leftCurb.visible = true; rightCurb.visible = true; }
+      }
+
+      // 4. Update HUD Scenario Briefing Card
+      const card = document.getElementById('scenario-briefing-card');
+      const cTitle = document.getElementById('scen-card-title');
+      const cDiff = document.getElementById('scen-card-diff');
+      const cSub = document.getElementById('scen-card-subtitle');
+      const cWidth = document.getElementById('scen-card-width');
+      const cHaz = document.getElementById('scen-card-hazards');
+
+      if (card) {
+        if (cTitle) cTitle.textContent = meta.name;
+        if (cDiff) {
+          cDiff.textContent = `DIFFICULTY: ${meta.difficulty}`;
+          cDiff.className = (meta.difficulty === 'EXTREME')
+            ? "text-[10px] px-2 py-0.5 rounded-full bg-red-950 text-red-300 font-bold border border-red-500 animate-pulse"
+            : ((meta.difficulty === 'HIGH')
+              ? "text-[10px] px-2 py-0.5 rounded-full bg-amber-950 text-amber-300 font-bold border border-amber-500"
+              : "text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 text-cyan-300 font-bold border border-cyan-500");
+        }
+        if (cSub) cSub.textContent = meta.subtitle;
+        if (cWidth) cWidth.textContent = `${meta.roadWidth} meters`;
+        if (cHaz) cHaz.textContent = meta.hazards.join(' • ');
+
+        card.classList.remove('hidden');
+        if (briefingTimer) clearTimeout(briefingTimer);
+        briefingTimer = setTimeout(() => {
+          if (card) card.classList.add('hidden');
+        }, 7500);
+      }
+
+      // 5. Rebuild 3D Scenery & Traffic for this Scenario
       buildScenarioScenery(scenarioId);
       populateTraffic(sim.density, scenarioId);
 
-      // Set Target Speed for this Scenario
+      // 6. Set Target Speed for this Scenario
       sim.targetSpeed = meta.speed;
       sim.speed = meta.speed;
-      document.getElementById('txt-target-speed').textContent = meta.speedLabel;
+      sim.lateralY = 0.0;
+      sim.targetLatSmooth = 0.0;
+      sim.heading = 0.0;
+      sim.steerAngle = 0.0;
+      const spdElem = document.getElementById('txt-target-speed');
+      if (spdElem) spdElem.textContent = meta.speedLabel;
 
       // Update HUD CAN Log
-      logCAN(`0x100: SCENARIO_SWITCH — ${meta.name.toUpperCase()}`);
+      logCAN(`0x100: SCENARIO_SWITCH — ${meta.name.toUpperCase()} (ROAD: ${meta.roadWidth}m, SPEED: ${meta.speedLabel})`);
     }
 
     // --- 12. MAIN ANIMATION LOOP (60 FPS RENDER, 25 HZ PHYSICS) ---
