@@ -117,39 +117,39 @@
           <div id="bar-steer" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-75" style="width: 50%;"></div>
           <div class="absolute inset-y-0 left-1/2 w-0.5 bg-slate-400"></div>
         </div>
-        <span class="text-[9px] text-slate-400">EFA:</span>
-        <span id="txt-efa" class="text-emerald-400 font-bold text-xs">0.02 m</span>
       </div>
 
-      <!-- 2. Active Stop / Glide Profile Pill -->
-      <div class="flex items-center space-x-1.5 bg-slate-950/80 px-2.5 py-0.5 rounded-xl border border-slate-800 text-xs font-mono">
-        <span class="text-[9px] text-slate-400 uppercase">PROFILE:</span>
-        <span id="txt-stop-profile" class="text-cyan-300 font-bold text-xs">EXPRESSWAY CRUISE</span>
+      <!-- 2. Traffic Density Controls: Increase / Decrease Traffic Quantity -->
+      <div class="flex items-center space-x-1 bg-slate-950/80 px-2 py-0.5 rounded-xl border border-slate-800 text-xs font-mono">
+        <span class="text-[9px] text-amber-400 font-bold uppercase">TRAFFIC:</span>
+        <button id="btn-traffic-minus" onclick="adjustTraffic(-1)" class="w-5 h-5 rounded bg-slate-800 hover:bg-amber-600 text-white font-bold flex items-center justify-center text-xs active:scale-90 transition" title="Reduce Traffic Density (-1 Obstacle)">−</button>
+        <span id="txt-traffic-count" class="font-bold text-amber-300 text-xs px-1">3 Active</span>
+        <button id="btn-traffic-plus" onclick="adjustTraffic(1)" class="w-5 h-5 rounded bg-slate-800 hover:bg-amber-600 text-white font-bold flex items-center justify-center text-xs active:scale-90 transition" title="Increase Traffic Density (+1 Obstacle)">+</button>
       </div>
 
-      <!-- 3. Fail-Safe Quick Triggers -->
+      <!-- 3. Indian Road Speed Preset Buttons -->
+      <div class="hidden sm:flex items-center space-x-1 text-[10px] font-mono bg-slate-950/80 p-0.5 rounded-xl border border-slate-800">
+        <span class="text-[9px] text-slate-400 px-1 font-bold">PRESET:</span>
+        <button onclick="setSpeedPreset(9.72, '35 KM/H')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300" title="35 km/h Town">35</button>
+        <button onclick="setSpeedPreset(13.89, '50 KM/H')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300" title="50 km/h City">50</button>
+        <button onclick="setSpeedPreset(22.22, '80 KM/H')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300" title="80 km/h Highway">80</button>
+        <button onclick="setSpeedPreset(33.33, '120 KM/H')" class="px-1.5 py-0.5 rounded bg-cyan-600 text-white font-bold" title="120 km/h Expressway">120</button>
+        <button onclick="setSpeedPreset(38.89, '140 KM/H')" class="px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300" title="140 km/h Fast">140</button>
+      </div>
+
+      <!-- 4. Fail-Safe Quick Triggers -->
       <div class="flex items-center space-x-1 text-xs font-mono">
         <button id="btn-trigger-road-end" class="px-2 py-0.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white font-bold transition shadow text-[11px]" title="Test Road End Safe Stop">🛑 Road End</button>
         <button id="btn-trigger-cam-fail" class="px-2 py-0.5 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white font-bold transition shadow text-[11px]" title="Simulate Camera Fail & IoT Handover">
           <span id="txt-cam-fail-icon">📷</span>
           <span id="txt-cam-fail-label">Cam Fail</span>
         </button>
-        <button id="btn-recover-all" class="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold transition text-[11px]" title="Resume Normal Autonomous Cruise">✅ Resume</button>
-      </div>
-
-      <div class="h-4 w-[1px] bg-slate-700 hidden sm:block"></div>
-
-      <!-- 4. Quick Entity Spawners -->
-      <div class="flex items-center space-x-1 text-[11px] font-mono">
-        <button id="btn-add-cow" class="px-1.5 py-0.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Add Cow">+ 🐄 Cow</button>
-        <button id="btn-add-rickshaw" class="px-1.5 py-0.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Add Auto Rickshaw">+ 🛺 Auto</button>
-        <button id="btn-add-truck" class="px-1.5 py-0.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Add Highway Truck">+ 🚛 Truck</button>
-        <button id="btn-add-bump" class="px-1.5 py-0.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-amber-300 border border-slate-700 transition" title="Add IRC Speed Breaker">+ 🚧 Bump</button>
+        <button id="btn-recover-all" class="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold transition text-[11px]" title="Resume Normal Cruise">✅ Resume</button>
       </div>
 
       <!-- 5. Config Drawer Toggle Button -->
-      <button onclick="toggleConfigDrawer()" class="px-2 py-0.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 text-[11px] font-mono font-bold transition active:scale-95" title="Toggle Speed, Weather & Sensor Diagnostics Drawer">
-        ⚙️ Settings
+      <button onclick="toggleConfigDrawer()" class="px-2 py-0.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 text-[11px] font-mono font-bold transition active:scale-95" title="Toggle Simulation Settings & Scenarios">
+        ⚙️ Config
       </button>
 
     </footer>
@@ -420,6 +420,38 @@
           gain.connect(this.ctx.destination);
           osc.start();
           osc.stop(this.ctx.currentTime + 0.5);
+        } catch(e) {}
+      }
+      playAutopilotEngage() {
+        if (!this.ctx || !this.enabled) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(587.33, this.ctx.currentTime); // D5
+          osc.frequency.setValueAtTime(880.00, this.ctx.currentTime + 0.12); // A5
+          gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.32);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.34);
+        } catch(e) {}
+      }
+      playAutopilotDisengage() {
+        if (!this.ctx || !this.enabled) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(880.00, this.ctx.currentTime); // A5
+          osc.frequency.setValueAtTime(587.33, this.ctx.currentTime + 0.12); // D5
+          gain.gain.setValueAtTime(0.18, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.32);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.34);
         } catch(e) {}
       }
       toggle() {
@@ -1563,6 +1595,36 @@
     cabin.castShadow = true;
     egoVehicle.add(cabin);
 
+    // Tesla Cockpit Interior (Dashboard, Center Console & Steering Yoke)
+    const dashboardMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.5 });
+    const dashboard = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.35, 0.6), dashboardMat);
+    dashboard.position.set(0, 0.95, 0.4);
+    egoVehicle.add(dashboard);
+
+    const centerScreen = new THREE.Mesh(
+      new THREE.BoxGeometry(0.5, 0.32, 0.04),
+      new THREE.MeshBasicMaterial({ color: 0x0284c7 })
+    );
+    centerScreen.position.set(0, 1.05, 0.42);
+    centerScreen.rotation.x = -0.2;
+    egoVehicle.add(centerScreen);
+
+    const steeringYoke = new THREE.Group();
+    const yokeRing = new THREE.Mesh(
+      new THREE.TorusGeometry(0.22, 0.035, 12, 24),
+      new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.3, metalness: 0.6 })
+    );
+    steeringYoke.add(yokeRing);
+    const yokeHub = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.06, 0.05, 16),
+      new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 })
+    );
+    yokeHub.rotation.x = Math.PI / 2;
+    steeringYoke.add(yokeHub);
+    steeringYoke.position.set(-0.35, 1.05, 0.18);
+    steeringYoke.rotation.x = -0.3;
+    egoVehicle.add(steeringYoke);
+
     // Roof LiDAR Puck
     const lidarPuck = new THREE.Mesh(
       new THREE.CylinderGeometry(0.2, 0.2, 0.2, 16),
@@ -2203,6 +2265,11 @@
       // 3D Holographic Ground Clearance Threat Footprint
       let threatRing = null;
       let innerDisc = null;
+      let hudSprite = null;
+      let spriteCanvas = null;
+      let spriteTex = null;
+      const spriteHeight = (type === 'truck') ? 3.8 : ((type === 'cow' || type === 'rickshaw') ? 2.8 : (type === 'speed_breaker' ? 1.5 : 2.4));
+
       if (type !== 'road_end' && type !== 'speed_breaker') {
         const ringRadius = (type === 'truck') ? 2.2 : ((type === 'cow' || type === 'rickshaw') ? 1.8 : 1.4);
         const ringGeo = new THREE.RingGeometry(ringRadius * 0.75, ringRadius, 32);
@@ -2230,6 +2297,24 @@
         innerDisc.rotation.x = -Math.PI / 2;
         innerDisc.position.set(-lateralX, 0.035, distAhead);
         scene.add(innerDisc);
+
+        // 3D Floating Perception & Risk Billboard Sprite (Identifies Object -> Tracks Velocity -> Calculates Risk)
+        spriteCanvas = document.createElement('canvas');
+        spriteCanvas.width = 256;
+        spriteCanvas.height = 128;
+        spriteTex = new THREE.CanvasTexture(spriteCanvas);
+        spriteTex.minFilter = THREE.LinearFilter;
+
+        const spriteMat = new THREE.SpriteMaterial({
+          map: spriteTex,
+          transparent: true,
+          opacity: 0.95,
+          depthTest: false
+        });
+        hudSprite = new THREE.Sprite(spriteMat);
+        hudSprite.scale.set(3.4, 1.7, 1.0);
+        hudSprite.position.set(-lateralX, spriteHeight, distAhead);
+        scene.add(hudSprite);
       }
 
       const entity = {
@@ -2239,6 +2324,10 @@
         bbox: bbox,
         threatRing: threatRing,
         innerDisc: innerDisc,
+        hudSprite: hudSprite,
+        spriteCanvas: spriteCanvas,
+        spriteTex: spriteTex,
+        spriteHeight: spriteHeight,
         x: lateralX,
         z: distAhead,
         vx: vx,
@@ -2260,6 +2349,7 @@
         scene.remove(e.bbox);
         if (e.threatRing) scene.remove(e.threatRing);
         if (e.innerDisc) scene.remove(e.innerDisc);
+        if (e.hudSprite) scene.remove(e.hudSprite);
       });
       allEntities.length = 0;
 
@@ -2321,6 +2411,7 @@
     // --- 9. PHYSICAL AUTONOMOUS SIMULATION STATE & MULTI-OBJECT PLANNING ---
     const sim = {
       scenarioId: 'scenario_3',
+      driveMode: 'autopilot',
       speed: 33.33, // 120 km/h Expressway default in m/s
       targetSpeed: 33.33,
       lateralY: 0.0,
@@ -2605,6 +2696,95 @@
     document.getElementById('w-day').onclick = () => setWeather('day');
 
     // --- 10. MULTI-AGENT STEP SIMULATION PHYSICS & CONTROLLERS (25 Hz) ---
+        // Draw Real-Time Perception, Velocity Tracking & Risk Metric on 3D Floating Sprite
+    function updatePerceptionSprite(e) {
+      if (!e.hudSprite || !e.spriteCanvas) return;
+      const ctx = e.spriteCanvas.getContext('2d');
+      const w = e.spriteCanvas.width;
+      const h = e.spriteCanvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      const closureRate = Math.max(0, sim.speed - e.vz);
+      const distance = Math.max(0, e.z);
+      const ttc = (closureRate > 0.5 && distance > 0.1) ? (distance / closureRate) : 99.9;
+      const latDistToEgo = Math.abs(e.x - sim.lateralY);
+      const targetLatGoal = sim.targetLatSmooth || 0.0;
+      const latDistToTarget = Math.abs(e.x - targetLatGoal);
+
+      let riskPct = 0;
+      let riskStatus = "SAFE";
+      let statusColor = "#10b981"; // Emerald
+      let borderColor = "rgba(16, 185, 129, 0.85)";
+
+      if (distance < 90.0 && latDistToEgo < 2.3) {
+        if (ttc < 3.2 || distance < 25.0) {
+          riskPct = Math.min(99, Math.round(98 - distance * 0.5));
+          riskStatus = "CRITICAL";
+          statusColor = "#ef4444";
+          borderColor = "rgba(239, 68, 68, 0.95)";
+        } else {
+          riskPct = Math.min(85, Math.round(82 - ttc * 8));
+          riskStatus = "MODERATE";
+          statusColor = "#f59e0b";
+          borderColor = "rgba(245, 158, 11, 0.9)";
+        }
+      } else if (sim.swerving || (latDistToTarget >= 2.6 && distance < 75.0)) {
+        riskPct = 5;
+        riskStatus = "EVADING";
+        statusColor = "#38bdf8";
+        borderColor = "rgba(56, 189, 248, 0.85)";
+      }
+
+      ctx.save();
+      ctx.fillStyle = 'rgba(6, 11, 25, 0.90)';
+      ctx.strokeStyle = borderColor;
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      // Draw rounded rectangle
+      const r = 12;
+      ctx.moveTo(4 + r, 4);
+      ctx.lineTo(w - 4 - r, 4);
+      ctx.quadraticCurveTo(w - 4, 4, w - 4, 4 + r);
+      ctx.lineTo(w - 4, h - 4 - r);
+      ctx.quadraticCurveTo(w - 4, h - 4, w - 4 - r, h - 4);
+      ctx.lineTo(4 + r, h - 4);
+      ctx.quadraticCurveTo(4, h - 4, 4, h - 4 - r);
+      ctx.lineTo(4, 4 + r);
+      ctx.quadraticCurveTo(4, 4, 4 + r, 4);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // 1. IDENTIFY
+      ctx.fillStyle = statusColor;
+      ctx.font = 'bold 20px monospace';
+      ctx.fillText(`[ ${e.type.toUpperCase()} #${e.id} ]  ${distance.toFixed(0)}m`, 14, 28);
+
+      // 2. TRACK VELOCITY
+      ctx.fillStyle = '#94a3b8';
+      ctx.font = '15px monospace';
+      const absSpeedKmh = (e.vz * 3.6).toFixed(0);
+      ctx.fillText(`VEL: ${absSpeedKmh} km/h (CLOSURE: ${closureRate.toFixed(1)} m/s)`, 14, 54);
+
+      // 3. CALCULATE RISK
+      ctx.fillStyle = statusColor;
+      ctx.font = 'bold 16px monospace';
+      const ttcStr = (ttc < 20) ? `${ttc.toFixed(1)}s` : '>10s';
+      ctx.fillText(`RISK: ${riskPct}% [${riskStatus}] • TTC: ${ttcStr}`, 14, 82);
+
+      // 4. CHANGE TRAJECTORY
+      ctx.fillStyle = '#e2e8f0';
+      ctx.font = '14px monospace';
+      if (sim.swerving || latDistToTarget >= 2.6) {
+        ctx.fillText(`TRAJ: SWERVING TO OPEN LANE ➔`, 14, 108);
+      } else {
+        ctx.fillText(`TRAJ: PATH CLEAR ➔ CRUISE`, 14, 108);
+      }
+
+      ctx.restore();
+      e.spriteTex.needsUpdate = true;
+    }
+
     function stepPhysics(dt) {
       if (sim.isPaused) return;
 
@@ -2715,6 +2895,10 @@
         if (e.threatRing && e.type !== 'road_end' && e.type !== 'speed_breaker') {
           e.threatRing.position.set(-e.x, 0.04, e.z);
           if (e.innerDisc) e.innerDisc.position.set(-e.x, 0.035, e.z);
+          if (e.hudSprite) {
+            e.hudSprite.position.set(-e.x, e.spriteHeight, e.z);
+            updatePerceptionSprite(e);
+          }
 
           if (e.z > 0.0 && e.z < 110.0) {
             e.threatRing.visible = true;
@@ -2767,7 +2951,43 @@
         sim.roadEndActive = true;
       }
 
-      // 2. Multi-Candidate 3-Lane Frenet Grid Evaluation (Zero-Collision Planning)
+      // 2. Drive Mode Evaluation: WASD Manual Drive vs Tesla Autopilot
+      if (sim.driveMode === 'manual') {
+        // --- MANUAL WASD DRIVING MODE ---
+        const isW = keysDown['KeyW'] || keysDown['ArrowUp'];
+        const isS = keysDown['KeyS'] || keysDown['ArrowDown'];
+        const isA = keysDown['KeyA'] || keysDown['ArrowLeft'];
+        const isD = keysDown['KeyD'] || keysDown['ArrowRight'];
+
+        if (isW) {
+          sim.currentAccel = Math.min(3.5, sim.currentAccel + 6.0 * dt);
+        } else if (isS) {
+          sim.currentAccel = Math.max(-6.5, sim.currentAccel - 9.0 * dt);
+        } else {
+          sim.currentAccel = -0.75; // Natural aerodynamic/engine drag
+        }
+
+        sim.speed = Math.max(0.0, Math.min(42.0, sim.speed + sim.currentAccel * dt));
+
+        if (isA) {
+          sim.steerAngle = Math.max(-0.48, sim.steerAngle - 2.2 * dt);
+        } else if (isD) {
+          sim.steerAngle = Math.min(0.48, sim.steerAngle + 2.2 * dt);
+        } else {
+          sim.steerAngle *= Math.max(0.0, 1.0 - 7.0 * dt); // Centering spring
+        }
+
+        const wheelbase = 2.7;
+        sim.heading += (sim.speed / wheelbase) * Math.tan(sim.steerAngle) * dt;
+        sim.heading *= 0.985;
+        sim.lateralY += sim.speed * Math.sin(sim.heading) * dt;
+        sim.lateralY = Math.max(-5.2, Math.min(5.2, sim.lateralY));
+
+        targetLat = sim.lateralY;
+        stopProfileName = (sim.speed < 0.2) ? "MANUAL STANDSTILL" : (isS ? "MANUAL BRAKING" : "MANUAL THROTTLE");
+
+      } else {
+        // --- TESLA AUTOPILOT MODE (Full Multi-Candidate & Kinematic AEB Envelope) ---
       let targetLat = 0.0;
       let evasionActive = false;
       let safeSpeedCap = sim.targetSpeed;
@@ -3029,27 +3249,25 @@
         carBody.position.y = 0.65 + sim.pitchDive * 0.35;
       }
 
+      } // End of sim.driveMode === 'manual' else branch
+
       // 6. Responsive Lateral Controller (Stanley Steering & Kinematics)
-      // Rapid target lateral position filter for authoritative lane change
-      sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, 14.0 * dt);
+      if (sim.driveMode !== 'manual') {
+        sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, 14.0 * dt);
+        const kStanley = 1.35;
+        const eps = 0.4;
+        const crossTrack = sim.lateralY - sim.targetLatSmooth;
+        const steerDemand = -sim.heading - Math.atan((kStanley * crossTrack) / (sim.speed + eps));
+        const maxSteerForSpeed = (sim.speed > 28.0) ? 0.36 : (sim.speed > 16.0 ? 0.46 : 0.55);
+        const clampedSteer = Math.max(-maxSteerForSpeed, Math.min(maxSteerForSpeed, steerDemand));
+        sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, 20.0 * dt);
 
-      // Stanley steering calculation with strong authority
-      const kStanley = 1.35;
-      const eps = 0.4;
-      const crossTrack = sim.lateralY - sim.targetLatSmooth;
-      const steerDemand = -sim.heading - Math.atan((kStanley * crossTrack) / (sim.speed + eps));
-      const maxSteerForSpeed = (sim.speed > 28.0) ? 0.36 : (sim.speed > 16.0 ? 0.46 : 0.55);
-      const clampedSteer = Math.max(-maxSteerForSpeed, Math.min(maxSteerForSpeed, steerDemand));
-
-      // Fast EPS steering motor slew rate (20.0 * dt)
-      sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, 20.0 * dt);
-
-      // 2-DOF Bicycle Kinematics with natural yaw damping (0.985)
-      const wheelbase = 2.7;
-      sim.heading += (sim.speed / wheelbase) * Math.tan(sim.steerAngle) * dt;
-      sim.heading *= 0.985;
-      sim.lateralY += sim.speed * Math.sin(sim.heading) * dt;
-      sim.lateralY = Math.max(-4.8, Math.min(4.8, sim.lateralY));
+        const wheelbase = 2.7;
+        sim.heading += (sim.speed / wheelbase) * Math.tan(sim.steerAngle) * dt;
+        sim.heading *= 0.985;
+        sim.lateralY += sim.speed * Math.sin(sim.heading) * dt;
+        sim.lateralY = Math.max(-4.8, Math.min(4.8, sim.lateralY));
+      }
 
       // Dynamic AI Trajectory Tracking & Planning Ultra-High Accuracy (99.5% - 99.9%)
       const errorPenalty = Math.abs(crossTrack) * 0.4;
@@ -3068,6 +3286,11 @@
           w.group.rotation.y = -sim.steerAngle;
         }
       });
+
+      // Animate Tesla Steering Yoke inside Cockpit
+      if (typeof steeringYoke !== 'undefined' && steeringYoke) {
+        steeringYoke.rotation.z = -sim.steerAngle * 2.6;
+      }
 
       // Brake Taillights
       if (sim.swerving || sim.currentDecel > 0.8 || sim.speed < 4.0) {
@@ -3315,12 +3538,54 @@
         accSub.textContent = `${accVal}%`;
       }
 
-      // AI PREDICTIVE AVOIDANCE CORRIDOR TICKER (Zero Screen-Blocking Popups!)
-      const tickerBadge = document.getElementById('ai-ticker-badge');
-      const tickerDetail = document.getElementById('ai-ticker-detail');
-      const tickerDot = document.getElementById('ai-ticker-dot');
-      const tickerBox = document.getElementById('ai-predictive-ticker');
+      // 4-STAGE AUTOPILOT NEURAL PIPELINE (Identifies -> Tracks Velocity -> Calculates Risk -> Changes Trajectory)
+      const pipeObj = document.getElementById('pipe-obj');
+      const pipeVel = document.getElementById('pipe-vel');
+      const pipeRisk = document.getElementById('pipe-risk');
+      const pipeTraj = document.getElementById('pipe-traj');
       const threatLabel = document.getElementById('txt-closest-threat');
+
+      if (sim.closestThreat) {
+        const t = sim.closestThreat;
+        const closureRate = Math.max(0, sim.speed - t.vz);
+        const ttc = (closureRate > 0.5 && t.z > 0.1) ? (t.z / closureRate).toFixed(1) + 's' : '>10s';
+        const latDistToEgo = Math.abs(t.x - sim.lateralY);
+        const isConflict = (latDistToEgo < 2.3 && t.z < 75.0);
+
+        if (pipeObj) pipeObj.textContent = `${t.type.toUpperCase()} #${t.id} (${t.z.toFixed(0)}m)`;
+        if (pipeVel) pipeVel.textContent = `Δv -${closureRate.toFixed(1)} m/s (${(t.vz * 3.6).toFixed(0)}km/h)`;
+        if (pipeRisk) {
+          if (isConflict && !sim.swerving) {
+            pipeRisk.className = "font-bold text-red-400 text-[11px] animate-pulse";
+            pipeRisk.textContent = `94% [CRITICAL TTC ${ttc}]`;
+          } else if (sim.swerving) {
+            pipeRisk.className = "font-bold text-amber-400 text-[11px]";
+            pipeRisk.textContent = `42% [EVADING]`;
+          } else {
+            pipeRisk.className = "font-bold text-emerald-400 text-[11px]";
+            pipeRisk.textContent = `12% [CLEARED]`;
+          }
+        }
+        if (pipeTraj) {
+          const latDir = (sim.targetLatSmooth > 0.4) ? 'SWERVE RIGHT (+3.4m)' : ((sim.targetLatSmooth < -0.4) ? 'SWERVE LEFT (-3.4m)' : 'LANE KEEP');
+          pipeTraj.textContent = latDir;
+        }
+      } else if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0) {
+        if (pipeObj) pipeObj.textContent = `SPEED BREAKER (${Math.max(0, sim.bumpDist).toFixed(0)}m)`;
+        if (pipeVel) pipeVel.textContent = `APPROACH ${(sim.speed * 3.6).toFixed(0)} km/h`;
+        if (pipeRisk) { pipeRisk.className = "font-bold text-amber-400 text-[11px]"; pipeRisk.textContent = "BUMP RISK [CRAWL]"; }
+        if (pipeTraj) pipeTraj.textContent = "CHAUFFEUR GLIDE (7 km/h)";
+      } else if (sim.roadEndActive || (sim.activeRoadEnd && sim.roadEndDist < 250.0)) {
+        if (pipeObj) pipeObj.textContent = `BARRICADE (${Math.max(0, sim.roadEndDist).toFixed(0)}m)`;
+        if (pipeVel) pipeVel.textContent = `DECEL -${(sim.currentDecel/9.81).toFixed(2)} G`;
+        if (pipeRisk) { pipeRisk.className = "font-bold text-red-400 text-[11px]"; pipeRisk.textContent = "TERMINUS [STOP]"; }
+        if (pipeTraj) pipeTraj.textContent = "SAFE STOP (5m BEFORE)";
+      } else {
+        if (pipeObj) pipeObj.textContent = `CORRIDOR CLEAR`;
+        if (pipeVel) pipeVel.textContent = `CRUISE ${(sim.speed * 3.6).toFixed(0)} km/h`;
+        if (pipeRisk) { pipeRisk.className = "font-bold text-emerald-400 text-[11px]"; pipeRisk.textContent = "0% [SAFE]"; }
+        if (pipeTraj) pipeTraj.textContent = "LANE KEEP (0.0m)";
+      }
 
       if (sim.cameraFailed) {
         tickerDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
@@ -3376,6 +3641,94 @@
         tickerDetail.textContent = `Corridor Clear (120m Lookahead) • ${allEntities.length} Road Entities Monitored`;
         if (threatLabel) threatLabel.textContent = `Expressway Cruise: ${allEntities.length} road entities tracked`;
       }
+    }
+
+    // --- 10. WASD MANUAL CONTROLLER & TESLA AUTOPILOT TOGGLE ---
+    const keysDown = {};
+    window.addEventListener('keydown', (e) => {
+      keysDown[e.code] = true;
+      // Spacebar toggles Autopilot vs Manual Drive
+      if (e.code === 'Space') {
+        e.preventDefault();
+        toggleAutopilot();
+      }
+    });
+    window.addEventListener('keyup', (e) => {
+      keysDown[e.code] = false;
+    });
+
+    function toggleAutopilot() {
+      if (sim.driveMode === 'autopilot') {
+        sim.driveMode = 'manual';
+        audio.playAutopilotDisengage();
+        logCAN("0x201: MANUAL_TAKEOVER — Driver override active. Steering via WASD/Arrows.");
+      } else {
+        sim.driveMode = 'autopilot';
+        audio.playAutopilotEngage();
+        logCAN("0x200: AUTOPILOT_ENGAGED — Autonomous neural planner active (120 km/h).");
+      }
+      updateDriveModeUI();
+    }
+
+    function updateDriveModeUI() {
+      const isAuto = (sim.driveMode === 'autopilot');
+      const btn = document.getElementById('btn-mode-toggle');
+      const icon = document.getElementById('txt-autopilot-icon');
+      const label = document.getElementById('txt-autopilot-label');
+      const banner = document.getElementById('manual-drive-banner');
+
+      if (isAuto) {
+        if (btn) btn.className = "px-2.5 py-1 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 text-white font-bold text-xs shadow-lg shadow-cyan-500/30 flex items-center space-x-1 active:scale-95 transition";
+        if (icon) icon.textContent = "⚡";
+        if (label) label.textContent = "AUTOPILOT";
+        if (banner) banner.classList.add('hidden');
+      } else {
+        if (btn) btn.className = "px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-600 to-orange-500 text-white font-bold text-xs shadow-lg shadow-amber-500/30 flex items-center space-x-1 active:scale-95 transition";
+        if (icon) icon.textContent = "🕹️";
+        if (label) label.textContent = "MANUAL";
+        if (banner) banner.classList.remove('hidden');
+      }
+    }
+
+    function adjustSpeedPreset(deltaKmh) {
+      const currentKmh = Math.round(sim.targetSpeed * 3.6);
+      const newKmh = Math.max(15, Math.min(150, currentKmh + deltaKmh));
+      setSpeedPreset(newKmh / 3.6, `${newKmh} KM/H`);
+    }
+
+    function adjustTraffic(delta) {
+      if (delta > 0) {
+        const types = ['rickshaw', 'cow', 'truck', 'bike', 'speed_breaker'];
+        const chosenType = types[Math.floor(Math.random() * types.length)];
+        const lateralX = (chosenType === 'speed_breaker') ? 0.0 : (Math.random() - 0.5) * 6.5;
+        const forwardZ = 60.0 + Math.random() * 60.0;
+        const fSpeed = (chosenType === 'truck') ? 5.5 : (chosenType === 'rickshaw' ? 4.0 : (chosenType === 'bike' ? 7.0 : 0.0));
+        addEntity(chosenType, lateralX, forwardZ, fSpeed, (Math.random() - 0.5) * 0.2);
+        logCAN(`0x210: TRAFFIC_INJECT — Added ${chosenType.toUpperCase()} ahead (+${forwardZ.toFixed(0)}m)`);
+      } else {
+        let furthestIdx = -1;
+        let maxZ = -Infinity;
+        for (let i = 0; i < allEntities.length; i++) {
+          if (allEntities[i].type !== 'road_end' && allEntities[i].z > maxZ) {
+            maxZ = allEntities[i].z;
+            furthestIdx = i;
+          }
+        }
+        if (furthestIdx !== -1 && allEntities.length > 1) {
+          const e = allEntities[furthestIdx];
+          entityGroup.remove(e.mesh);
+          scene.remove(e.bbox);
+          if (e.threatRing) scene.remove(e.threatRing);
+          if (e.innerDisc) scene.remove(e.innerDisc);
+          if (e.hudSprite) scene.remove(e.hudSprite);
+          allEntities.splice(furthestIdx, 1);
+          logCAN("0x211: TRAFFIC_REDUCE — Removed distant obstacle");
+        }
+      }
+      const countElem = document.getElementById('txt-traffic-count');
+      if (countElem) countElem.textContent = `${allEntities.length} Active`;
+      const objCountElem = document.getElementById('txt-obj-count');
+      if (objCountElem) objCountElem.textContent = `${allEntities.length} Active`;
     }
 
     // --- 11. CAMERA CONTROLLERS ---
