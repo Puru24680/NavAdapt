@@ -188,6 +188,29 @@
           </button>
         </div>
 
+        <!-- 5 SIH Benchmark Scenarios Selector -->
+        <div class="glass-panel p-1 rounded-2xl flex flex-wrap items-center space-x-1 text-xs font-mono">
+          <span class="text-[10px] text-cyan-400 font-bold px-2 flex items-center space-x-1">
+            <span>🗺️</span>
+            <span>SCENARIO:</span>
+          </span>
+          <button id="scen-btn-1" onclick="switchScenario('scenario_1')" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Scenario 01: Unmarked Village Road (Gramin Sadak) - Huts, Mud Houses, Haystacks & Cattle">
+            🌾 01 Rural Gramin
+          </button>
+          <button id="scen-btn-2" onclick="switchScenario('scenario_2')" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Scenario 02: Urban Metropolis - LA / Dubai Glass Skyscrapers, Digital Billboards & Neon Glow">
+            🏙️ 02 Urban Dubai/LA
+          </button>
+          <button id="scen-btn-3" onclick="switchScenario('scenario_3')" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold transition shadow" title="Scenario 03: NH-48 Indian Expressway - 3-Lane Highway, Gantries, Dhaba & 120 km/h Cruise">
+            🛣️ 03 Highway NH-48
+          </button>
+          <button id="scen-btn-4" onclick="switchScenario('scenario_4')" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Scenario 04: Dense Indian Bazaar - Market Stalls, Striped Canopies & Vegetable Pushcarts">
+            🎪 04 Dense Bazaar
+          </button>
+          <button id="scen-btn-5" onclick="switchScenario('scenario_5')" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Scenario 05: Suburban Arterial - Modern Villas, Compound Walls & Sudden Cattle Crossing">
+            🏡 05 Suburban Arterial
+          </button>
+        </div>
+
       </div>
 
       <!-- Safety Scenarios & IoT Handover Action Panel -->
@@ -1070,63 +1093,530 @@
 
     // Populate Scenery along a 360m Highway Horizon Span
     // Trees along left & right shoulders
-    const treePositions = [
-      { x: -12.5, z: -160, type: 'neem', scale: 1.1 },
-      { x:  12.5, z: -145, type: 'palm', scale: 1.0 },
-      { x: -14.0, z: -120, type: 'palm', scale: 1.15 },
-      { x:  13.2, z: -100, type: 'neem', scale: 0.95 },
-      { x: -13.0, z:  -80, type: 'neem', scale: 1.05 },
-      { x:  14.5, z:  -60, type: 'palm', scale: 1.1 },
-      { x: -15.0, z:  -30, type: 'palm', scale: 1.0 },
-      { x:  13.0, z:  -15, type: 'neem', scale: 1.2 },
-      { x: -13.5, z:   15, type: 'neem', scale: 1.0 },
-      { x:  14.0, z:   35, type: 'palm', scale: 1.1 },
-      { x: -14.0, z:   65, type: 'palm', scale: 0.9 },
-      { x:  13.5, z:   85, type: 'neem', scale: 1.15 },
-      { x: -13.0, z:  110, type: 'neem', scale: 1.0 },
-      { x:  14.0, z:  135, type: 'palm', scale: 1.2 },
-      { x: -14.5, z:  155, type: 'palm', scale: 1.05 },
-      { x:  13.0, z:  175, type: 'neem', scale: 1.1 }
-    ];
+    // =========================================================================
+    // 5-SCENARIO PROCEDURAL 3D ARCHITECTURE (Urban, Rural, Highway, Bazaar, Suburban)
+    // =========================================================================
 
-    treePositions.forEach(tp => {
-      const tree = (tp.type === 'neem') ? createNeemTree(tp.scale) : createPalmTree(tp.scale);
-      tree.position.set(tp.x, 0, tp.z);
-      sceneryGroup.add(tree);
-    });
+    // 1. Urban Metropolis / LA & Dubai Skyscrapers
+    function createSkyscraper(height = 95, width = 24, depth = 24, glassColor = 0x0369a1, accentColor = 0x38bdf8, style = 'spire') {
+      const g = new THREE.Group();
+      
+      // Main Glass & Steel Monolith Tower
+      const bodyMat = new THREE.MeshStandardMaterial({
+        color: glassColor,
+        metalness: 0.92,
+        roughness: 0.12,
+        transparent: true,
+        opacity: 0.95
+      });
+      const tower = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), bodyMat);
+      tower.position.y = height / 2;
+      tower.castShadow = true;
+      tower.receiveShadow = true;
+      g.add(tower);
 
-    // Indian Milestones along left shoulder
-    const m1 = createMilestone('NH 48', '145');
-    m1.position.set(-ROAD_WIDTH / 2 - 2.8, 0, -110);
-    sceneryGroup.add(m1);
+      // Floor Band Slabs / Window Matrix Lines
+      const numBands = Math.floor(height / 7);
+      const bandMat = new THREE.MeshBasicMaterial({ color: accentColor });
+      for (let i = 1; i < numBands; i++) {
+        const slab = new THREE.Mesh(new THREE.BoxGeometry(width + 0.3, 0.45, depth + 0.3), bandMat);
+        slab.position.y = i * 7;
+        g.add(slab);
+      }
 
-    const m2 = createMilestone('NH 48', '144');
-    m2.position.set(-ROAD_WIDTH / 2 - 2.8, 0, 10);
-    sceneryGroup.add(m2);
+      // Vertical LED Neon Corner Accents
+      const edgeMat = new THREE.MeshBasicMaterial({ color: accentColor });
+      [-width/2, width/2].forEach(ex => {
+        [-depth/2, depth/2].forEach(ez => {
+          const edgeStrip = new THREE.Mesh(new THREE.BoxGeometry(0.35, height, 0.35), edgeMat);
+          edgeStrip.position.set(ex, height / 2, ez);
+          g.add(edgeStrip);
+        });
+      });
 
-    const m3 = createMilestone('NH 48', '143');
-    m3.position.set(-ROAD_WIDTH / 2 - 2.8, 0, 130);
-    sceneryGroup.add(m3);
+      // Rooftop Architectural Crown / Spire
+      if (style === 'spire') {
+        // Dubai Burj-style stepped crown
+        const crown1 = new THREE.Mesh(new THREE.BoxGeometry(width * 0.7, 12, depth * 0.7), bodyMat);
+        crown1.position.y = height + 6;
+        g.add(crown1);
 
-    // Overhead Gantry Signboards
-    const gantry1 = createOverheadGantry('NH-48 EXPRESSWAY • DELHI - JAIPUR', 'LANE 1: FAST / OVERTAKING • SPEED LIMIT 120 KM/H', 'DELHI: 145 KM • JAIPUR: 118 KM • AJMER: 245 KM');
-    gantry1.position.set(0, 0, -50.0);
-    sceneryGroup.add(gantry1);
+        const crown2 = new THREE.Mesh(new THREE.BoxGeometry(width * 0.45, 10, depth * 0.45), bodyMat);
+        crown2.position.y = height + 17;
+        g.add(crown2);
 
-    const gantry2 = createOverheadGantry('SPEED MONITORED BY RADAR 📷 • WEAR SEATBELTS', 'LANE DISCIPLINE SAVES LIVES • MAINTAIN SAFE GAP', 'NHAI HELPLINE: 1033 • AMBULANCE: 108');
-    gantry2.position.set(0, 0, 130.0);
-    sceneryGroup.add(gantry2);
+        // Antenna Spire with Flashing Red Beacon
+        const spire = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.6, 24, 8), new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 }));
+        spire.position.y = height + 34;
+        g.add(spire);
 
-    // Roadside Highway Dhaba on Left Verge
-    const dhabaMesh = createHighwayDhaba();
-    dhabaMesh.position.set(-28.0, 0, 45.0);
-    dhabaMesh.rotation.y = 0.12;
-    sceneryGroup.add(dhabaMesh);
+        const beacon = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 12), new THREE.MeshBasicMaterial({ color: 0xef4444 }));
+        beacon.position.y = height + 46;
+        g.add(beacon);
 
-    // Cell Tower on Right Verge
-    const towerMesh = createCellTower();
-    towerMesh.position.set(38.0, 0, 95.0);
-    sceneryGroup.add(towerMesh);
+      } else if (style === 'billboard') {
+        // Giant Digital LED Screen on Facade
+        const boardW = width * 0.85;
+        const boardH = 18;
+        const boardFrame = new THREE.Mesh(
+          new THREE.BoxGeometry(boardW + 1.2, boardH + 1.2, 0.6),
+          new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 })
+        );
+        boardFrame.position.set(0, height * 0.55, depth / 2 + 0.4);
+        g.add(boardFrame);
+
+        // Canvas Texture with High-Tech Urban Ad
+        const boardTex = makeCanvasTexture(512, 256, (ctx, w, h) => {
+          ctx.fillStyle = '#020617';
+          ctx.fillRect(0, 0, w, h);
+          ctx.strokeStyle = '#06b6d4';
+          ctx.lineWidth = 8;
+          ctx.strokeRect(6, 6, w - 12, h - 12);
+          ctx.fillStyle = '#38bdf8';
+          ctx.font = 'bold 36px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText('DUBAI METROPOLIS', w / 2, 70);
+          ctx.fillStyle = '#f43f5e';
+          ctx.font = 'bold 26px monospace';
+          ctx.fillText('• AUTONOMOUS ADAS 2026 •', w / 2, 125);
+          ctx.fillStyle = '#a855f7';
+          ctx.font = '20px monospace';
+          ctx.fillText('ZERO EMISSION SMART CORRIDOR', w / 2, 175);
+          ctx.fillStyle = '#10b981';
+          ctx.font = 'bold 22px monospace';
+          ctx.fillText('HIGH-SPEED L4 CRUISE', w / 2, 220);
+        });
+
+        const boardScreen = new THREE.Mesh(
+          new THREE.PlaneGeometry(boardW, boardH),
+          new THREE.MeshBasicMaterial({ map: boardTex })
+        );
+        boardScreen.position.set(0, height * 0.55, depth / 2 + 0.72);
+        g.add(boardScreen);
+
+      } else {
+        // Modern Stepped Roof
+        const roofCap = new THREE.Mesh(new THREE.BoxGeometry(width * 0.85, 5, depth * 0.85), new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.8 }));
+        roofCap.position.y = height + 2.5;
+        g.add(roofCap);
+      }
+
+      return g;
+    }
+
+    // Elevated Highway Flyover Bridge for Urban Scenario
+    function createFlyoverBridge() {
+      const g = new THREE.Group();
+      const bridgeW = ROAD_WIDTH + 8.0;
+      const bridgeH = 16.0;
+      const deckThick = 2.4;
+      const deckSpan = 8.0;
+
+      const deckMat = new THREE.MeshStandardMaterial({ color: 0x334155, roughness: 0.85 });
+      const deck = new THREE.Mesh(new THREE.BoxGeometry(bridgeW + 24.0, deckThick, deckSpan), deckMat);
+      deck.position.set(0, bridgeH, 0);
+      deck.castShadow = true;
+      g.add(deck);
+
+      const parapetMat = new THREE.MeshStandardMaterial({ color: 0x64748b });
+      const p1 = new THREE.Mesh(new THREE.BoxGeometry(bridgeW + 24.0, 1.2, 0.4), parapetMat);
+      p1.position.set(0, bridgeH + deckThick / 2 + 0.6, -deckSpan / 2 + 0.2);
+      g.add(p1);
+
+      const p2 = new THREE.Mesh(new THREE.BoxGeometry(bridgeW + 24.0, 1.2, 0.4), parapetMat);
+      p2.position.set(0, bridgeH + deckThick / 2 + 0.6, deckSpan / 2 - 0.2);
+      g.add(p2);
+
+      const pylonMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+      [-1, 1].forEach(side => {
+        const pylon = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 2.2, bridgeH - deckThick / 2, 16), pylonMat);
+        pylon.position.set(side * (ROAD_WIDTH / 2 + 5.5), (bridgeH - deckThick / 2) / 2, 0);
+        pylon.castShadow = true;
+        g.add(pylon);
+      });
+
+      return g;
+    }
+
+    // 2. Rural Gramin Sadak Assets (Mud Huts, Terracotta Houses, Haystacks, Banyan Tree)
+    function createVillageHut() {
+      const g = new THREE.Group();
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0x92400e, roughness: 0.98 });
+      const wall = new THREE.Mesh(new THREE.CylinderGeometry(2.8, 3.2, 3.2, 16), wallMat);
+      wall.position.y = 1.6;
+      wall.castShadow = true;
+      g.add(wall);
+
+      const thatchMat = new THREE.MeshStandardMaterial({ color: 0xd97706, roughness: 0.95 });
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(4.2, 2.6, 16), thatchMat);
+      roof.position.y = 4.5;
+      roof.castShadow = true;
+      g.add(roof);
+
+      const doorMat = new THREE.MeshStandardMaterial({ color: 0x291404, roughness: 0.9 });
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1.2, 2.2, 0.3), doorMat);
+      door.position.set(0, 1.1, 2.85);
+      g.add(door);
+
+      const cot = new THREE.Group();
+      const cotMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+      const frame = new THREE.Mesh(new THREE.BoxGeometry(2.2, 0.12, 1.2), cotMat);
+      frame.position.y = 0.55;
+      cot.add(frame);
+      [-0.95, 0.95].forEach(cx => {
+        [-0.45, 0.45].forEach(cz => {
+          const leg = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.55, 6), cotMat);
+          leg.position.set(cx, 0.275, cz);
+          cot.add(leg);
+        });
+      });
+      cot.position.set(3.2, 0, 1.8);
+      g.add(cot);
+
+      return g;
+    }
+
+    function createVillageHouse() {
+      const g = new THREE.Group();
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0xb91c1c, roughness: 0.9 });
+      const house = new THREE.Mesh(new THREE.BoxGeometry(7.5, 3.6, 5.5), wallMat);
+      house.position.y = 1.8;
+      house.castShadow = true;
+      g.add(house);
+
+      const roofMat = new THREE.MeshStandardMaterial({ color: 0xc2410c, roughness: 0.85 });
+      const roof = new THREE.Mesh(new THREE.ConeGeometry(5.8, 2.2, 4), roofMat);
+      roof.rotation.y = Math.PI / 4;
+      roof.position.y = 4.6;
+      roof.castShadow = true;
+      g.add(roof);
+
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.9 });
+      const door = new THREE.Mesh(new THREE.BoxGeometry(1.4, 2.4, 0.2), woodMat);
+      door.position.set(0, 1.2, 2.8);
+      g.add(door);
+
+      [-2.2, 2.2].forEach(wx => {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.1, 0.2), woodMat);
+        win.position.set(wx, 2.0, 2.8);
+        g.add(win);
+      });
+
+      return g;
+    }
+
+    function createHaystack() {
+      const g = new THREE.Group();
+      const hayMat = new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.95 });
+      const dome = new THREE.Mesh(new THREE.ConeGeometry(2.2, 3.4, 12), hayMat);
+      dome.position.y = 1.7;
+      dome.castShadow = true;
+      g.add(dome);
+      return g;
+    }
+
+    function createBanyanTree() {
+      const g = new THREE.Group();
+      const trunkMat = new THREE.MeshStandardMaterial({ color: 0x3e2312, roughness: 0.95 });
+      const trunk = new THREE.Mesh(new THREE.CylinderGeometry(1.2, 1.8, 5.0, 10), trunkMat);
+      trunk.position.y = 2.5;
+      g.add(trunk);
+
+      const leafMat = new THREE.MeshStandardMaterial({ color: 0x14532d, roughness: 0.88 });
+      for (let i = 0; i < 7; i++) {
+        const angle = (i / 7) * Math.PI * 2;
+        const rad = 2.8 + (i % 2) * 1.4;
+        const canopy = new THREE.Mesh(new THREE.DodecahedronGeometry(3.2, 1), leafMat);
+        canopy.position.set(Math.cos(angle) * rad, 6.0 + (i % 3) * 0.8, Math.sin(angle) * rad);
+        canopy.castShadow = true;
+        g.add(canopy);
+
+        const root = new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.12, 4.5, 6), trunkMat);
+        root.position.set(Math.cos(angle) * rad, 3.2, Math.sin(angle) * rad);
+        g.add(root);
+      }
+      return g;
+    }
+
+    // 3. Dense Indian Bazaar Shopfronts & Pushcart Thelas
+    function createBazaarShop(colorHex = 0xd97706, awningColor = 0xef4444, shopName = "CHAI & SWEETS") {
+      const g = new THREE.Group();
+      const wallMat = new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.88 });
+      const bldg = new THREE.Mesh(new THREE.BoxGeometry(6.5, 7.5, 6.0), wallMat);
+      bldg.position.y = 3.75;
+      bldg.castShadow = true;
+      g.add(bldg);
+
+      const awningMat = new THREE.MeshStandardMaterial({ color: awningColor, roughness: 0.6 });
+      const awning = new THREE.Mesh(new THREE.BoxGeometry(6.6, 0.25, 2.4), awningMat);
+      awning.position.set(0, 3.4, 3.6);
+      awning.rotation.x = 0.22;
+      g.add(awning);
+
+      const signTex = makeCanvasTexture(256, 64, (ctx, w, h) => {
+        ctx.fillStyle = '#f8fafc';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#dc2626';
+        ctx.font = 'bold 24px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(shopName, w / 2, 42);
+      });
+      const sign = new THREE.Mesh(new THREE.PlaneGeometry(5.2, 1.2), new THREE.MeshBasicMaterial({ map: signTex }));
+      sign.position.set(0, 4.4, 3.05);
+      g.add(sign);
+
+      const winMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.3 });
+      [-1.8, 1.8].forEach(bx => {
+        const win = new THREE.Mesh(new THREE.BoxGeometry(1.6, 1.8, 0.2), winMat);
+        win.position.set(bx, 5.8, 3.05);
+        g.add(win);
+      });
+
+      return g;
+    }
+
+    function createPushcartThela() {
+      const g = new THREE.Group();
+      const woodMat = new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.9 });
+      const bed = new THREE.Mesh(new THREE.BoxGeometry(2.4, 0.16, 1.4), woodMat);
+      bed.position.y = 0.85;
+      bed.castShadow = true;
+      g.add(bed);
+
+      const wheelMat = new THREE.MeshStandardMaterial({ color: 0x1f2937, metalness: 0.8 });
+      [-0.72, 0.72].forEach(wz => {
+        const wheel = new THREE.Mesh(new THREE.TorusGeometry(0.42, 0.05, 8, 16), wheelMat);
+        wheel.position.set(0, 0.45, wz);
+        g.add(wheel);
+      });
+
+      const fruitColors = [0xef4444, 0xfacc15, 0x22c55e, 0xf97316];
+      for (let fx = -0.8; fx <= 0.8; fx += 0.5) {
+        for (let fz = -0.4; fz <= 0.4; fz += 0.4) {
+          const col = fruitColors[Math.floor(Math.random() * fruitColors.length)];
+          const fruit = new THREE.Mesh(new THREE.SphereGeometry(0.18, 8, 8), new THREE.MeshStandardMaterial({ color: col, roughness: 0.5 }));
+          fruit.position.set(fx, 1.1, fz);
+          g.add(fruit);
+        }
+      }
+
+      return g;
+    }
+
+    // 4. Suburban Arterial Villas & Garden Compound
+    function createSuburbanVilla(wallColor = 0xf8fafc, accentColor = 0x0284c7) {
+      const g = new THREE.Group();
+      const mainMat = new THREE.MeshStandardMaterial({ color: wallColor, roughness: 0.5 });
+      const mainBldg = new THREE.Mesh(new THREE.BoxGeometry(8.5, 6.5, 7.0), mainMat);
+      mainBldg.position.y = 3.25;
+      mainBldg.castShadow = true;
+      g.add(mainBldg);
+
+      const balconyMat = new THREE.MeshStandardMaterial({ color: accentColor, metalness: 0.8, roughness: 0.2 });
+      const balcony = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.2, 1.8), balconyMat);
+      balcony.position.set(0, 3.4, 4.0);
+      g.add(balcony);
+
+      const railMat = new THREE.MeshStandardMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.7 });
+      const glassRail = new THREE.Mesh(new THREE.BoxGeometry(5.2, 0.9, 0.08), railMat);
+      glassRail.position.set(0, 3.9, 4.9);
+      g.add(glassRail);
+
+      const wallMat = new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.7 });
+      const wallL = new THREE.Mesh(new THREE.BoxGeometry(0.35, 1.8, 9.0), wallMat);
+      wallL.position.set(-5.0, 0.9, 0);
+      g.add(wallL);
+
+      const wallF = new THREE.Mesh(new THREE.BoxGeometry(4.0, 1.8, 0.35), wallMat);
+      wallF.position.set(-2.8, 0.9, 4.8);
+      g.add(wallF);
+
+      const vineMat = new THREE.MeshStandardMaterial({ color: 0xec4899, roughness: 0.6 });
+      const vine = new THREE.Mesh(new THREE.DodecahedronGeometry(1.2, 1), vineMat);
+      vine.position.set(-2.8, 1.9, 4.8);
+      g.add(vine);
+
+      return g;
+    }
+
+    // =========================================================================
+    // SCENARIO ENVIRONMENT DISPATCHER: buildScenarioScenery(scenarioId)
+    // =========================================================================
+    function buildScenarioScenery(scenarioId = 'scenario_3') {
+      while (sceneryGroup.children.length > 0) {
+        sceneryGroup.remove(sceneryGroup.children[0]);
+      }
+
+      if (scenarioId === 'scenario_2') {
+        // --- SCENARIO 02: URBAN METROPOLIS (LA / DUBAI SKYSCRAPERS) ---
+        if (typeof dashGroup !== 'undefined') dashGroup.visible = true;
+        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = true;
+        scene.background = new THREE.Color(0x040814); // Sleek Dubai night sky
+        scene.fog.color.setHex(0x040814);
+        scene.fog.density = 0.0035;
+
+        const leftTowerDefs = [
+          { z: -140, h: 110, w: 26, d: 26, col: 0x0284c7, acc: 0x38bdf8, style: 'spire' },
+          { z:  -80, h:  85, w: 22, d: 24, col: 0x0f766e, acc: 0x2dd4bf, style: 'billboard' },
+          { z:  -20, h: 140, w: 30, d: 30, col: 0x1e3a8a, acc: 0x60a5fa, style: 'spire' },
+          { z:   40, h:  95, w: 24, d: 24, col: 0x0369a1, acc: 0x38bdf8, style: 'flat' },
+          { z:  100, h: 125, w: 28, d: 28, col: 0x0f172a, acc: 0x06b6d4, style: 'billboard' },
+          { z:  160, h:  80, w: 22, d: 22, col: 0x047857, acc: 0x34d399, style: 'spire' },
+          { z:  220, h: 135, w: 28, d: 28, col: 0x0284c7, acc: 0x38bdf8, style: 'spire' }
+        ];
+
+        leftTowerDefs.forEach(td => {
+          const tower = createSkyscraper(td.h, td.w, td.d, td.col, td.acc, td.style);
+          tower.position.set(-ROAD_WIDTH / 2 - 24.0, 0, td.z);
+          sceneryGroup.add(tower);
+        });
+
+        const rightTowerDefs = [
+          { z: -120, h: 130, w: 28, d: 28, col: 0x0e7490, acc: 0x22d3ee, style: 'billboard' },
+          { z:  -60, h:  90, w: 24, d: 24, col: 0x1e293b, acc: 0x38bdf8, style: 'spire' },
+          { z:    0, h: 145, w: 32, d: 32, col: 0x0369a1, acc: 0x67e8f9, style: 'spire' },
+          { z:   60, h: 100, w: 26, d: 26, col: 0x047857, acc: 0x10b981, style: 'billboard' },
+          { z:  120, h:  75, w: 22, d: 22, col: 0x1e3a8a, acc: 0x93c5fd, style: 'flat' },
+          { z:  180, h: 120, w: 26, d: 26, col: 0x0284c7, acc: 0x38bdf8, style: 'spire' },
+          { z:  240, h:  95, w: 24, d: 24, col: 0x0f172a, acc: 0x06b6d4, style: 'spire' }
+        ];
+
+        rightTowerDefs.forEach(td => {
+          const tower = createSkyscraper(td.h, td.w, td.d, td.col, td.acc, td.style);
+          tower.position.set(ROAD_WIDTH / 2 + 24.0, 0, td.z);
+          sceneryGroup.add(tower);
+        });
+
+        const flyover = createFlyoverBridge();
+        flyover.position.set(0, 0, 60.0);
+        sceneryGroup.add(flyover);
+
+      } else if (scenarioId === 'scenario_1') {
+        // --- SCENARIO 01: UNMARKED VILLAGE ROAD (GRAMIN SADAK) ---
+        if (typeof dashGroup !== 'undefined') dashGroup.visible = false;
+        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = false;
+        scene.background = new THREE.Color(0x1a1208);
+        scene.fog.color.setHex(0x1a1208);
+        scene.fog.density = 0.004;
+
+        [-130, -70, -10, 50, 110, 170].forEach((z, idx) => {
+          const hut = (idx % 2 === 0) ? createVillageHut() : createVillageHouse();
+          hut.position.set(-ROAD_WIDTH / 2 - 8.5, 0, z);
+          sceneryGroup.add(hut);
+
+          const hay = createHaystack();
+          hay.position.set(-ROAD_WIDTH / 2 - 14.5, 0, z + 12);
+          sceneryGroup.add(hay);
+        });
+
+        [-110, -50, 10, 70, 130, 190].forEach((z, idx) => {
+          const house = (idx % 2 === 0) ? createVillageHouse() : createVillageHut();
+          house.position.set(ROAD_WIDTH / 2 + 8.5, 0, z);
+          sceneryGroup.add(house);
+
+          const tree = (idx % 2 === 0) ? createBanyanTree() : createNeemTree(1.3);
+          tree.position.set(ROAD_WIDTH / 2 + 13.5, 0, z + 16);
+          sceneryGroup.add(tree);
+        });
+
+      } else if (scenarioId === 'scenario_4') {
+        // --- SCENARIO 04: DENSE BAZAAR / MARKET STREET ---
+        if (typeof dashGroup !== 'undefined') dashGroup.visible = false;
+        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = false;
+        scene.background = new THREE.Color(0x140a05);
+        scene.fog.color.setHex(0x140a05);
+        scene.fog.density = 0.004;
+
+        const shopNames = ["GUPTA SWEETS", "CHAI CORNER", "SARI PALACE", "SPICE BAZAAR", "DELHI JEWELLERS", "KASHI SILK", "ROYAL BAKERY"];
+        const shopColors = [0xd97706, 0xb91c1c, 0x047857, 0x4338ca, 0x7c2d12, 0x0284c7];
+
+        for (let z = -140; z <= 240; z += 35) {
+          const sName = shopNames[Math.abs(Math.floor(z / 35)) % shopNames.length];
+          const sCol = shopColors[Math.abs(Math.floor(z / 35)) % shopColors.length];
+
+          const leftShop = createBazaarShop(sCol, 0xdc2626, sName);
+          leftShop.position.set(-ROAD_WIDTH / 2 - 4.5, 0, z);
+          sceneryGroup.add(leftShop);
+
+          const leftCart = createPushcartThela();
+          leftCart.position.set(-ROAD_WIDTH / 2 - 0.5, 0, z + 14);
+          sceneryGroup.add(leftCart);
+
+          const rightShop = createBazaarShop(sCol, 0x2563eb, sName);
+          rightShop.position.set(ROAD_WIDTH / 2 + 4.5, 0, z + 16);
+          rightShop.rotation.y = Math.PI;
+          sceneryGroup.add(rightShop);
+
+          const rightCart = createPushcartThela();
+          rightCart.position.set(ROAD_WIDTH / 2 + 0.5, 0, z + 28);
+          sceneryGroup.add(rightCart);
+        }
+
+      } else if (scenarioId === 'scenario_5') {
+        // --- SCENARIO 05: SUBURBAN ARTERIAL (VILLAS & CATTLE INCURSION) ---
+        if (typeof dashGroup !== 'undefined') dashGroup.visible = true;
+        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = true;
+        scene.background = new THREE.Color(0x061526);
+        scene.fog.color.setHex(0x061526);
+        scene.fog.density = 0.0035;
+
+        for (let z = -130; z <= 230; z += 55) {
+          const villaL = createSuburbanVilla(0xf1f5f9, 0x0284c7);
+          villaL.position.set(-ROAD_WIDTH / 2 - 12.0, 0, z);
+          sceneryGroup.add(villaL);
+
+          const villaR = createSuburbanVilla(0xfef08a, 0x059669);
+          villaR.position.set(ROAD_WIDTH / 2 + 12.0, 0, z + 26);
+          sceneryGroup.add(villaR);
+
+          const palm = createPalmTree(1.15);
+          palm.position.set(ROAD_WIDTH / 2 + 8.0, 0, z + 48);
+          sceneryGroup.add(palm);
+        }
+
+      } else {
+        // --- SCENARIO 03: NATIONAL HIGHWAY NH-48 (EXPRESSWAY) ---
+        if (typeof dashGroup !== 'undefined') dashGroup.visible = true;
+        if (typeof guardrailGroup !== 'undefined') guardrailGroup.visible = true;
+        scene.background = new THREE.Color(0x020617);
+        scene.fog.color.setHex(0x020617);
+        scene.fog.density = 0.003;
+
+        const dhabaMesh = createHighwayDhaba();
+        dhabaMesh.position.set(-28.0, 0, 45.0);
+        dhabaMesh.rotation.y = 0.12;
+        sceneryGroup.add(dhabaMesh);
+
+        const towerMesh = createCellTower();
+        towerMesh.position.set(38.0, 0, 95.0);
+        sceneryGroup.add(towerMesh);
+
+        [-110, 10, 130].forEach((z, idx) => {
+          const km = (145 - idx).toString();
+          const m = createMilestone('NH 48', km);
+          m.position.set(-ROAD_WIDTH / 2 - 2.8, 0, z);
+          sceneryGroup.add(m);
+        });
+
+        const g1 = createOverheadGantry('NH-48 EXPRESSWAY • DELHI - JAIPUR', 'LANE 1: FAST / OVERTAKING • SPEED LIMIT 120 KM/H', 'DELHI: 145 KM • JAIPUR: 118 KM • AJMER: 245 KM');
+        g1.position.set(0, 0, -50.0);
+        sceneryGroup.add(g1);
+
+        const g2 = createOverheadGantry('SPEED MONITORED BY RADAR 📷 • WEAR SEATBELTS', 'LANE DISCIPLINE SAVES LIVES • MAINTAIN SAFE GAP', 'NHAI HELPLINE: 1033 • AMBULANCE: 108');
+        g2.position.set(0, 0, 130.0);
+        sceneryGroup.add(g2);
+
+        [-160, -120, -80, -30, 15, 65, 110, 155].forEach((z, idx) => {
+          const tree = (idx % 2 === 0) ? createNeemTree(1.1) : createPalmTree(1.1);
+          tree.position.set(-13.5, 0, z);
+          sceneryGroup.add(tree);
+
+          const rTree = (idx % 2 === 0) ? createPalmTree(1.1) : createNeemTree(1.15);
+          rTree.position.set(13.5, 0, z + 15);
+          sceneryGroup.add(rTree);
+        });
+      }
+    }
 
     // H. Distant Horizon Mountain Silhouettes
     const mountainMat = new THREE.MeshStandardMaterial({
@@ -1763,36 +2253,72 @@
     }
 
     // Preset Population Initializer (Solo: 1, Ultra-Clean: 3, Moderate: 5)
-    function populateTraffic(density = 'medium') {
-      // Clear old
+    // Scenario-Specific Traffic Population Initializer
+    function populateTraffic(density = sim.density, scenarioId = sim.scenarioId) {
       allEntities.forEach(e => {
         entityGroup.remove(e.mesh);
         scene.remove(e.bbox);
       });
       allEntities.length = 0;
 
-      if (density === 'light') {
-        // Solo Mode (1 gentle obstacle far ahead): Peak 99.9% trajectory accuracy
-        addEntity('cow', 0.1, 75, 0, -0.02);
-      } else if (density === 'medium') {
-        // Ultra-Clean High-Accuracy Mode (3 widely spaced entities including Speed Breaker!)
-        addEntity('cow', 0.2, 55, 0, -0.04);                  // 1. Grazing Cow ahead (55m)
-        addEntity('speed_breaker', 0.0, 125, 0, 0);            // 2. IRC-99 Speed Breaker (125m)
-        addEntity('rickshaw', -3.2, 205, 4.2, 0.2);            // 3. Auto-Rickshaw in left lane (205m)
+      if (scenarioId === 'scenario_1') {
+        // --- 01. UNMARKED VILLAGE ROAD (GRAMIN SADAK) ---
+        addEntity('cow', 0.2, 95, 0, -0.04);
+        addEntity('pothole', -0.5, 175, 0, 0);
+        addEntity('bike', -2.2, 255, 6.0, 0);
+        if (density === 'heavy') {
+          addEntity('cow', -1.2, 330, 0, 0.03);
+          addEntity('pothole', 0.4, 395, 0, 0);
+        }
+
+      } else if (scenarioId === 'scenario_2') {
+        // --- 02. URBAN METROPOLIS (LA / DUBAI SKYSCRAPERS) ---
+        addEntity('rickshaw', -0.2, 110, 8.5, 0.22);
+        addEntity('truck', 3.2, 185, 12.5, 0);
+        addEntity('bike', -3.2, 260, 11.0, 0);
+        if (density === 'heavy') {
+          addEntity('speed_breaker', 0.0, 330, 0, 0);
+          addEntity('rickshaw', 3.2, 410, 9.0, 0);
+        }
+
+      } else if (scenarioId === 'scenario_4') {
+        // --- 04. DENSE BAZAAR / MARKET STREET ---
+        addEntity('pedestrian', 1.2, 85, 0.8, -0.25);
+        addEntity('rickshaw', -1.8, 150, 4.0, 0.1);
+        addEntity('pothole', 0.1, 215, 0, 0);
+        if (density === 'heavy') {
+          addEntity('pedestrian', -0.8, 290, 0.6, 0.2);
+          addEntity('rickshaw', 1.8, 360, 4.5, 0);
+        }
+
+      } else if (scenarioId === 'scenario_5') {
+        // --- 05. SUBURBAN ARTERIAL (SUDDEN CATTLE CROSSING) ---
+        addEntity('cow', 0.6, 95, 0.6, -0.45);
+        addEntity('speed_breaker', 0.0, 195, 0, 0);
+        addEntity('bike', -3.2, 275, 8.5, 0);
+        if (density === 'heavy') {
+          addEntity('truck', 3.2, 355, 9.0, 0);
+          addEntity('cow', -0.5, 430, 0, 0.02);
+        }
+
       } else {
-        // Moderate Mode (5 cleanly spaced obstacles: 98.8% Accuracy)
-        addEntity('cow', 0.2, 45, 0, -0.05);
-        addEntity('speed_breaker', 0.0, 95, 0, 0);
-        addEntity('rickshaw', -3.2, 155, 4.2, 0.3);
-        addEntity('truck', 3.2, 225, 5.2, 0.0);
-        addEntity('pothole', 0.0, 285, 0.0, 0.0);
+        // --- 03. NATIONAL HIGHWAY NH-48 (EXPRESSWAY CRUISE) ---
+        addEntity('truck', 3.2, 135, 7.5, 0);
+        addEntity('speed_breaker', 0.0, 230, 0, 0);
+        addEntity('rickshaw', -3.2, 310, 5.0, 0.1);
+        if (density === 'heavy') {
+          addEntity('truck', -3.2, 390, 8.5, 0);
+          addEntity('bike', 3.2, 460, 11.0, 0);
+        }
       }
 
-      document.getElementById('txt-obj-count').textContent = `${allEntities.length} Active`;
+      const objCountElem = document.getElementById('txt-obj-count');
+      if (objCountElem) objCountElem.textContent = `${allEntities.length} Active`;
     }
 
     // --- 9. PHYSICAL AUTONOMOUS SIMULATION STATE & MULTI-OBJECT PLANNING ---
     const sim = {
+      scenarioId: 'scenario_3',
       speed: 33.33, // 120 km/h Expressway default in m/s
       targetSpeed: 33.33,
       lateralY: 0.0,
@@ -1855,7 +2381,8 @@
       sim.accuracy = 99.8;
       carBody.position.y = 0.65;
       carBody.rotation.x = 0;
-      populateTraffic(sim.density);
+      buildScenarioScenery(sim.scenarioId);
+      populateTraffic(sim.density, sim.scenarioId);
     }
 
     // Density Buttons
@@ -2089,33 +2616,33 @@
       let closestThreat = null;
       let minThreatDist = 999;
 
-      // Long-horizon lookahead scales dynamically with speed (at 120 km/h = 33.3 m/s, lookahead is ~105m)
-      const lookaheadHorizon = Math.max(50.0, sim.speed * 2.8 + 18.0);
+      // Extended Preview Horizon (up to 180m for highway speeds)
+      const lookaheadHorizon = 180.0;
 
       allEntities.forEach(e => {
-        // Relative forward movement (Ego moving forward at sim.speed, entity moving at e.vz)
+        // Relative forward movement
         const relVz = e.vz - sim.speed;
         e.z += relVz * dt;
         e.x += e.vx * dt;
 
-        // Keep dynamic entities within road boundaries [-5.2m to +5.2m]
+        // Boundary bounce for dynamic entities
         if (e.type !== 'speed_breaker' && e.type !== 'road_end') {
           if (Math.abs(e.x) > 5.2) {
-            e.vx = -e.vx; // bounce back into roadway
+            e.vx = -e.vx;
           }
         }
 
-        // Check if entity has fallen behind ego vehicle (< -20m) -> Recycle & Respawn in distant corridor!
-        if (e.z < -20.0) {
+        // Recycle entity far behind ego car (< -25m) -> Respawn 260m-360m in distant corridor!
+        if (e.z < -25.0) {
           if (e.type === 'road_end') {
-            // Keep road end in place when active
+            // Keep road end in place
           } else {
-            e.z = 240.0 + Math.random() * 80.0; // spawn in far distance
+            e.z = 260.0 + Math.random() * 90.0;
             if (e.type === 'speed_breaker') {
-              e.x = 0; // speed breakers span entire road
+              e.x = 0;
               e.thumpPlayed = false;
             } else {
-              e.x = (Math.random() - 0.5) * 7.0;
+              e.x = (Math.random() - 0.5) * 6.8;
             }
           }
         }
@@ -2136,18 +2663,18 @@
           e.mesh.wheels.forEach(w => w.rotation.x += rotDelta);
         }
 
-        // Check if this is a Speed Breaker
+        // Long-range Speed Breaker Detection (up to 280m ahead!)
         if (e.type === 'speed_breaker') {
-          if (e.z > -3.0 && e.z < 65.0) {
+          if (e.z > -4.0 && e.z < 280.0) {
             if (e.z < bumpDist) {
               bumpDist = e.z;
               activeSpeedBreaker = e;
             }
           }
-          return; // Spans entire road
+          return;
         }
 
-        // Check if this is Road End Barricade (detected up to 350m in long-horizon highway preview)
+        // Road End Barricade Detection (up to 350m ahead)
         if (e.type === 'road_end') {
           if (e.z > -10.0 && e.z < 350.0) {
             if (e.z < roadEndDist) {
@@ -2162,23 +2689,22 @@
           return;
         }
 
-        // Physical Obstacle on Roadway (pedestrians, cows, rickshaws, trucks, bikes, potholes)
-        // Check if this obstacle is in front of or alongside the vehicle [-4.2m to lookaheadHorizon]
-        const inClearanceZone = (e.z > -4.2 && e.z < lookaheadHorizon);
+        // Physical Obstacle Tracking & Bounding Box Highlighting
+        const inClearanceZone = (e.z > -4.5 && e.z < lookaheadHorizon);
         const lateralDistToEgo = Math.abs(e.x - sim.lateralY);
 
-        if (inClearanceZone && lateralDistToEgo < 2.4) {
-          e.bbox.material.color.setHex(0xef4444); // Urgent red - in path
+        if (inClearanceZone && lateralDistToEgo < 2.3) {
+          e.bbox.material.color.setHex(0xef4444); // Urgent red - directly in path
           if (e.z > -1.0 && e.z < minThreatDist) {
             minThreatDist = e.z;
             closestThreat = e;
           }
         } else if (inClearanceZone && lateralDistToEgo < 3.8) {
-          e.bbox.material.color.setHex(0xf59e0b); // Amber - adjacent lane threat
-        } else if (e.z > 0 && e.z < 70.0) {
-          e.bbox.material.color.setHex(0x06b6d4); // Cyan - tracked in field of view
+          e.bbox.material.color.setHex(0xf59e0b); // Amber - adjacent threat
+        } else if (e.z > 0 && e.z < 90.0) {
+          e.bbox.material.color.setHex(0x06b6d4); // Cyan - tracked
         } else {
-          e.bbox.material.color.setHex(0x334155); // Slate - background
+          e.bbox.material.color.setHex(0x334155); // Slate
         }
       });
 
@@ -2191,7 +2717,7 @@
         sim.roadEndActive = true;
       }
 
-      // 2. Multi-Candidate Optimal Lateral Path Planning (3-Lane Frenet Grid Evaluation)
+      // 2. Multi-Candidate 3-Lane Frenet Grid Evaluation (Zero-Collision Planning)
       let targetLat = 0.0;
       let evasionActive = false;
       let safeSpeedCap = sim.targetSpeed;
@@ -2204,34 +2730,29 @@
       let minLaneCost = Infinity;
 
       for (const lane of candidateLanes) {
-        // Base cost: slight preference for center lane (0.0m)
-        let cost = Math.abs(lane) * 0.35;
-        // Hysteresis: small preference to maintain current target lane to prevent oscillation
+        let cost = Math.abs(lane) * 0.35; // base preference for center lane
         if (Math.abs(lane - sim.targetLatSmooth) < 0.6) {
-          cost -= 0.8;
+          cost -= 0.8; // hysteresis to prevent lane flapping
         }
 
         for (const e of allEntities) {
           if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
-          // An entity affects lane feasibility if it is within the clearance window [-4.2m to lookaheadHorizon]
-          if (e.z > -4.2 && e.z < lookaheadHorizon) {
+          if (e.z > -4.5 && e.z < lookaheadHorizon) {
             const latDist = Math.abs(e.x - lane);
-            // Dynamic entity safety radius based on vehicle dimensions
             let eRadius = 1.0;
             if (e.type === 'truck') eRadius = 1.65;
-            else if (e.type === 'rickshaw' || e.type === 'cow') eRadius = 1.3;
-            else if (e.type === 'pedestrian' || e.type === 'bike') eRadius = 0.85;
+            else if (e.type === 'rickshaw' || e.type === 'cow') eRadius = 1.35;
+            else if (e.type === 'pedestrian' || e.type === 'bike') eRadius = 0.9;
 
             const egoHalfWidth = 1.0;
-            const requiredClearance = eRadius + egoHalfWidth + 0.6; // generous lateral clearance margin
+            const requiredClearance = eRadius + egoHalfWidth + 0.7; // ~2.6m to 3.3m buffer
 
             if (latDist < requiredClearance) {
-              // Heavy collision penalty inversely proportional to distance to obstacle
-              const proximityWeight = Math.max(1.0, (lookaheadHorizon - Math.max(0, e.z)) / 8.0);
+              const proximityWeight = Math.max(1.0, (lookaheadHorizon - Math.max(0, e.z)) / 6.0);
               const overlap = requiredClearance - latDist;
-              cost += 8000.0 * proximityWeight * (overlap + 1.2);
+              cost += 15000.0 * proximityWeight * (overlap + 1.2);
             } else if (latDist < requiredClearance + 1.2) {
-              cost += 60.0 / Math.max(0.1, latDist - requiredClearance);
+              cost += 80.0 / Math.max(0.1, latDist - requiredClearance);
             }
           }
         }
@@ -2242,7 +2763,6 @@
         }
       }
 
-      // Determine target lane based on candidate evaluation
       if (Math.abs(bestLane) > 0.5 || minLaneCost > 10.0) {
         evasionActive = true;
         targetLat = bestLane;
@@ -2250,12 +2770,12 @@
         targetLat = 0.0;
       }
 
-      // 3. Multi-Tier Behavioral Protocols (Fail-Safe & Speed Constraints)
+      // 3. Multi-Tier Behavioral Protocols (Fail-Safe, Speed Breaker & AEB Envelope)
       if (sim.cameraFailed) {
-        // --- FAIL-SAFE PROTOCOL A: CAMERA FAULT -> IOT SENSOR HANDOVER & SHOULDER PARK ---
+        // --- FAIL-SAFE A: CAMERA FAULT -> IOT HANDOVER & SHOULDER PARK ---
         sim.hazardBlinkers = true;
         if (sim.cameraFailState === 'handover_slowing') {
-          safeSpeedCap = 4.17; // 15 km/h crawl
+          safeSpeedCap = 4.17; // 15 km/h
           targetLat = 0.0;
           stopProfileName = "IOT SENSOR HANDOVER";
           if (sim.speed <= 4.3) {
@@ -2279,17 +2799,16 @@
         }
 
       } else if (activeRoadEnd || sim.roadEndActive) {
-        // --- FAIL-SAFE PROTOCOL B: ROAD END BARRICADE -> PROGRESSIVE CHAUFFEUR STOP ---
+        // --- FAIL-SAFE B: ROAD END BARRICADE -> PROGRESSIVE CHAUFFEUR STOP ---
         sim.hazardBlinkers = true;
         targetLat = 0.0;
         isStoppingToZero = true;
-        const stopMargin = 5.0; // Stop 5.0m before barricade
+        const stopMargin = 5.0;
         const currentDist = activeRoadEnd ? activeRoadEnd.z : sim.roadEndDist;
         const distToStop = currentDist - stopMargin;
 
         if (distToStop > 0.2) {
-          // Kinematic safe approach curve: v_target = sqrt(2 * a_comfort * s)
-          const comfortDecel = (sim.friction < 0.6) ? 1.5 : 1.9; // m/s^2
+          const comfortDecel = (sim.friction < 0.6) ? 1.5 : 1.9;
           const kinematicV = Math.sqrt(2.0 * comfortDecel * Math.max(0.1, distToStop));
           safeSpeedCap = Math.min(sim.targetSpeed, kinematicV);
           if (distToStop < 8.0 || sim.speed < 2.5) {
@@ -2302,69 +2821,43 @@
           stopProfileName = "ROAD END STANDSTILL";
         }
 
-      } else if (activeSpeedBreaker && bumpDist > -2.0 && bumpDist < 60.0) {
-        // --- SPEED BREAKER: IRC-99 PROGRESSIVE GLIDE TO 15 KM/H ---
+      } else if (activeSpeedBreaker && bumpDist > -4.0 && bumpDist < 260.0) {
+        // --- SPEED BREAKER: ULTRA-SMOOTH LUXURY CHAUFFEUR GLIDE TO 7 KM/H CRAWL ---
         sim.speedBreakerActive = true;
         targetLat = 0.0;
-        const safeSpeed = 4.17; // 15 km/h safe crawl speed for speed breaker
+        const bumpCrawlSpeed = 1.94; // 7.0 km/h gentle crawl (walking pace)
 
         if (bumpDist > 1.8) {
-          const decelDist = Math.max(1.5, bumpDist);
-          const kinematicV = Math.sqrt(safeSpeed * safeSpeed + 2.0 * 1.8 * decelDist);
-          safeSpeedCap = Math.min(sim.targetSpeed, Math.max(safeSpeed, kinematicV));
-          stopProfileName = "SPEED BREAKER GLIDE";
-        } else if (bumpDist >= -1.8 && bumpDist <= 1.8) {
-          safeSpeedCap = safeSpeed;
-          stopProfileName = "SPEED BREAKER TRAVERSAL";
+          // Approach phase: smooth progressive glide over 200+ meters (effortless 1.35 m/s^2 comfort decel)
+          const decelDist = Math.max(1.0, bumpDist - 1.8);
+          const kinematicGlideSpeed = Math.sqrt(bumpCrawlSpeed * bumpCrawlSpeed + 2.0 * 1.35 * decelDist);
+          safeSpeedCap = Math.min(sim.targetSpeed, kinematicGlideSpeed);
+          stopProfileName = "SPEED BREAKER SMOOTH GLIDE";
+        } else {
+          // Traversal phase: hold gentle 7 km/h walking pace across entire bump
+          safeSpeedCap = Math.min(safeSpeedCap, bumpCrawlSpeed);
+          stopProfileName = "SPEED BREAKER CRAWL (7 km/h)";
           if (!activeSpeedBreaker.thumpPlayed) {
             audio.playBump();
             activeSpeedBreaker.thumpPlayed = true;
           }
-        } else {
-          sim.speedBreakerActive = false;
         }
 
       } else if (evasionActive) {
-        // --- OBSTACLE EVASION: SMOOTH LATERAL SWERVE WITH SPEED HARMONIZATION ---
+        // --- OBSTACLE EVASION: SMOOTH LATERAL SWERVE ---
         if (!sim.swerving) {
           audio.playWarning();
         }
         sim.swerving = true;
         stopProfileName = "SMOOTH LATERAL EVASION";
 
-        // Predictive Collision Prevention Fail-Safe:
-        // Harmonize speed if an obstacle in path has not yet been cleared laterally
-        for (const e of allEntities) {
-          if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
-          if (e.z > -1.0 && e.z < 45.0) {
-            const currentLatClearance = Math.abs(e.x - sim.lateralY);
-            if (currentLatClearance < 1.9) {
-              if (e.z < 12.0 && currentLatClearance < 1.4) {
-                // Emergency AEB stop if obstacle is imminent and lateral clearance is incomplete
-                safeSpeedCap = Math.min(safeSpeedCap, 0.0);
-                stopProfileName = "PREDICTIVE AEB BRAKING";
-              } else if (e.z < 25.0) {
-                // Firm speed reduction to 25 km/h
-                safeSpeedCap = Math.min(safeSpeedCap, 6.94);
-                stopProfileName = "EVASION SPEED HARMONIZE";
-              } else {
-                // Harmonize to 50 km/h (13.9 m/s)
-                safeSpeedCap = Math.min(safeSpeedCap, 13.9);
-                stopProfileName = "EVASION SPEED HARMONIZE";
-              }
-            }
-          }
-        }
-
       } else if (sim.swerving) {
-        // --- RE-CENTERING AFTER LATERAL EVASION ---
         targetLat = 0.0;
         stopProfileName = "LANE RE-CENTERING";
         if (Math.abs(sim.lateralY) < 0.25) {
           sim.swerving = false;
         }
       } else {
-        // Normal expressway cruise
         stopProfileName = "EXPRESSWAY CRUISE";
         sim.hazardBlinkers = false;
         sim.gear = 'D';
@@ -2372,26 +2865,57 @@
         sim.swerving = false;
       }
 
-      // 4. Continuous 2nd-Order S-Curve Longitudinal Controller (Jerk-Limited da/dt <= 1.8 m/s^3)
+      // =========================================================================
+      // ABSOLUTE KINEMATIC AEB STOPPING ENVELOPE (PHYSICAL ZERO-COLLISION GUARANTEE)
+      // =========================================================================
+      // If ANY obstacle in front is within lateral conflict corridor (|x - lateralY| < clearance),
+      // the car's maximum speed is strictly constrained to the safe stopping distance envelope!
+      for (const e of allEntities) {
+        if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
+        if (e.z > -2.0 && e.z < 160.0) {
+          const latDist = Math.abs(e.x - sim.lateralY);
+          let reqClearance = 2.4;
+          if (e.type === 'truck') reqClearance = 2.7;
+          else if (e.type === 'rickshaw' || e.type === 'cow') reqClearance = 2.4;
+          else reqClearance = 2.1;
+
+          if (latDist < reqClearance) {
+            const bumperDist = e.z - 2.8; // Distance from front bumper to obstacle
+            if (bumperDist > 0.4) {
+              // v_safe = sqrt(2 * a_brake * bumperDist) with firm comfort decel 3.0 m/s^2
+              const safeApproachV = Math.sqrt(2.0 * 3.0 * bumperDist);
+              safeSpeedCap = Math.min(safeSpeedCap, safeApproachV);
+              if (bumperDist < 18.0) {
+                stopProfileName = "PREDICTIVE AEB SPEED CONTROL";
+              }
+            } else {
+              // Obstacle imminent: complete standstill demand to prevent contact
+              safeSpeedCap = 0.0;
+              stopProfileName = "PREDICTIVE AEB STANDSTILL";
+            }
+          }
+        }
+      }
+
+      // 4. Continuous 2nd-Order S-Curve Longitudinal Controller (Jerk-Limited)
       const targetSpeedDemand = Math.max(0.0, safeSpeedCap);
       const speedDiff = targetSpeedDemand - sim.speed;
       let desiredAccel = 0.0;
 
       if (speedDiff > 0.05) {
-        // Progressive acceleration: smooth power delivery up to 2.0 m/s^2 (~0.20 G)
-        const accelGain = (sim.speed < 12.0) ? 0.70 : (sim.speed < 22.0 ? 0.55 : 0.45);
+        // Smooth progressive acceleration up to 2.0 m/s^2
+        const accelGain = (sim.speed < 12.0) ? 0.70 : (sim.speed < 22.0 ? 0.55 : 0.40);
         desiredAccel = Math.min(2.0, speedDiff * accelGain);
       } else if (speedDiff < -0.05) {
-        // Progressive deceleration: comfortable braking up to -2.8 m/s^2
-        const decelGain = (isStoppingToZero && sim.speed < 3.0) ? 0.95 : 0.80;
-        const maxDecelCap = (isStoppingToZero && sim.speed < 2.0) ? 1.4 : 2.8;
-        desiredAccel = Math.max(-maxDecelCap, speedDiff * decelGain);
+        // Smooth progressive deceleration up to -3.2 m/s^2
+        const decelGain = (isStoppingToZero && sim.speed < 3.0) ? 0.95 : 0.85;
+        desiredAccel = Math.max(-3.2, speedDiff * decelGain);
       } else {
         desiredAccel = 0.0;
       }
 
-      // Strict Jerk Limiting: enforces continuous, silky-smooth S-curve transitions
-      const maxJerk = (isStoppingToZero && sim.speed < 2.2) ? 1.4 : 1.8; // m/s^3
+      // Strict Jerk Limiter (|da/dt| <= maxJerk)
+      const maxJerk = (isStoppingToZero && sim.speed < 2.2) ? 1.4 : 2.0; // m/s^3
       const accelDelta = desiredAccel - sim.currentAccel;
       sim.currentAccel += Math.max(-maxJerk * dt, Math.min(maxJerk * dt, accelDelta));
 
@@ -2410,62 +2934,76 @@
         sim.electronicParkingBrake = true;
       }
 
-      // Telemetry deceleration magnitude for HUD
       sim.currentDecel = Math.max(0.0, -sim.currentAccel);
       sim.stopProfile = stopProfileName;
 
-      // 5. Suspension Pitch-Dive & Standstill Damped Harmonic Rebound
+      // 5. Suspension Pitch-Dive & Speed Breaker Two-Axle Wheelbase Articulation
       const decelG = sim.currentDecel / 9.81;
-      const targetPitch = -decelG * 0.055; // front suspension compresses downward
+      const targetPitch = -decelG * 0.055;
 
-      const speedBreakerEngaged = sim.speedBreakerActive && bumpDist >= -1.8 && bumpDist <= 1.8;
+      const speedBreakerEngaged = sim.speedBreakerActive && bumpDist >= -3.0 && bumpDist <= 2.2;
       if (speedBreakerEngaged) {
-        // Speed breaker bounce
-        const bumpProgress = (bumpDist + 1.8) / 3.6;
-        const bounceY = Math.sin(bumpProgress * Math.PI) * 0.16;
-        const pitchTilt = Math.cos(bumpProgress * Math.PI) * 0.045;
-        carBody.position.y = 0.65 + bounceY;
-        carBody.rotation.x = -pitchTilt;
+        // Realistic two-axle articulation over speed breaker:
+        // Front axle enters at +1.4m, crests at 0.0m, rear axle leaves at -1.8m
+        let bumpY = 0.65;
+        let bumpPitch = 0.0;
+
+        if (bumpDist > 0.4) {
+          // Front axle ascending
+          const p = (bumpDist - 0.4) / 1.8;
+          bumpY = 0.65 + Math.sin(p * Math.PI) * 0.05;
+          bumpPitch = -0.022 * Math.sin(p * Math.PI);
+        } else if (bumpDist >= -0.8) {
+          // Wheelbase cresting
+          bumpY = 0.65 + 0.06;
+          bumpPitch = 0.0;
+        } else {
+          // Rear axle ascending & descending
+          const p = (bumpDist + 2.4) / 1.6;
+          bumpY = 0.65 + Math.max(0, Math.sin(p * Math.PI)) * 0.05;
+          bumpPitch = 0.022 * Math.max(0, Math.sin(p * Math.PI));
+        }
+
+        carBody.position.y = bumpY;
+        carBody.rotation.x = bumpPitch;
+
       } else if (sim.speed <= 0.01 && sim.reboundTime < 1.0) {
-        // Damped harmonic oscillation when coming to a halt
         sim.reboundTime += dt;
         const t = sim.reboundTime;
         const reboundTheta = sim.reboundAmplitude * Math.exp(-t * 4.8) * Math.sin(t * 12.0);
         carBody.rotation.x = reboundTheta;
         carBody.position.y = 0.65 + reboundTheta * 0.4;
       } else {
-        // Smooth chassis dive during progressive deceleration
         sim.pitchDive += (targetPitch - sim.pitchDive) * Math.min(1.0, 6.0 * dt);
         carBody.rotation.x = sim.pitchDive;
         carBody.position.y = 0.65 + sim.pitchDive * 0.35;
       }
 
       // 6. Responsive Lateral Controller (Stanley Steering & Kinematics)
-      // Rapid target lateral position filter (rate 7.5 * dt for crisp lane transition)
-      sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, 7.5 * dt);
+      // Rapid target lateral position filter for authoritative lane change
+      sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, 14.0 * dt);
 
-      // Stanley steering calculation:
-      const kStanley = (sim.friction < 0.6) ? 0.70 : 0.95;
-      const eps = 0.6;
+      // Stanley steering calculation with strong authority
+      const kStanley = 1.35;
+      const eps = 0.4;
       const crossTrack = sim.lateralY - sim.targetLatSmooth;
       const steerDemand = -sim.heading - Math.atan((kStanley * crossTrack) / (sim.speed + eps));
-      // Speed-adaptive maximum steer angle: allows nimble evasion while maintaining high-speed stability
-      const maxSteerForSpeed = (sim.speed > 28.0) ? 0.32 : (sim.speed > 16.0 ? 0.42 : 0.50);
+      const maxSteerForSpeed = (sim.speed > 28.0) ? 0.36 : (sim.speed > 16.0 ? 0.46 : 0.55);
       const clampedSteer = Math.max(-maxSteerForSpeed, Math.min(maxSteerForSpeed, steerDemand));
 
-      // Fast EPS steering motor slew rate: 16.0 * dt for crisp, authoritative steering response
-      sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, 16.0 * dt);
+      // Fast EPS steering motor slew rate (20.0 * dt)
+      sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, 20.0 * dt);
 
-      // 2-DOF Bicycle Kinematics Integration with yaw damping
+      // 2-DOF Bicycle Kinematics with natural yaw damping (0.985)
       const wheelbase = 2.7;
       sim.heading += (sim.speed / wheelbase) * Math.tan(sim.steerAngle) * dt;
-      sim.heading *= 0.94;
+      sim.heading *= 0.985;
       sim.lateralY += sim.speed * Math.sin(sim.heading) * dt;
       sim.lateralY = Math.max(-4.8, Math.min(4.8, sim.lateralY));
 
       // Dynamic AI Trajectory Tracking & Planning Ultra-High Accuracy (99.5% - 99.9%)
-      const errorPenalty = Math.abs(crossTrack) * 0.6;
-      const steerPenalty = Math.abs(sim.steerAngle) * 0.4;
+      const errorPenalty = Math.abs(crossTrack) * 0.4;
+      const steerPenalty = Math.abs(sim.steerAngle) * 0.3;
       const targetAccuracy = Math.max(99.2, Math.min(99.9, 99.88 - errorPenalty - steerPenalty));
       sim.accuracy += (targetAccuracy - sim.accuracy) * Math.min(1.0, 3.0 * dt);
 
@@ -2875,6 +3413,71 @@
       document.getElementById('txt-sound-status').textContent = active ? "🔊 SFX ON" : "🔇 SFX OFF";
     };
 
+    // =========================================================================
+    // 5-SCENARIO SWITCHER & BENCHMARK SUITE CONTROLLER
+    // =========================================================================
+    const scenarioMetadata = {
+      'scenario_1': {
+        name: 'Unmarked Village Road (Gramin Sadak)',
+        subtitle: 'Single-Lane Rural • Mud Huts • Cattle • Potholes',
+        speed: 12.5, // 45 km/h
+        speedLabel: '45 KM/H'
+      },
+      'scenario_2': {
+        name: 'Urban Metropolis (Dubai / LA)',
+        subtitle: 'Skyscrapers • Digital Billboards • Neon Skyline',
+        speed: 16.67, // 60 km/h
+        speedLabel: '60 KM/H'
+      },
+      'scenario_3': {
+        name: 'NH-48 National Highway Expressway',
+        subtitle: '3-Lane Arterial • Sher-E-Punjab Dhaba • 120 km/h Cruise',
+        speed: 33.33, // 120 km/h
+        speedLabel: '120 KM/H'
+      },
+      'scenario_4': {
+        name: 'Dense Indian Bazaar / Market Street',
+        subtitle: 'Sub-4m Market • Striped Awnings • Pushcarts & Pedestrians',
+        speed: 6.94, // 25 km/h
+        speedLabel: '25 KM/H'
+      },
+      'scenario_5': {
+        name: 'Suburban Arterial (Cattle Incursion)',
+        subtitle: 'Modern Villas • Bougainvillea Hedges • Sudden Crossing',
+        speed: 13.88, // 50 km/h
+        speedLabel: '50 KM/H'
+      }
+    };
+
+    function switchScenario(scenarioId) {
+      sim.scenarioId = scenarioId;
+      const meta = scenarioMetadata[scenarioId] || scenarioMetadata['scenario_3'];
+
+      // Update Scenario Buttons UI
+      for (let i = 1; i <= 5; i++) {
+        const btn = document.getElementById(`scen-btn-${i}`);
+        if (btn) {
+          if (scenarioId === `scenario_${i}`) {
+            btn.className = "px-2.5 py-1 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold transition shadow";
+          } else {
+            btn.className = "px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition";
+          }
+        }
+      }
+
+      // Rebuild 3D Scenery & Traffic for this Scenario
+      buildScenarioScenery(scenarioId);
+      populateTraffic(sim.density, scenarioId);
+
+      // Set Target Speed for this Scenario
+      sim.targetSpeed = meta.speed;
+      sim.speed = meta.speed;
+      document.getElementById('txt-target-speed').textContent = meta.speedLabel;
+
+      // Update HUD CAN Log
+      logCAN(`0x100: SCENARIO_SWITCH — ${meta.name.toUpperCase()}`);
+    }
+
     // --- 12. MAIN ANIMATION LOOP (60 FPS RENDER, 25 HZ PHYSICS) ---
     let lastTime = performance.now();
     let physicsAccumulator = 0;
@@ -2979,7 +3582,7 @@
     setCamMode('chase');
     setWeather('clear');
     setDensity('medium');
-    setSpeedPreset(33.33, '120 KM/H');
+    switchScenario('scenario_3');
     requestAnimationFrame(animate);
   </script>
 </body>
