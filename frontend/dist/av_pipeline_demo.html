@@ -84,7 +84,7 @@
           </button>
 
           <button id="btn-speed-toggle" class="px-2.5 py-1.5 rounded-xl bg-blue-950/60 hover:bg-blue-900/80 text-cyan-300 border border-blue-600/40 font-bold transition" title="Cycle Target Cruise Speed">
-            ⚡ <span id="txt-target-speed">35 KM/H</span>
+            ⚡ <span id="txt-target-speed">120 KM/H</span>
           </button>
 
           <button id="btn-sound-toggle" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold transition" title="Toggle Synthesized Audio Engine">
@@ -96,7 +96,7 @@
         <div class="glass-panel px-4 py-2 rounded-2xl flex items-center space-x-4 text-xs font-mono">
           <div>
             <span class="text-[9px] text-slate-400 block uppercase">Speed</span>
-            <span id="txt-speed" class="text-lg font-black text-emerald-400">35.0 km/h</span>
+            <span id="txt-speed" class="text-lg font-black text-emerald-400">120.0 km/h</span>
           </div>
           <div class="h-6 w-[1px] bg-slate-700"></div>
           <div>
@@ -120,7 +120,7 @@
 
       </div>
 
-      <!-- Sub-Bar: Weather & Traffic Density Controls -->
+      <!-- Sub-Bar: Weather, Traffic Density & Indian Road Speed Controls -->
       <div class="flex flex-wrap items-center justify-between gap-3 interactive">
         
         <!-- Weather Selector Buttons -->
@@ -146,17 +146,37 @@
           </button>
         </div>
 
-        <!-- Traffic Density & Obstacle Reduction Selector -->
+        <!-- Indian Road Speed Presets (120 km/h Expressway, 80 km/h Highway, 50 km/h City, 35 km/h Cruise) -->
         <div class="glass-panel p-1 rounded-2xl flex items-center space-x-1 text-xs font-mono">
           <span class="text-[10px] text-cyan-400 font-bold px-2 flex items-center space-x-1">
+            <span>🇮🇳</span>
+            <span>INDIAN ROAD SPEED:</span>
+          </span>
+          <button id="spd-120" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold transition shadow" title="Samruddhi / Delhi-Mumbai Expressway 120 km/h Limit">
+            ⚡ 120 km/h (Expressway)
+          </button>
+          <button id="spd-80" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="National Highway (NH-44 / NH-48)">
+            🏎️ 80 km/h (NH Highway)
+          </button>
+          <button id="spd-50" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Urban Arterial Road">
+            🚗 50 km/h (City)
+          </button>
+          <button id="spd-35" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Town / Village Cruise">
+            🛺 35 km/h (Town)
+          </button>
+        </div>
+
+        <!-- Traffic Density & Obstacle Reduction Selector -->
+        <div class="glass-panel p-1 rounded-2xl flex items-center space-x-1 text-xs font-mono">
+          <span class="text-[10px] text-emerald-400 font-bold px-2 flex items-center space-x-1">
             <span>🚦</span>
-            <span>OBSTACLES / ACCURACY:</span>
+            <span>OBSTACLES:</span>
           </span>
           <button id="dens-light" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Solo Mode (1 Obstacle) - 99.9% Ultra Accuracy">
             🟢 Solo (1) • 99.9%
           </button>
           <button id="dens-medium" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-white font-bold transition shadow" title="Ultra-Clean Mode (3 Obstacles) - 99.7% Accuracy">
-            🎯 Ultra-Clean (3) • 99.7%
+            🎯 Clean (3) • 99.7%
           </button>
           <button id="dens-heavy" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Moderate (5 Obstacles) - 98.8% Accuracy">
             🚕 Moderate (5) • 98.8%
@@ -230,30 +250,34 @@
           <span class="text-[9px] text-slate-400 font-mono">Instant spawn:</span>
         </div>
 
-        <div class="grid grid-cols-6 gap-1.5 font-mono text-[11px]">
-          <button id="btn-add-cow" class="p-1.5 rounded-xl bg-amber-950/60 border border-amber-500/70 hover:bg-amber-900/80 text-amber-200 transition active:scale-95 flex flex-col items-center shadow">
-            <span class="text-lg">🐄</span>
-            <span class="text-[8px] font-bold mt-0.5">+ Cow</span>
+        <div class="grid grid-cols-7 gap-1 font-mono text-[11px]">
+          <button id="btn-add-cow" class="p-1 rounded-xl bg-amber-950/60 border border-amber-500/70 hover:bg-amber-900/80 text-amber-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Stray Cow">
+            <span class="text-base">🐄</span>
+            <span class="text-[8px] font-bold mt-0.5">Cow</span>
           </button>
-          <button id="btn-add-rickshaw" class="p-1.5 rounded-xl bg-yellow-950/60 border border-yellow-500/70 hover:bg-yellow-900/80 text-yellow-200 transition active:scale-95 flex flex-col items-center shadow">
-            <span class="text-lg">🛺</span>
-            <span class="text-[8px] font-bold mt-0.5">+ Auto</span>
+          <button id="btn-add-rickshaw" class="p-1 rounded-xl bg-yellow-950/60 border border-yellow-500/70 hover:bg-yellow-900/80 text-yellow-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Auto-Rickshaw">
+            <span class="text-base">🛺</span>
+            <span class="text-[8px] font-bold mt-0.5">Auto</span>
           </button>
-          <button id="btn-add-truck" class="p-1.5 rounded-xl bg-indigo-950/60 border border-indigo-500/70 hover:bg-indigo-900/80 text-indigo-200 transition active:scale-95 flex flex-col items-center shadow">
-            <span class="text-lg">🚛</span>
-            <span class="text-[8px] font-bold mt-0.5">+ Truck</span>
+          <button id="btn-add-truck" class="p-1 rounded-xl bg-indigo-950/60 border border-indigo-500/70 hover:bg-indigo-900/80 text-indigo-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Tata Truck">
+            <span class="text-base">🚛</span>
+            <span class="text-[8px] font-bold mt-0.5">Truck</span>
           </button>
-          <button id="btn-add-bike" class="p-1.5 rounded-xl bg-pink-950/60 border border-pink-500/70 hover:bg-pink-900/80 text-pink-200 transition active:scale-95 flex flex-col items-center shadow">
-            <span class="text-lg">🏍️</span>
-            <span class="text-[8px] font-bold mt-0.5">+ Bike</span>
+          <button id="btn-add-bike" class="p-1 rounded-xl bg-pink-950/60 border border-pink-500/70 hover:bg-pink-900/80 text-pink-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Motorcycle">
+            <span class="text-base">🏍️</span>
+            <span class="text-[8px] font-bold mt-0.5">Bike</span>
           </button>
-          <button id="btn-add-ped" class="p-1.5 rounded-xl bg-cyan-950/60 border border-cyan-500/70 hover:bg-cyan-900/80 text-cyan-200 transition active:scale-95 flex flex-col items-center shadow">
-            <span class="text-lg">🚶</span>
-            <span class="text-[8px] font-bold mt-0.5">+ Walker</span>
+          <button id="btn-add-ped" class="p-1 rounded-xl bg-cyan-950/60 border border-cyan-500/70 hover:bg-cyan-900/80 text-cyan-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Jaywalker">
+            <span class="text-base">🚶</span>
+            <span class="text-[8px] font-bold mt-0.5">Walker</span>
           </button>
-          <button id="btn-add-pothole" class="p-1.5 rounded-xl bg-rose-950/60 border border-rose-500/70 hover:bg-rose-900/80 text-rose-200 transition active:scale-95 flex flex-col items-center shadow">
-            <span class="text-lg">🕳️</span>
-            <span class="text-[8px] font-bold mt-0.5">+ Pothole</span>
+          <button id="btn-add-pothole" class="p-1 rounded-xl bg-rose-950/60 border border-rose-500/70 hover:bg-rose-900/80 text-rose-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Deep Pothole">
+            <span class="text-base">🕳️</span>
+            <span class="text-[8px] font-bold mt-0.5">Pothole</span>
+          </button>
+          <button id="btn-add-bump" class="p-1 rounded-xl bg-amber-950/70 border border-amber-400/90 hover:bg-amber-900/90 text-amber-300 transition active:scale-95 flex flex-col items-center shadow animate-pulse" title="Spawn IRC Speed Breaker (Auto Slow to 15 km/h)">
+            <span class="text-base">🚧</span>
+            <span class="text-[8px] font-bold mt-0.5">Bump</span>
           </button>
         </div>
       </div>
@@ -396,6 +420,22 @@
           gain.connect(this.ctx.destination);
           osc.start();
           osc.stop(this.ctx.currentTime + 0.26);
+        } catch(e) {}
+      }
+      playBump() {
+        if (!this.ctx || !this.enabled) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(70, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(28, this.ctx.currentTime + 0.22);
+          gain.gain.setValueAtTime(0.22, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.22);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.24);
         } catch(e) {}
       }
       toggle() {
@@ -826,6 +866,70 @@
       return g;
     }
 
+    function buildSpeedBreakerMesh() {
+      // Indian Roads Congress (IRC:99-2018) Standard Speed Breaker
+      const g = new THREE.Group();
+      const bumpWidth = ROAD_WIDTH - 0.4;
+      const bumpLength = 2.4;
+      const bumpHeight = 0.16;
+
+      // Base asphalt foundation
+      const baseMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, roughness: 0.9 });
+      const baseMesh = new THREE.Mesh(new THREE.BoxGeometry(bumpWidth, bumpHeight, bumpLength), baseMat);
+      baseMesh.position.y = bumpHeight / 2;
+      baseMesh.receiveShadow = true;
+      g.add(baseMesh);
+
+      // 14 alternating yellow & black reflective stripes
+      const numStripes = 14;
+      const stripeWidth = bumpWidth / numStripes;
+      const yellowMat = new THREE.MeshStandardMaterial({
+        color: 0xfacc15,
+        roughness: 0.3,
+        emissive: 0x713f12,
+        emissiveIntensity: 0.25
+      });
+      const blackMat = new THREE.MeshStandardMaterial({ color: 0x090d16, roughness: 0.8 });
+
+      for (let i = 0; i < numStripes; i++) {
+        const isYellow = (i % 2 === 0);
+        const stripe = new THREE.Mesh(
+          new THREE.BoxGeometry(stripeWidth * 0.94, bumpHeight + 0.015, bumpLength * 0.92),
+          isYellow ? yellowMat : blackMat
+        );
+        stripe.position.set(-bumpWidth / 2 + (i + 0.5) * stripeWidth, bumpHeight / 2 + 0.008, 0);
+        stripe.receiveShadow = true;
+        g.add(stripe);
+      }
+
+      // Cautionary Speed Bump road signs on shoulders with blinking amber beacons
+      for (let side of [-1, 1]) {
+        const signPost = new THREE.Mesh(
+          new THREE.CylinderGeometry(0.06, 0.06, 3.2, 8),
+          new THREE.MeshStandardMaterial({ color: 0x64748b })
+        );
+        signPost.position.set(side * (ROAD_WIDTH / 2 + 1.2), 1.6, 0);
+        g.add(signPost);
+
+        const signBoard = new THREE.Mesh(
+          new THREE.BoxGeometry(0.85, 0.85, 0.05),
+          new THREE.MeshStandardMaterial({ color: 0xfacc15, roughness: 0.3, emissive: 0xb45309, emissiveIntensity: 0.3 })
+        );
+        signBoard.rotation.z = Math.PI / 4;
+        signBoard.position.set(side * (ROAD_WIDTH / 2 + 1.2), 3.0, 0);
+        g.add(signBoard);
+
+        const beacon = new THREE.Mesh(
+          new THREE.SphereGeometry(0.12, 12, 12),
+          new THREE.MeshBasicMaterial({ color: 0xf59e0b })
+        );
+        beacon.position.set(side * (ROAD_WIDTH / 2 + 1.2), 3.65, 0);
+        g.add(beacon);
+      }
+
+      return g;
+    }
+
     // --- 8. MULTI-OBJECT POPULATION & AGENT MANAGER ---
     const allEntities = [];
     const entityGroup = new THREE.Group();
@@ -840,6 +944,7 @@
       else if (type === 'bike') mesh = buildMotorcycleMesh();
       else if (type === 'pedestrian') mesh = buildPedestrianMesh();
       else if (type === 'pothole') mesh = buildPotholeMesh();
+      else if (type === 'speed_breaker') mesh = buildSpeedBreakerMesh();
 
       entityGroup.add(mesh);
 
@@ -856,6 +961,8 @@
         z: distAhead,
         vx: vx,
         vz: vz, // forward speed relative to road
+        isSpeedBreaker: (type === 'speed_breaker'),
+        thumpPlayed: false,
         active: true
       };
       allEntities.push(entity);
@@ -875,15 +982,15 @@
         // Solo Mode (1 gentle obstacle far ahead): Peak 99.9% trajectory accuracy
         addEntity('cow', 0.1, 75, 0, -0.02);
       } else if (density === 'medium') {
-        // Ultra-Clean High-Accuracy Mode (3 widely spaced obstacles: 99.6% - 99.8% Accuracy)
+        // Ultra-Clean High-Accuracy Mode (3 widely spaced entities including Speed Breaker!)
         addEntity('cow', 0.2, 55, 0, -0.04);                  // 1. Grazing Cow ahead (55m)
-        addEntity('rickshaw', -3.2, 135, 4.2, 0.2);            // 2. Auto-Rickshaw in left lane (135m)
-        addEntity('pedestrian', 3.6, 215, 0, -0.4);            // 3. Jaywalker on distant shoulder (215m)
+        addEntity('speed_breaker', 0.0, 125, 0, 0);            // 2. IRC-99 Speed Breaker (125m)
+        addEntity('rickshaw', -3.2, 205, 4.2, 0.2);            // 3. Auto-Rickshaw in left lane (205m)
       } else {
         // Moderate Mode (5 cleanly spaced obstacles: 98.8% Accuracy)
         addEntity('cow', 0.2, 45, 0, -0.05);
-        addEntity('rickshaw', -3.2, 105, 4.2, 0.3);
-        addEntity('pedestrian', 3.6, 165, 0, -0.6);
+        addEntity('speed_breaker', 0.0, 95, 0, 0);
+        addEntity('rickshaw', -3.2, 155, 4.2, 0.3);
         addEntity('truck', 3.2, 225, 5.2, 0.0);
         addEntity('pothole', 0.0, 285, 0.0, 0.0);
       }
@@ -893,8 +1000,8 @@
 
     // --- 9. PHYSICAL AUTONOMOUS SIMULATION STATE & MULTI-OBJECT PLANNING ---
     const sim = {
-      speed: 9.72, // 35 km/h in m/s
-      targetSpeed: 9.72,
+      speed: 33.33, // 120 km/h Expressway default in m/s
+      targetSpeed: 33.33,
       lateralY: 0.0,
       targetLatSmooth: 0.0,
       heading: 0.0,
@@ -906,6 +1013,7 @@
       density: 'medium',
       isPaused: false,
       swerving: false,
+      speedBreakerActive: false,
       friction: 0.85,
       closestThreat: null
     };
@@ -918,7 +1026,10 @@
       sim.steerAngle = 0.0;
       sim.totalDistance = 0.0;
       sim.swerving = false;
+      sim.speedBreakerActive = false;
       sim.accuracy = 99.7;
+      carBody.position.y = 0.65;
+      carBody.rotation.x = 0;
       populateTraffic(sim.density);
     }
 
@@ -952,6 +1063,7 @@
     document.getElementById('btn-add-bike').onclick = () => addEntity('bike', (Math.random() - 0.5) * 4, 50 + Math.random() * 40, 7.5, (Math.random() - 0.5) * 0.4);
     document.getElementById('btn-add-ped').onclick = () => addEntity('pedestrian', (Math.random() > 0.5 ? 4.0 : -4.0), 35 + Math.random() * 30, 0, (Math.random() > 0.5 ? -1.2 : 1.2));
     document.getElementById('btn-add-pothole').onclick = () => addEntity('pothole', (Math.random() - 0.5) * 5, 50 + Math.random() * 40, 0, 0);
+    document.getElementById('btn-add-bump').onclick = () => addEntity('speed_breaker', 0.0, 55 + Math.random() * 25, 0, 0);
 
     // Weather Switcher
     const weatherButtons = {
@@ -984,9 +1096,9 @@
         sunMoonLight.color.setHex(0x93c5fd); sunMoonLight.intensity = 0.85; sunMoonLight.position.set(30, 60, -30);
         roadMat.roughness = 0.82; roadMat.metalness = 0.15; roadMat.color.setHex(0x0f172a);
         rainSystem.visible = false; dustSystem.visible = false;
-        sim.friction = 0.85; sim.targetSpeed = 9.72;
+        sim.friction = 0.85; sim.targetSpeed = 33.33;
         txtPrimarySensor.textContent = "Camera + 16-LiDAR";
-        document.getElementById('txt-target-speed').textContent = "35 KM/H";
+        document.getElementById('txt-target-speed').textContent = "120 KM/H";
       } else if (mode === 'rain') {
         scene.background.setHex(0x080e1a);
         scene.fog.color.setHex(0x0c1527);
@@ -995,9 +1107,9 @@
         sunMoonLight.color.setHex(0x60a5fa); sunMoonLight.intensity = 0.65; sunMoonLight.position.set(20, 50, -20);
         roadMat.roughness = 0.08; roadMat.metalness = 0.82; roadMat.color.setHex(0x060b14);
         rainSystem.visible = true; dustSystem.visible = false;
-        sim.friction = 0.52; sim.targetSpeed = 6.94;
+        sim.friction = 0.52; sim.targetSpeed = 22.22;
         txtPrimarySensor.textContent = "Radar + Filtered LiDAR";
-        document.getElementById('txt-target-speed').textContent = "25 KM/H";
+        document.getElementById('txt-target-speed').textContent = "80 KM/H";
       } else if (mode === 'fog') {
         scene.background.setHex(0x475569);
         scene.fog.color.setHex(0x64748b);
@@ -1006,9 +1118,9 @@
         sunMoonLight.color.setHex(0xcbd5e1); sunMoonLight.intensity = 0.45; sunMoonLight.position.set(10, 40, -10);
         roadMat.roughness = 0.75; roadMat.metalness = 0.20; roadMat.color.setHex(0x1e293b);
         rainSystem.visible = false; dustSystem.visible = false;
-        sim.friction = 0.70; sim.targetSpeed = 5.56;
+        sim.friction = 0.70; sim.targetSpeed = 13.89;
         txtPrimarySensor.textContent = "77 GHz mmWave Radar (Primary)";
-        document.getElementById('txt-target-speed').textContent = "20 KM/H";
+        document.getElementById('txt-target-speed').textContent = "50 KM/H";
       } else if (mode === 'dust') {
         scene.background.setHex(0x451a03);
         scene.fog.color.setHex(0x78350f);
@@ -1017,9 +1129,9 @@
         sunMoonLight.color.setHex(0xf59e0b); sunMoonLight.intensity = 0.70; sunMoonLight.position.set(40, 50, 10);
         roadMat.roughness = 0.95; roadMat.metalness = 0.05; roadMat.color.setHex(0x271406);
         rainSystem.visible = false; dustSystem.visible = true;
-        sim.friction = 0.62; sim.targetSpeed = 6.94;
+        sim.friction = 0.62; sim.targetSpeed = 16.67;
         txtPrimarySensor.textContent = "Radar + Multi-Hypothesis EKF";
-        document.getElementById('txt-target-speed').textContent = "25 KM/H";
+        document.getElementById('txt-target-speed').textContent = "60 KM/H";
       } else if (mode === 'day') {
         scene.background.setHex(0x38bdf8);
         scene.fog.color.setHex(0xbae6fd);
@@ -1028,9 +1140,9 @@
         sunMoonLight.color.setHex(0xfef08a); sunMoonLight.intensity = 1.85; sunMoonLight.position.set(30, 80, 20);
         roadMat.roughness = 0.70; roadMat.metalness = 0.10; roadMat.color.setHex(0x334155);
         rainSystem.visible = false; dustSystem.visible = false;
-        sim.friction = 0.88; sim.targetSpeed = 12.5;
+        sim.friction = 0.88; sim.targetSpeed = 33.33;
         txtPrimarySensor.textContent = "Stereo Camera + LiDAR + Radar";
-        document.getElementById('txt-target-speed').textContent = "45 KM/H";
+        document.getElementById('txt-target-speed').textContent = "120 KM/H";
       }
     }
 
@@ -1051,8 +1163,10 @@
       // 1. Step & Update All Surrounding Multi-Agents
       let closestInCorridor = null;
       let minThreatDist = 999;
+      let activeSpeedBreaker = null;
+      let bumpDist = 999;
 
-      const lookaheadAvoidance = (sim.friction < 0.6) ? 42.0 : 32.0;
+      const lookaheadAvoidance = (sim.friction < 0.6) ? 45.0 : 35.0;
 
       allEntities.forEach(e => {
         // Relative forward movement (Ego moving forward at sim.speed, entity moving at e.vz)
@@ -1060,15 +1174,22 @@
         e.z += relVz * dt;
         e.x += e.vx * dt;
 
-        // Keep entity within road boundaries [-5.2m to +5.2m]
-        if (Math.abs(e.x) > 5.2) {
-          e.vx = -e.vx; // bounce back into roadway
+        // Keep dynamic entities within road boundaries [-5.2m to +5.2m]
+        if (e.type !== 'speed_breaker') {
+          if (Math.abs(e.x) > 5.2) {
+            e.vx = -e.vx; // bounce back into roadway
+          }
         }
 
         // Check if entity has fallen behind ego vehicle (< -18m) -> Recycle & Respawn in distant corridor!
         if (e.z < -18.0) {
           e.z = 240.0 + Math.random() * 80.0; // spawn in far distance
-          e.x = (Math.random() - 0.5) * 7.0;
+          if (e.type === 'speed_breaker') {
+            e.x = 0; // speed breakers span entire road
+            e.thumpPlayed = false;
+          } else {
+            e.x = (Math.random() - 0.5) * 7.0;
+          }
         }
 
         // Update 3D Mesh Position
@@ -1087,8 +1208,18 @@
           e.mesh.wheels.forEach(w => w.rotation.x += rotDelta);
         }
 
-        // 2. Collision Corridor Check for this Entity
-        // Is it ahead of us (z > 0), within lookahead, and within our corridor (|lateralDiff| < 1.9m)?
+        // Check if this is a Speed Breaker
+        if (e.type === 'speed_breaker') {
+          if (e.z > -3.0 && e.z < 65.0) {
+            if (e.z < bumpDist) {
+              bumpDist = e.z;
+              activeSpeedBreaker = e;
+            }
+          }
+          return; // Speed breaker spans entire road, avoid lateral steering evasion
+        }
+
+        // 2. Collision Corridor Check for other Entities (Obstacles)
         const lateralDist = Math.abs(e.x - sim.lateralY);
         const inCorridor = (e.z > 0 && e.z < lookaheadAvoidance && lateralDist < 2.0);
 
@@ -1107,6 +1238,50 @@
       });
 
       sim.closestThreat = closestInCorridor;
+      sim.activeSpeedBreaker = activeSpeedBreaker;
+      sim.bumpDist = bumpDist;
+
+      // 2. Speed Breaker Longitudinal Controller & Suspension Physics
+      let speedBreakerEngaged = false;
+      if (activeSpeedBreaker) {
+        speedBreakerEngaged = true;
+        const safeSpeed = 4.17; // 15 km/h safe crawl speed for speed breaker
+
+        if (bumpDist > 1.8) {
+          // Predictive deceleration: progressive braking down to 15 km/h
+          const decelNeeded = (sim.speed * sim.speed - safeSpeed * safeSpeed) / (2 * Math.max(1.5, bumpDist));
+          const maxDecel = (sim.friction < 0.6) ? 3.8 : 6.8;
+          const applyDecel = Math.max(2.8, Math.min(maxDecel, decelNeeded));
+          sim.speed = Math.max(safeSpeed, sim.speed - applyDecel * dt);
+          sim.speedBreakerActive = true;
+
+        } else if (bumpDist >= -1.8 && bumpDist <= 1.8) {
+          // Passing over the speed breaker: maintain 15 km/h & realistic suspension bounce
+          sim.speed = Math.max(3.8, Math.min(4.5, sim.speed));
+          sim.speedBreakerActive = true;
+
+          const bumpProgress = (bumpDist + 1.8) / 3.6; // 0 to 1
+          const bounceY = Math.sin(bumpProgress * Math.PI) * 0.16;
+          const pitchTilt = Math.cos(bumpProgress * Math.PI) * 0.045;
+          carBody.position.y = 0.65 + bounceY;
+          carBody.rotation.x = -pitchTilt;
+
+          if (!activeSpeedBreaker.thumpPlayed) {
+            audio.playBump();
+            activeSpeedBreaker.thumpPlayed = true;
+          }
+        } else {
+          // Just cleared bump
+          carBody.position.y = 0.65;
+          carBody.rotation.x = 0;
+          sim.speedBreakerActive = false;
+          speedBreakerEngaged = false;
+        }
+      } else {
+        carBody.position.y = 0.65;
+        carBody.rotation.x = 0;
+        sim.speedBreakerActive = false;
+      }
 
       // 3. Multi-Agent Reactive Frenet & Stanley Planner with Smooth Trajectory Evasion
       let targetLat = 0.0;
@@ -1116,35 +1291,40 @@
           audio.playWarning();
         }
         sim.swerving = true;
-
-        // Choose best evasion lane: if threat is to the right, swerve left (-2.4m); if to left, swerve right (+2.4m)
         targetLat = (closestInCorridor.x >= sim.lateralY) ? -2.4 : 2.4;
 
-        // Gentle deceleration for passenger comfort and vehicle stability
-        const decelRate = (sim.friction < 0.6) ? 1.8 : 2.4;
-        sim.speed = Math.max(5.5, sim.speed - decelRate * dt);
+        if (!speedBreakerEngaged) {
+          const decelRate = (sim.friction < 0.6) ? 2.5 : 3.5;
+          sim.speed = Math.max(6.0, sim.speed - decelRate * dt);
+        }
 
       } else if (sim.swerving) {
-        // Path cleared ahead: return smoothly to center lane
         targetLat = 0.0;
-        sim.speed = Math.min(sim.targetSpeed, sim.speed + 2.0 * dt);
+        if (!speedBreakerEngaged) {
+          sim.speed = Math.min(sim.targetSpeed, sim.speed + 2.5 * dt);
+        }
         if (Math.abs(sim.lateralY) < 0.25) {
           sim.swerving = false;
         }
       } else {
         targetLat = 0.0;
-        sim.speed = Math.min(sim.targetSpeed, sim.speed + 2.2 * dt);
+        if (!speedBreakerEngaged) {
+          // Accelerate back up to target cruise speed (up to 120 km/h)
+          const accelRate = (sim.speed < 12.0) ? 5.5 : (sim.speed < 22.0 ? 4.0 : 2.6);
+          sim.speed = Math.min(sim.targetSpeed, sim.speed + accelRate * dt);
+        }
       }
 
       // Smooth target lateral position filter (exponential moving average for fluid lane change)
       sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, 4.0 * dt);
 
-      // Stanley steering calculation with softened low-speed regularizer:
+      // Stanley steering calculation (with speed-adaptive maximum steer angle for high-speed stability):
       const kStanley = (sim.friction < 0.6) ? 0.55 : 0.72;
       const eps = 0.8;
       const crossTrack = sim.lateralY - sim.targetLatSmooth;
       const steerDemand = -sim.heading - Math.atan((kStanley * crossTrack) / (sim.speed + eps));
-      const clampedSteer = Math.max(-0.45, Math.min(0.45, steerDemand));
+      const maxSteerForSpeed = (sim.speed > 25.0) ? 0.24 : (sim.speed > 14.0 ? 0.35 : 0.45);
+      const clampedSteer = Math.max(-maxSteerForSpeed, Math.min(maxSteerForSpeed, steerDemand));
 
       // Smooth steering actuator response (models EPS motor slew rate)
       sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, 10.0 * dt);
@@ -1266,14 +1446,20 @@
       const alertBanner = document.getElementById('alert-banner');
       const threatLabel = document.getElementById('txt-closest-threat');
 
-      if (sim.closestThreat) {
+      if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0) {
+        alertBanner.classList.remove('hidden');
+        document.getElementById('alert-title').textContent = '⚠️ IRC-99 SPEED BREAKER DETECTED';
+        document.getElementById('alert-sub').textContent = `Speed reduced from ${document.getElementById('txt-target-speed').textContent} to 15 km/h. Bump in ${Math.max(0, sim.bumpDist).toFixed(1)}m.`;
+        threatLabel.textContent = `Speed Breaker (${Math.max(0, sim.bumpDist).toFixed(1)}m) -> 15 km/h Crawl`;
+        document.getElementById('txt-behavior').textContent = 'SPEED BREAKER';
+      } else if (sim.closestThreat) {
         alertBanner.classList.remove('hidden');
         document.getElementById('alert-title').textContent = `🚨 AVOIDING ${sim.closestThreat.type.toUpperCase()}`;
         document.getElementById('alert-sub').textContent = `Frenet planner bypass active. Distance: ${sim.closestThreat.z.toFixed(1)}m.`;
         threatLabel.textContent = `Threat: ${sim.closestThreat.type.toUpperCase()} (${sim.closestThreat.z.toFixed(1)}m)`;
       } else {
         alertBanner.classList.add('hidden');
-        threatLabel.textContent = `All Lanes Monitored (${allEntities.length} agents)`;
+        threatLabel.textContent = `Expressway Cruise: ${allEntities.length} road entities tracked`;
       }
     }
 
@@ -1354,16 +1540,44 @@
       }
     };
 
-    const speeds = [
-      { label: "25 KM/H", val: 6.94 },
-      { label: "35 KM/H", val: 9.72 },
-      { label: "50 KM/H", val: 13.89 }
+    const speedPresets = [
+      { id: 'spd-120', mps: 33.33, label: '120 KM/H' },
+      { id: 'spd-80', mps: 22.22, label: '80 KM/H' },
+      { id: 'spd-50', mps: 13.89, label: '50 KM/H' },
+      { id: 'spd-35', mps: 9.72, label: '35 KM/H' }
     ];
-    let speedIdx = 1;
+
+    function setSpeedPreset(mps, label) {
+      sim.targetSpeed = mps;
+      document.getElementById('txt-target-speed').textContent = label;
+      speedPresets.forEach(p => {
+        const btn = document.getElementById(p.id);
+        if (btn) {
+          if (Math.abs(p.mps - mps) < 0.8) {
+            btn.className = "px-2.5 py-1 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold transition shadow";
+          } else {
+            btn.className = "px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition";
+          }
+        }
+      });
+    }
+
+    document.getElementById('spd-120').onclick = () => setSpeedPreset(33.33, '120 KM/H');
+    document.getElementById('spd-80').onclick = () => setSpeedPreset(22.22, '80 KM/H');
+    document.getElementById('spd-50').onclick = () => setSpeedPreset(13.89, '50 KM/H');
+    document.getElementById('spd-35').onclick = () => setSpeedPreset(9.72, '35 KM/H');
+
+    const speeds = [
+      { label: "120 KM/H", val: 33.33 },
+      { label: "80 KM/H", val: 22.22 },
+      { label: "50 KM/H", val: 13.89 },
+      { label: "35 KM/H", val: 9.72 },
+      { label: "20 KM/H", val: 5.56 }
+    ];
+    let speedIdx = 0; // Starts at 120 KM/H Expressway default!
     document.getElementById('btn-speed-toggle').onclick = () => {
       speedIdx = (speedIdx + 1) % speeds.length;
-      sim.targetSpeed = speeds[speedIdx].val;
-      document.getElementById('txt-target-speed').textContent = speeds[speedIdx].label;
+      setSpeedPreset(speeds[speedIdx].val, speeds[speedIdx].label);
     };
 
     document.getElementById('btn-sound-toggle').onclick = () => {
@@ -1428,10 +1642,11 @@
       renderer.setSize(window.innerWidth, window.innerHeight);
     });
 
-    // Start with Chase Cam, Clear Weather & Balanced High-Accuracy Traffic (5 well-spaced obstacles)
+    // Start with Chase Cam, Clear Weather & 120 KM/H Indian Expressway Mode
     setCamMode('chase');
     setWeather('clear');
     setDensity('medium');
+    setSpeedPreset(33.33, '120 KM/H');
     requestAnimationFrame(animate);
   </script>
 </body>
