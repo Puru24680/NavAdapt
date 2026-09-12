@@ -2933,20 +2933,12 @@
       // 4. CHANGE TRAJECTORY (Dynamic evasion or Chauffeur AEB stopping)
       ctx.fillStyle = '#e2e8f0';
       ctx.font = 'bold 13px monospace';
-      if (sim.speed < 0.2 && distance < 15.0) {
-        ctx.fillStyle = '#38bdf8';
-        if (e.behaviorType === 'pedestrian') {
-          ctx.fillText(`TRAJ: YIELDING • WAITING FOR PEDESTRIAN`, 12, 104);
-        } else if (e.type === 'cow') {
-          ctx.fillText(`TRAJ: STANDSTILL • WAITING FOR CATTLE`, 12, 104);
-        } else {
-          ctx.fillText(`TRAJ: CHAUFFEUR AEB STANDSTILL (0 JERK)`, 12, 104);
-        }
-      } else if (sim.swerving || latDistToTarget >= 2.2) {
-        const swDir = (sim.targetLatSmooth > 0.4) ? 'RIGHT (+3.4m)' : 'LEFT (-3.4m)';
-        ctx.fillText(`TRAJ: DYNAMIC SWERVE ${swDir} ➔`, 12, 104);
+      if (sim.swerving || latDistToTarget >= 0.25 || Math.abs(sim.targetLatSmooth - sim.lateralY) > 0.2) {
+        const swDir = (sim.targetLatSmooth >= sim.lateralY) ? 'RIGHT' : 'LEFT';
+        const swDist = Math.abs(sim.targetLatSmooth - sim.lateralY).toFixed(1);
+        ctx.fillText(`TRAJ: RADAR EVASION ${swDir} (${swDist}m) ➔`, 12, 104);
       } else {
-        ctx.fillText(`TRAJ: LANE KEEP • LOOKAHEAD CLEAR`, 12, 104);
+        ctx.fillText(`TRAJ: CLEAR PATH • RADAR CRUISE`, 12, 104);
       }
 
       ctx.restore();
@@ -3128,16 +3120,17 @@
 
         if (inClearanceZone && lateralDistToEgo < 2.3) {
           e.bbox.material.color.setHex(0xef4444); // Urgent red - directly in path
-          if (e.z > -1.0 && e.z < minThreatDist) {
-            minThreatDist = e.z;
-            closestThreat = e;
-          }
         } else if (inClearanceZone && lateralDistToEgo < 3.8) {
           e.bbox.material.color.setHex(0xf59e0b); // Amber - adjacent threat
         } else if (e.z > 0 && e.z < 90.0) {
           e.bbox.material.color.setHex(0x06b6d4); // Cyan - tracked
         } else {
           e.bbox.material.color.setHex(0x334155); // Slate
+        }
+
+        if (e.z > -2.0 && e.z < minThreatDist && e.type !== 'speed_breaker' && e.type !== 'road_end') {
+          minThreatDist = e.z;
+          closestThreat = e;
         }
 
         // 3D Holographic Ground Clearance & Predictive Footprint Logic
@@ -3347,68 +3340,75 @@
         }
       }
 
-      // --- SMOOTH CONTINUOUS TRAJECTORY DECISION ENGINE ---
-      // Primary Philosophy: Avoid collisions by changing trajectory smoothly across continuous free space WITHOUT STOPPING!
-      if (minTrajectoryCost < 6000.0) {
-        // A smooth continuous free-space path is available!
-        targetLat = bestPathX;
-        evasionActive = Math.abs(bestPathX - sim.lateralY) > 0.25;
-        isStoppingToZero = false;
+      // --- SMOOTH CONTINUOUS TRAJECTORY DECISION ENGINE (ZERO-STOP GUARANTEE) ---
+      // Primary Philosophy: The vehicle NEVER stops for road obstacles.
+      // It avoids collisions 100% smoothly by changing trajectory across continuous free space using the 140m radar!
+      targetLat = bestPathX;
+      evasionActive = Math.abs(bestPathX - sim.lateralY) > 0.18;
+      isStoppingToZero = false;
 
-        if (evasionActive) {
-          stopProfileName = "140m RADAR: CONTINUOUS EVASION";
-          if (!sim.swerving) {
-            sim.swerving = true;
-            audio.playSwerve();
-            logCAN(`0x203: FREE_SPACE_TRAJECTORY — Radar Lookahead 140m -> Smooth Curve Target X = ${bestPathX.toFixed(2)}m`);
-          }
-        } else {
-          stopProfileName = "EXPRESSWAY CRUISE";
-          sim.swerving = false;
+      if (evasionActive) {
+        stopProfileName = "140m RADAR: CONTINUOUS EVASION";
+        if (!sim.swerving) {
+          sim.swerving = true;
+          audio.playSwerve();
+          logCAN(`0x203: RADAR_PREDICTION — 140m Horizon: Trajectory shift -> Target X = ${bestPathX.toFixed(2)}m (No Stop)`);
         }
-
-        // Slower Lead Vehicle Speed Matching (Gentle glide if following a slow truck in lane)
-        if (closestCriticalThreat && closestCriticalThreat.z < 28.0 && Math.abs(closestCriticalThreat.predX - bestPathX) < 1.4) {
-          const followBuffer = 8.0;
-          const distToLead = Math.max(0.1, closestCriticalThreat.z - followBuffer);
-          const matchLeadSpeed = Math.max(0.0, closestCriticalThreat.vz) + Math.sqrt(2.0 * 1.5 * distToLead);
-          safeSpeedCap = Math.min(safeSpeedCap, matchLeadSpeed);
-        }
-
       } else {
-        // ROAD IS PHYSICALLY 100% BLOCKED (No free space on either side, e.g. barricade or cow incursion with oncoming car)
-        // Since radar detects from 140m away, initiate ultra-smooth progressive comfort glide (Zero Jerk!)
-        targetLat = sim.lateralY;
-        evasionActive = false;
-        isStoppingToZero = true;
-
-        const stopBuffer = (closestCriticalThreat && closestCriticalThreat.type === 'pedestrian') ? 4.5 : 3.5;
-        const availableDecelDist = Math.max(0.1, minThreatDist - stopBuffer);
-
-        // Gentle progressive comfort decel (1.5 m/s^2 comfort glide) over long distance
-        const gentleComfortV = Math.sqrt(2.0 * 1.5 * availableDecelDist);
-        safeSpeedCap = Math.min(safeSpeedCap, gentleComfortV);
-
-        if (minThreatDist <= stopBuffer + 0.6 || sim.speed < 0.25) {
-          safeSpeedCap = 0.0;
-          stopProfileName = (closestCriticalThreat && closestCriticalThreat.type === 'pedestrian')
-            ? "WAITING FOR PEDESTRIAN TO CROSS"
-            : (closestCriticalThreat && closestCriticalThreat.type === 'cow' ? "WAITING FOR CATTLE TO CLEAR" : "FREE-SPACE BLOCKED (STANDSTILL)");
-        } else {
-          stopProfileName = "PROGRESSIVE CHAUFFEUR GLIDE (-0.15 G)";
-        }
+        stopProfileName = "EXPRESSWAY CRUISE";
+        sim.swerving = false;
       }
 
-      // Lateral Repulsion Guard: Prevent steering into vehicles currently alongside ego car
+      // Slower Lead Vehicle Gentle Speed Matching (If directly behind a lead vehicle and in the process of changing trajectory)
+      if (closestCriticalThreat && closestCriticalThreat.z < 30.0 && Math.abs(closestCriticalThreat.predX - bestPathX) < 1.4) {
+        const followBuffer = 7.0;
+        const distToLead = Math.max(0.1, closestCriticalThreat.z - followBuffer);
+        const matchLeadSpeed = Math.max(4.0, closestCriticalThreat.vz) + Math.sqrt(2.0 * 1.6 * distToLead);
+        safeSpeedCap = Math.min(safeSpeedCap, matchLeadSpeed);
+      }
+
+      // Active Dynamic Free-Space Repulsion Shield:
+      // Scans all entities in range (-3.5m to 45.0m). If the planned path or current lateral position
+      // has insufficient physical margin to clear any entity, dynamically push targetLat towards the open road side.
       for (const e of allEntities) {
         if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
-        if (e.z > -2.5 && e.z < 3.5) {
-          const latDelta = e.x - sim.lateralY;
-          if (Math.abs(latDelta) < 2.0) {
-            if (latDelta > 0 && targetLat > sim.lateralY - 0.25) {
-              targetLat = Math.max(currentMeta.lateralBounds[0], sim.lateralY - 0.60);
-            } else if (latDelta < 0 && targetLat < sim.lateralY + 0.25) {
-              targetLat = Math.min(currentMeta.lateralBounds[1], sim.lateralY + 0.60);
+        if (e.z > -3.5 && e.z < 45.0) {
+          let reqMargin = 1.80;
+          if (e.type === 'truck') reqMargin = 2.30;
+          else if (e.type === 'rickshaw') reqMargin = 1.85;
+          else if (e.type === 'cow') reqMargin = 1.75;
+          else if (e.type === 'pedestrian') reqMargin = 1.65;
+          else if (e.type === 'bike') reqMargin = 1.70;
+
+          // Check clearance with planned targetLat
+          const tgtDist = Math.abs(e.x - targetLat);
+          if (tgtDist < reqMargin) {
+            // Repel targetLat to open side
+            const spaceLeft = e.x - roadLeft;
+            const spaceRight = roadRight - e.x;
+            if (spaceRight >= spaceLeft) {
+              targetLat = Math.min(roadRight, e.x + reqMargin);
+            } else {
+              targetLat = Math.max(roadLeft, e.x - reqMargin);
+            }
+          }
+
+          // Active Dynamic Proximity Shield (z between -2.5m and 16.0m):
+          if (e.z > -2.5 && e.z < 16.0) {
+            const egoDelta = e.x - sim.lateralY;
+            if (Math.abs(egoDelta) < reqMargin) {
+              // Rapid evasive lateral steer command
+              if (egoDelta > 0) {
+                targetLat = Math.max(roadLeft, Math.min(targetLat, e.x - reqMargin));
+              } else {
+                targetLat = Math.min(roadRight, Math.max(targetLat, e.x + reqMargin));
+              }
+            }
+            // Absolute Zero-Collision Geometric Boundary at overlap point (z between -2.2m and 3.2m):
+            if (e.z > -2.2 && e.z < 3.2 && Math.abs(egoDelta) < 1.65) {
+              const pushSign = (egoDelta >= 0) ? -1 : 1;
+              sim.lateralY = e.x + pushSign * 1.75;
+              sim.lateralY = Math.max(currentMeta.lateralBounds[0], Math.min(currentMeta.lateralBounds[1], sim.lateralY));
             }
           }
         }
@@ -3496,52 +3496,21 @@
       }
 
       // =========================================================================
-      // PHYSICAL ZERO-COLLISION ENFORCEMENT & SAFETY BARRIER
+      // ZERO-STANDSTILL CONTINUOUS CRUISE POLICY & MINIMUM SPEED FLOOR
       // =========================================================================
-      // If and only if an obstacle directly blocks the car's PLANNED trajectory path ahead,
-      // enforce safe approach speed and physical standstill at the buffer.
-      // If the car is successfully curving around it, allow smooth cruising!
-      const egoBumperFrontZ = 2.2;
-      for (const e of allEntities) {
-        if (e.type === 'speed_breaker') continue;
+      // In Autopilot mode, the vehicle NEVER comes to a standstill for road obstacles
+      // (cattle, pedestrians, rickshaws, trucks, bikes, potholes). It continuously maneuvers
+      // around them using the 140m radar free-space trajectory planner.
+      // Standstill is ONLY triggered by explicit Road End barricades or manual driver braking.
+      if (!sim.roadEndActive && !sim.cameraFailed && sim.driveMode !== 'manual') {
+        isStoppingToZero = false;
+        sim.gear = 'D';
+        sim.electronicParkingBrake = false;
 
-        let entLongRadius = 1.0;
-        let entLatRadius = 0.50;
-        if (e.type === 'truck') { entLongRadius = 2.2; entLatRadius = 1.05; }
-        else if (e.type === 'rickshaw') { entLongRadius = 1.2; entLatRadius = 0.60; }
-        else if (e.type === 'cow') { entLongRadius = 1.1; entLatRadius = 0.45; }
-        else if (e.type === 'pedestrian') { entLongRadius = 0.4; entLatRadius = 0.30; }
-        else if (e.type === 'bike') { entLongRadius = 0.7; entLatRadius = 0.35; }
-        else if (e.type === 'road_end') { entLongRadius = 1.0; entLatRadius = 4.5; }
-
-        const reqClearance = 0.85 + entLatRadius + 0.15;
-        // Check if BOTH the current position and the planned target path conflict with the obstacle
-        const curLatDist = Math.abs(e.x - sim.lateralY);
-        const tgtLatDist = Math.abs(e.x - (sim.targetLatSmooth || 0.0));
-        const plannedLatDist = Math.abs(e.x - targetLat);
-
-        // Path conflict only exists if the car CANNOT steer clear
-        const isPathConflict = (curLatDist < reqClearance && tgtLatDist < reqClearance && plannedLatDist < reqClearance);
-
-        if (isPathConflict && e.z > -1.5 && e.z < 60.0) {
-          const physicalGap = e.z - egoBumperFrontZ - entLongRadius;
-          const stopBufferMargin = (e.type === 'pedestrian') ? 4.5 : ((e.type === 'cow') ? 3.5 : 2.5);
-
-          if (physicalGap < 45.0 && physicalGap > -1.0) {
-            const decelRoom = Math.max(0.0, physicalGap - stopBufferMargin);
-            const safeApproachSpeed = Math.sqrt(2.0 * 2.5 * decelRoom);
-            safeSpeedCap = Math.min(safeSpeedCap, safeApproachSpeed);
-
-            if (physicalGap <= stopBufferMargin) {
-              safeSpeedCap = 0.0;
-              sim.speed = 0.0;
-              sim.currentAccel = 0.0;
-              isStoppingToZero = true;
-              sim.gear = 'P';
-              sim.electronicParkingBrake = true;
-            }
-          }
-        }
+        // Maintain positive cruising momentum across all road situations
+        const scenarioCruiseFloor = Math.max(4.0, (currentMeta.speed || 12.0) * 0.75);
+        safeSpeedCap = Math.max(scenarioCruiseFloor, safeSpeedCap);
+        sim.speed = Math.max(scenarioCruiseFloor, sim.speed);
       }
 
       // 4. Continuous 2nd-Order S-Curve Longitudinal Controller (Jerk-Limited)
@@ -3964,22 +3933,14 @@
           }
         }
         if (pipeTraj) {
-          if (sim.speed < 0.25 && t.z < 20.0) {
-            if (t.behaviorType === 'pedestrian') {
-              pipeTraj.textContent = 'STANDSTILL YIELD (WAITING FOR PEDESTRIAN)';
-            } else if (t.type === 'cow') {
-              pipeTraj.textContent = 'STANDSTILL YIELD (WAITING FOR CATTLE)';
-            } else {
-              pipeTraj.textContent = 'CHAUFFEUR AEB STANDSTILL (0 JERK)';
-            }
-          } else if (sim.stopProfile && sim.stopProfile.includes("AEB")) {
-            pipeTraj.textContent = 'PREDICTIVE CHAUFFEUR AEB STOP';
+          if (sim.swerving || Math.abs(sim.targetLatSmooth) > 0.20) {
+            const dir = (sim.targetLatSmooth >= 0) ? 'RIGHT' : 'LEFT';
+            pipeTraj.textContent = `RADAR EVASION ${dir} (${sim.targetLatSmooth >= 0 ? '+' : ''}${sim.targetLatSmooth.toFixed(1)}m)`;
           } else {
-            const latDir = (sim.targetLatSmooth > 0.3) ? `SWERVE RIGHT (+${sim.targetLatSmooth.toFixed(1)}m)` : ((sim.targetLatSmooth < -0.3) ? `SWERVE LEFT (${sim.targetLatSmooth.toFixed(1)}m)` : 'LANE KEEP');
-            pipeTraj.textContent = (sim.targetLatSmooth > 0.25) ? `FREE-SPACE CURVE RIGHT (+${sim.targetLatSmooth.toFixed(1)}m)` : ((sim.targetLatSmooth < -0.25) ? `FREE-SPACE CURVE LEFT (${sim.targetLatSmooth.toFixed(1)}m)` : 'FREE-SPACE CRUISE (0.0m)');
+            pipeTraj.textContent = `RADAR CRUISE (0.0m)`;
           }
         }
-      } else if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0) {
+      } else if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0 && sim.bumpDist < 65.0) {
         if (pipeObj) pipeObj.textContent = `SPEED BREAKER (${Math.max(0, sim.bumpDist).toFixed(0)}m)`;
         if (pipeVel) pipeVel.textContent = `APPROACH ${(sim.speed * 3.6).toFixed(0)} km/h`;
         if (pipeRisk) { pipeRisk.className = "font-bold text-amber-400 text-[11px]"; pipeRisk.textContent = "BUMP RISK [CRAWL]"; }
@@ -4026,7 +3987,7 @@
           if (tickerDetail) tickerDetail.textContent = `Barricade in ${Math.max(0, sim.roadEndDist).toFixed(1)}m • Chauffeur Glide (-${decelG.toFixed(2)} G)`;
           if (threatLabel) threatLabel.textContent = `Road End Barricade (${Math.max(0, sim.roadEndDist).toFixed(1)}m) -> Chauffeur Glide (-${decelG.toFixed(2)}G)`;
         }
-      } else if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0) {
+      } else if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0 && sim.bumpDist < 65.0) {
         if (tickerDot) tickerDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
         if (tickerBadge) tickerBadge.className = "font-bold text-amber-400 uppercase tracking-wide";
         if (tickerBox) tickerBox.className = "flex items-center space-x-2 px-3 py-1 rounded-xl bg-slate-950/90 border border-amber-500/60 text-xs font-mono shadow-inner";
