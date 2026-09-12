@@ -204,6 +204,10 @@
 
       <!-- 4. Fail-Safe Quick Triggers -->
       <div class="flex items-center space-x-1 text-xs font-mono">
+        <button id="btn-trigger-bump" onclick="triggerSpeedBreaker()" class="px-2 py-0.5 rounded-lg bg-amber-600/90 hover:bg-amber-500 text-white font-bold transition shadow text-[11px] flex items-center space-x-1 border border-amber-400/40" title="Spawn Speed Breaker 45m ahead and test gradual deceleration & 8 km/h crawl">
+          <span>🚧</span>
+          <span>Speed Breaker</span>
+        </button>
         <button id="btn-trigger-road-end" class="px-2 py-0.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white font-bold transition shadow text-[11px]" title="Test Road End Safe Stop">🛑 Road End</button>
         <button id="btn-trigger-cam-fail" class="px-2 py-0.5 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white font-bold transition shadow text-[11px]" title="Simulate Camera Fail & IoT Handover">
           <span id="txt-cam-fail-icon">📷</span>
@@ -262,13 +266,17 @@
       <!-- Extra Spawners -->
       <div>
         <div class="text-[10px] text-slate-400 font-bold mb-1.5">MORE OBSTACLES:</div>
-        <div class="grid grid-cols-3 gap-1 text-[11px]">
+        <div class="grid grid-cols-4 gap-1 text-[11px]">
+          <button id="btn-add-bump" onclick="triggerSpeedBreaker()" class="px-1.5 py-0.5 rounded-lg bg-amber-950 text-amber-300 border border-amber-500/50 hover:bg-amber-900 font-bold">🚧 Bump</button>
+          <button id="btn-add-cow" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🐄 Cow</button>
+          <button id="btn-add-rickshaw" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🛺 Auto</button>
+          <button id="btn-add-truck" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🚚 Truck</button>
           <button id="btn-add-bike" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🏍️ Bike</button>
-          <button id="btn-add-ped" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🚶 Pedestrian</button>
-          <button id="btn-add-pothole" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🕳️ Pothole</button>
-          <button id="btn-add-road-end" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🛑 Road End</button>
-          <button id="btn-add-cam-fail" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">📷 Cam Fail</button>
-          <button id="btn-speed-toggle" class="px-1.5 py-0.5 rounded-lg bg-blue-950 text-cyan-300 border border-blue-600/40">⚡ Cycle Spd</button>
+          <button id="btn-add-ped" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🚶 Ped</button>
+          <button id="btn-add-pothole" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🕳️ Hole</button>
+          <button id="btn-add-road-end" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🛑 End</button>
+          <button id="btn-add-cam-fail" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">📷 Cam</button>
+          <button id="btn-speed-toggle" class="px-1.5 py-0.5 rounded-lg bg-blue-950 text-cyan-300 border border-blue-600/40 col-span-3">⚡ Cycle Spd</button>
         </div>
       </div>
 
@@ -517,6 +525,22 @@
           gain.connect(this.ctx.destination);
           osc.start();
           osc.stop(this.ctx.currentTime + 0.34);
+        } catch(e) {}
+      }
+      playSwerve() {
+        if (!this.ctx || !this.enabled) return;
+        try {
+          const osc = this.ctx.createOscillator();
+          const gain = this.ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(320, this.ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(460, this.ctx.currentTime + 0.12);
+          gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+          osc.connect(gain);
+          gain.connect(this.ctx.destination);
+          osc.start();
+          osc.stop(this.ctx.currentTime + 0.16);
         } catch(e) {}
       }
       toggle() {
@@ -2450,12 +2474,12 @@
 
       if (scenarioId === 'scenario_1') {
         // --- 01. RURAL ARTERIAL WITHOUT LANE MARKINGS (GRAMIN SADAK) ---
-        // Road Width: 5.5m • Missing centerlines, natural dirt shoulders, roaming cattle, potholes, speed breaker, oncoming two-wheeler
-        const cow1 = addEntity('cow', 0.6, 65, 0.2, -0.15);
-        cow1.behaviorType = 'erratic_wander';
+        // Gramin Sadak Asphalt Speed Breaker placed 45m ahead for immediate experience
+        addEntity('speed_breaker', 0.0, 45.0, 0, 0);
 
-        // Gramin Sadak Asphalt Speed Breaker (requires gentle deceleration from 65m down to 8 km/h crawl)
-        addEntity('speed_breaker', 0.0, 100.0, 0, 0);
+        // Roaming cattle along the unpaved dirt shoulder (85m ahead)
+        const cow1 = addEntity('cow', 1.85, 85.0, 0.2, -0.04);
+        cow1.behaviorType = 'erratic_wander';
 
         const pot1 = addEntity('pothole', -0.5, 155, 0, 0);
 
@@ -2483,6 +2507,7 @@
 
         const bus1 = addEntity('truck', -2.8, 110, 4.5, 0.1);
         bus1.behaviorType = 'overloaded_truck';
+        addEntity('speed_breaker', 0.0, 75.0, 0, 0);
 
         if (density === 'heavy') {
           const rick2 = addEntity('rickshaw', -1.8, 170, 5.5, 0.9);
@@ -2496,8 +2521,9 @@
         const ped1 = addEntity('pedestrian', 1.8, 30, 0.6, -1.1);
         ped1.behaviorType = 'pedestrian';
 
+        addEntity('speed_breaker', 0.0, 55, 0, 0);
         // Pothole / drain grating in narrow market
-        addEntity('pothole', 0.2, 75, 0, 0);
+        addEntity('pothole', 0.2, 95, 0, 0);
 
         // Protruding parked motorcycle along market verge
         const bike1 = addEntity('bike', -1.3, 110, 0, 0);
@@ -2663,6 +2689,24 @@
       }
     }
 
+    // Safety Scenario: Speed Breaker Spawn & Gradual Chauffeur Glide
+    function triggerSpeedBreaker() {
+      // Remove any existing speed breakers to ensure clean test
+      for (let i = allEntities.length - 1; i >= 0; i--) {
+        if (allEntities[i].type === 'speed_breaker') {
+          entityGroup.remove(allEntities[i].mesh);
+          scene.remove(allEntities[i].bbox);
+          allEntities.splice(i, 1);
+        }
+      }
+      // Spawn speed breaker 45m ahead for immediate, smooth gradual glide
+      const sb = addEntity('speed_breaker', 0.0, 45.0, 0, 0);
+      sb.thumpPlayed = false;
+      sim.speedBreakerActive = false;
+      logCAN("0x290: SPEED_BREAKER_DEPLOY — Speed Breaker placed 45m ahead. Smooth Hermite glide armed!");
+    }
+    window.triggerSpeedBreaker = triggerSpeedBreaker;
+
     // Safety Scenario: Road End Barricade Detection & Controlled Stop
     function triggerRoadEndStop() {
       // Calculate realistic, comfortable passenger stopping distance:
@@ -2727,6 +2771,8 @@
     }
 
     // Safety & Fail-Safe Button Bindings (Safe with existence check)
+    const btnTriggerBump = document.getElementById('btn-trigger-bump');
+    if (btnTriggerBump) btnTriggerBump.onclick = () => triggerSpeedBreaker();
     const btnRoadEnd = document.getElementById('btn-trigger-road-end');
     if (btnRoadEnd) btnRoadEnd.onclick = () => triggerRoadEndStop();
     const btnCamFail = document.getElementById('btn-trigger-cam-fail');
@@ -2742,7 +2788,7 @@
       'btn-add-bike': () => addEntity('bike', (Math.random() - 0.5) * 4, 50 + Math.random() * 40, 7.5, (Math.random() - 0.5) * 0.4),
       'btn-add-ped': () => addEntity('pedestrian', (Math.random() > 0.5 ? 4.0 : -4.0), 35 + Math.random() * 30, 0, (Math.random() > 0.5 ? -1.2 : 1.2)),
       'btn-add-pothole': () => addEntity('pothole', (Math.random() - 0.5) * 5, 50 + Math.random() * 40, 0, 0),
-      'btn-add-bump': () => addEntity('speed_breaker', 0.0, 55 + Math.random() * 25, 0, 0),
+      'btn-add-bump': () => triggerSpeedBreaker(),
       'btn-add-road-end': () => triggerRoadEndStop(),
       'btn-add-cam-fail': () => triggerCameraFailure()
     };
@@ -2785,9 +2831,8 @@
         mountainMat.color.setHex(0x1a2f3d);
         starField.visible = true; cloudGroup.visible = false;
         rainSystem.visible = false; dustSystem.visible = false;
-        sim.friction = 0.85; sim.targetSpeed = 33.33;
+        sim.friction = 0.85;
         txtPrimarySensor.textContent = "Camera + 16-LiDAR";
-        document.getElementById('txt-target-speed').textContent = "120 KM/H";
       } else if (mode === 'rain') {
         scene.background.setHex(0x080e1a);
         scene.fog.color.setHex(0x0c1527);
@@ -2841,9 +2886,8 @@
         mountainMat.color.setHex(0x3b6b55);
         starField.visible = false; cloudGroup.visible = true;
         rainSystem.visible = false; dustSystem.visible = false;
-        sim.friction = 0.88; sim.targetSpeed = 33.33;
+        sim.friction = 0.88;
         txtPrimarySensor.textContent = "Stereo Camera + LiDAR + Radar";
-        document.getElementById('txt-target-speed').textContent = "120 KM/H";
       }
     }
 
@@ -3354,7 +3398,9 @@
         stopProfileName = "140m RADAR: CONTINUOUS EVASION";
         if (!sim.swerving) {
           sim.swerving = true;
-          audio.playSwerve();
+          if (typeof audio !== 'undefined' && audio && typeof audio.playSwerve === 'function') {
+            try { audio.playSwerve(); } catch(e) {}
+          }
           logCAN(`0x203: RADAR_PREDICTION — 140m Horizon: Trajectory shift -> Target X = ${bestPathX.toFixed(2)}m (No Stop)`);
         }
       } else {
@@ -3464,7 +3510,15 @@
           stopProfileName = "ROAD END STANDSTILL";
         }
 
-      } else if (!isStoppingToZero && activeSpeedBreaker && bumpDist > -4.0 && bumpDist < 160.0) {
+      } else {
+        if (!activeSpeedBreaker || bumpDist >= 160.0 || bumpDist < -4.0) {
+          sim.speedBreakerActive = false;
+        }
+      }
+
+      sim.bumpDist = bumpDist;
+
+      if (!isStoppingToZero && activeSpeedBreaker && bumpDist > -4.0 && bumpDist < 160.0) {
         // --- SPEED BREAKER: ULTRA-SMOOTH GRADUAL CHAUFFEUR GLIDE TO 8 KM/H CRAWL ---
         // Begins progressive, gentle deceleration 65m-80m in advance ("dehre dehre kam hona")
         // NEVER overrides targetLat: Keeps evading any road entities seamlessly ("vechile se collide nahi hona chayie")
@@ -4058,6 +4112,9 @@
       updateDriveModeUI();
     }
 
+    window.toggleAutopilot = toggleAutopilot;
+    window.toggleDriveMode = toggleAutopilot;
+
     function updateDriveModeUI() {
       const isAuto = (sim.driveMode === 'autopilot');
       const btn = document.getElementById('btn-mode-toggle');
@@ -4524,7 +4581,7 @@
     setCamMode('chase');
     setWeather('clear');
     setDensity('medium');
-    switchScenario('scenario_3');
+    switchScenario('scenario_1');
     requestAnimationFrame(animate);
   </script>
 <span id="txt-stop-profile" class="hidden">CHAUFFEUR COMFORT</span>
