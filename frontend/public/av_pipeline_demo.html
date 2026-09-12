@@ -28,403 +28,233 @@
   <!-- 3D WebGL Canvas Container -->
   <div id="canvas-container"></div>
 
-  <!-- HUD & UI Overlay on top of 3D Scene -->
-  <div id="hud-overlay" class="flex flex-col justify-between p-3 md:p-5">
+  <!-- HUD & UI Overlay on top of 3D Scene (Minimal Cyber-HUD: Pure Screen Visibility) -->
+  <div id="hud-overlay" class="w-full h-full pointer-events-none relative">
     
-    <!-- Top Section: Brand, Controls, Weather Switcher & Telemetry -->
-    <div class="space-y-2.5">
+    <!-- TOP CYBER-BAR: Sleek Floating Glass Pill (Height ~44px) -->
+    <header class="fixed top-2.5 left-3 right-3 z-30 flex flex-wrap items-center justify-between gap-2 px-3.5 py-1.5 glass-panel rounded-2xl border border-cyan-500/30 shadow-2xl interactive">
       
-      <!-- Top Bar: Brand, Camera Modes, Simulation Controls & Live Telemetry -->
-      <div class="flex flex-wrap items-center justify-between gap-3 interactive">
-        
-        <!-- Brand & Project Info -->
-        <div class="glass-panel px-4 py-2 rounded-2xl flex items-center space-x-3">
-          <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 via-blue-600 to-indigo-700 flex items-center justify-center font-black text-white text-base shadow-lg shadow-cyan-500/30">
+      <!-- Left: Brand Logo & 5 SIH Scenario Selector Pills -->
+      <div class="flex items-center space-x-2">
+        <div class="flex items-center space-x-1.5 pr-2.5 border-r border-slate-700/60">
+          <div class="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-cyan-500/30">
             NA
           </div>
-          <div>
-            <div class="flex items-center space-x-2">
-              <span class="font-extrabold text-base tracking-wider text-white">NavAdapt 3D</span>
-              <span class="text-[9px] px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-400 text-cyan-300 font-mono font-bold">
-                MULTI-AGENT 3D
-              </span>
-            </div>
-            <p class="text-[10px] text-slate-400 font-mono">
-              Smart India Hackathon 2026 • Dense Mixed Indian Traffic Stack
-            </p>
-          </div>
+          <span class="font-extrabold text-sm tracking-wider text-white hidden sm:inline">NavAdapt</span>
+        </div>
+        
+        <!-- 5 Scenarios Quick Switch -->
+        <div class="flex items-center space-x-1 text-[11px] font-mono">
+          <button id="scen-btn-1" onclick="switchScenario('scenario_1')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="Scenario 01: Rural Gramin Sadak (Huts, Mud Houses, Cattle)">🌾 Rural</button>
+          <button id="scen-btn-2" onclick="switchScenario('scenario_2')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="Scenario 02: Urban Metropolis (Dubai/LA Glass Skyscrapers)">🏙️ Dubai</button>
+          <button id="scen-btn-3" onclick="switchScenario('scenario_3')" class="px-2 py-0.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold transition shadow" title="Scenario 03: NH-48 Indian Expressway (120 km/h Cruise)">🛣️ NH-48</button>
+          <button id="scen-btn-4" onclick="switchScenario('scenario_4')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="Scenario 04: Dense Indian Bazaar (Shops, Pushcarts)">🎪 Bazaar</button>
+          <button id="scen-btn-5" onclick="switchScenario('scenario_5')" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white hover:bg-slate-800/80 transition" title="Scenario 05: Suburban Arterial (Villas, Compounds)">🏡 Suburban</button>
+        </div>
+      </div>
+
+      <!-- Center: AI PREDICTIVE AVOIDANCE CORRIDOR TICKER (High-Contrast Real-Time Intelligence) -->
+      <div id="ai-predictive-ticker" class="flex items-center space-x-2 px-3 py-1 rounded-xl bg-slate-950/90 border border-emerald-500/50 text-xs font-mono shadow-inner">
+        <span id="ai-ticker-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+        <span id="ai-ticker-badge" class="font-bold text-emerald-400 uppercase tracking-wide">AI PREDICTIVE CRUISE</span>
+        <span class="text-slate-600">|</span>
+        <span id="ai-ticker-detail" class="text-slate-200">Corridor Clear (120m Horizon) • Zero Hazards</span>
+      </div>
+
+      <!-- Right: Telemetry & Controls -->
+      <div class="flex items-center space-x-2 text-xs font-mono">
+        
+        <!-- Live Speed Badge -->
+        <div class="flex items-baseline space-x-1 bg-slate-950/75 px-2.5 py-0.5 rounded-xl border border-slate-800">
+          <span class="text-[9px] text-slate-400 uppercase">SPD:</span>
+          <span id="txt-speed" class="font-black text-emerald-400 text-sm">120.0 km/h</span>
         </div>
 
-        <!-- Camera Angle Controls -->
-        <div class="glass-panel p-1 rounded-2xl flex items-center space-x-1 text-xs font-mono">
-          <button id="cam-chase" class="px-3 py-1.5 rounded-xl bg-cyan-600 text-white font-bold transition shadow" title="3rd Person Follow Camera">
-            🎥 Chase Cam
-          </button>
-          <button id="cam-cockpit" class="px-3 py-1.5 rounded-xl text-slate-300 hover:text-white transition" title="First Person Driver Perspective">
-            🚗 Cockpit
-          </button>
-          <button id="cam-orbit" class="px-3 py-1.5 rounded-xl text-slate-300 hover:text-white transition" title="Free 360° Mouse Orbit">
-            🛸 Free 3D Orbit
-          </button>
-          <button id="cam-bev" class="px-3 py-1.5 rounded-xl text-slate-300 hover:text-white transition" title="Top-Down Bird's Eye View">
-            🛰️ Tactical BEV
-          </button>
+        <!-- Accuracy Badge -->
+        <div class="hidden sm:flex items-baseline space-x-1 bg-slate-950/75 px-2 py-0.5 rounded-xl border border-slate-800">
+          <span class="text-[9px] text-emerald-400 uppercase">ACC:</span>
+          <span id="txt-accuracy" class="font-bold text-emerald-400 text-xs">99.8%</span>
         </div>
 
-        <!-- Live Simulation Action Buttons (Pause/Play, Reset, Speed, Sound) -->
-        <div class="glass-panel px-3 py-1.5 rounded-2xl flex items-center space-x-2 text-xs font-mono">
-          <button id="btn-toggle-play" class="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition active:scale-95 shadow">
+        <!-- Camera Perspective Selector -->
+        <div class="flex items-center bg-slate-950/80 p-0.5 rounded-xl border border-slate-800 text-[10px]">
+          <button id="cam-chase" class="px-2 py-0.5 rounded-lg bg-cyan-600 text-white font-bold transition shadow" title="3rd Person Follow">🎥 Chase</button>
+          <button id="cam-cockpit" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white transition" title="First Person Cockpit">🚗 Cockpit</button>
+          <button id="cam-orbit" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white transition" title="360 Orbit">🛸 Orbit</button>
+          <button id="cam-bev" class="px-2 py-0.5 rounded-lg text-slate-300 hover:text-white transition" title="Top-Down BEV">🛰️ BEV</button>
+        </div>
+
+        <!-- Sim State Controls -->
+        <div class="flex items-center space-x-1">
+          <button id="btn-toggle-play" class="px-2 py-0.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-bold transition active:scale-95 text-xs flex items-center space-x-1">
             <span id="txt-play-icon">⏸️</span>
-            <span id="txt-play-label">PAUSE</span>
+            <span id="txt-play-label" class="hidden md:inline">PAUSE</span>
           </button>
-          
-          <button id="btn-reset-sim" class="flex items-center space-x-1 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold transition active:scale-95" title="Reset Car to Origin">
-            <span>🔄</span>
-            <span>RESET</span>
-          </button>
-
-          <button id="btn-speed-toggle" class="px-2.5 py-1.5 rounded-xl bg-blue-950/60 hover:bg-blue-900/80 text-cyan-300 border border-blue-600/40 font-bold transition" title="Cycle Target Cruise Speed">
-            ⚡ <span id="txt-target-speed">120 KM/H</span>
-          </button>
-
-          <button id="btn-sound-toggle" class="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-bold transition" title="Toggle Synthesized Audio Engine">
-            <span id="txt-sound-status">🔊 SFX ON</span>
-          </button>
-        </div>
-
-        <!-- Live Telemetry Badges -->
-        <div class="glass-panel px-4 py-2 rounded-2xl flex items-center space-x-3.5 text-xs font-mono">
-          <div>
-            <span class="text-[9px] text-slate-400 block uppercase">Speed</span>
-            <span id="txt-speed" class="text-lg font-black text-emerald-400">120.0 km/h</span>
-          </div>
-          <div class="h-6 w-[1px] bg-slate-700"></div>
-          <div>
-            <span class="text-[9px] text-emerald-400 font-bold uppercase flex items-center space-x-1">
-              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              <span>Accuracy</span>
-            </span>
-            <span id="txt-accuracy" class="text-lg font-black text-emerald-400">99.7%</span>
-          </div>
-          <div class="h-6 w-[1px] bg-slate-700"></div>
-          <div>
-            <span class="text-[9px] text-slate-400 block uppercase">Braking G</span>
-            <span id="txt-top-decel" class="text-lg font-black text-emerald-400">0.00 G</span>
-          </div>
-          <div class="h-6 w-[1px] bg-slate-700"></div>
-          <div>
-            <span class="text-[9px] text-slate-400 block uppercase">Obstacles</span>
-            <span id="txt-obj-count" class="text-cyan-400 font-bold text-base">3 Active</span>
-          </div>
-          <div class="h-6 w-[1px] bg-slate-700"></div>
-          <div>
-            <span class="text-[9px] text-slate-400 block uppercase">Traveled</span>
-            <span id="txt-dist" class="text-white font-bold">0.0 m</span>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Sub-Bar: Weather, Traffic Density & Indian Road Speed Controls -->
-      <div class="flex flex-wrap items-center justify-between gap-3 interactive">
-        
-        <!-- Weather Selector Buttons -->
-        <div class="glass-panel p-1 rounded-2xl flex items-center space-x-1 text-xs font-mono">
-          <span class="text-[10px] text-amber-400 font-bold px-2 flex items-center space-x-1">
-            <span>🌦️</span>
-            <span>WEATHER:</span>
-          </span>
-          <button id="w-clear" class="px-2.5 py-1 rounded-xl bg-cyan-600 text-white font-bold transition shadow">
-            🌙 Clear Night
-          </button>
-          <button id="w-rain" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition">
-            🌧️ Monsoon Rain
-          </button>
-          <button id="w-fog" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition">
-            🌫️ Dense Fog
-          </button>
-          <button id="w-dust" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition">
-            🌪️ Dust Storm
-          </button>
-          <button id="w-day" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition">
-            ☀️ Daylight
-          </button>
-        </div>
-
-        <!-- Indian Road Speed Presets (120 km/h Expressway, 80 km/h Highway, 50 km/h City, 35 km/h Cruise) -->
-        <div class="glass-panel p-1 rounded-2xl flex items-center space-x-1 text-xs font-mono">
-          <span class="text-[10px] text-cyan-400 font-bold px-2 flex items-center space-x-1">
-            <span>🇮🇳</span>
-            <span>INDIAN ROAD SPEED:</span>
-          </span>
-          <button id="spd-120" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold transition shadow" title="Samruddhi / Delhi-Mumbai Expressway 120 km/h Limit">
-            ⚡ 120 km/h (Expressway)
-          </button>
-          <button id="spd-80" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="National Highway (NH-44 / NH-48)">
-            🏎️ 80 km/h (NH Highway)
-          </button>
-          <button id="spd-50" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Urban Arterial Road">
-            🚗 50 km/h (City)
-          </button>
-          <button id="spd-35" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Town / Village Cruise">
-            🛺 35 km/h (Town)
-          </button>
-        </div>
-
-        <!-- Traffic Density & Obstacle Reduction Selector -->
-        <div class="glass-panel p-1 rounded-2xl flex items-center space-x-1 text-xs font-mono">
-          <span class="text-[10px] text-emerald-400 font-bold px-2 flex items-center space-x-1">
-            <span>🚦</span>
-            <span>OBSTACLES:</span>
-          </span>
-          <button id="dens-light" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Solo Mode (1 Obstacle) - 99.9% Ultra Accuracy">
-            🟢 Solo (1) • 99.9%
-          </button>
-          <button id="dens-medium" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-emerald-500 to-cyan-600 text-white font-bold transition shadow" title="Ultra-Clean Mode (3 Obstacles) - 99.7% Accuracy">
-            🎯 Clean (3) • 99.7%
-          </button>
-          <button id="dens-heavy" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Moderate (5 Obstacles) - 98.8% Accuracy">
-            🚕 Moderate (5) • 98.8%
-          </button>
-        </div>
-
-        <!-- 5 SIH Benchmark Scenarios Selector -->
-        <div class="glass-panel p-1 rounded-2xl flex flex-wrap items-center space-x-1 text-xs font-mono">
-          <span class="text-[10px] text-cyan-400 font-bold px-2 flex items-center space-x-1">
-            <span>🗺️</span>
-            <span>SCENARIO:</span>
-          </span>
-          <button id="scen-btn-1" onclick="switchScenario('scenario_1')" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Scenario 01: Unmarked Village Road (Gramin Sadak) - Huts, Mud Houses, Haystacks & Cattle">
-            🌾 01 Rural Gramin
-          </button>
-          <button id="scen-btn-2" onclick="switchScenario('scenario_2')" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Scenario 02: Urban Metropolis - LA / Dubai Glass Skyscrapers, Digital Billboards & Neon Glow">
-            🏙️ 02 Urban Dubai/LA
-          </button>
-          <button id="scen-btn-3" onclick="switchScenario('scenario_3')" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold transition shadow" title="Scenario 03: NH-48 Indian Expressway - 3-Lane Highway, Gantries, Dhaba & 120 km/h Cruise">
-            🛣️ 03 Highway NH-48
-          </button>
-          <button id="scen-btn-4" onclick="switchScenario('scenario_4')" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Scenario 04: Dense Indian Bazaar - Market Stalls, Striped Canopies & Vegetable Pushcarts">
-            🎪 04 Dense Bazaar
-          </button>
-          <button id="scen-btn-5" onclick="switchScenario('scenario_5')" class="px-2.5 py-1 rounded-xl text-slate-300 hover:text-white transition" title="Scenario 05: Suburban Arterial - Modern Villas, Compound Walls & Sudden Cattle Crossing">
-            🏡 05 Suburban Arterial
+          <button id="btn-reset-sim" class="p-1 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Reset Car Position">🔄</button>
+          <button id="btn-sound-toggle" class="p-1 px-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="Toggle Synthesizer Sound">
+            <span id="txt-sound-status">🔊</span>
           </button>
         </div>
 
       </div>
 
-      <!-- Safety Scenarios & IoT Handover Action Panel -->
-      <div class="flex flex-wrap items-center justify-between gap-2.5 interactive">
-        
-        <!-- Fail-Safe Mode Triggers -->
-        <div class="glass-panel px-3 py-1.5 rounded-2xl flex flex-wrap items-center gap-2 text-xs font-mono">
-          <span class="text-[10px] text-amber-400 font-bold flex items-center space-x-1">
-            <span>🛡️</span>
-            <span>SAFETY & FAIL-SAFE:</span>
-          </span>
+    </header>
 
-          <!-- Trigger Road End Stop -->
-          <button id="btn-trigger-road-end" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-500 hover:to-rose-600 text-white font-bold transition shadow active:scale-95 flex items-center space-x-1.5" title="Test Road End / Dead End Barricade Detection & Controlled Safety Stop">
-            <span>🛑</span>
-            <span>Test Road End Stop</span>
-          </button>
-
-          <!-- Trigger Camera Failure & IoT Handover -->
-          <button id="btn-trigger-cam-fail" class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-600 to-orange-700 hover:from-amber-500 hover:to-orange-600 text-white font-bold transition shadow active:scale-95 flex items-center space-x-1.5" title="Simulate Camera Sensor Failure -> Auto-Handover to LiDAR/Radar IoT & Safe Shoulder Park">
-            <span id="txt-cam-fail-icon">📷</span>
-            <span id="txt-cam-fail-label">Trigger Camera Failure</span>
-          </button>
-
-          <!-- Recover / Resume Normal Cruise -->
-          <button id="btn-recover-all" class="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold transition active:scale-95 flex items-center space-x-1.5" title="Clear Faults & Resume Normal 120 km/h Autonomous Cruise">
-            <span>✅</span>
-            <span>Resume Cruise</span>
-          </button>
-        </div>
-
-        <!-- Sensor Status & Fail-Safe State Pills -->
-        <div class="glass-panel px-3 py-1.5 rounded-2xl flex items-center space-x-3 text-xs font-mono">
-          <div class="flex items-center space-x-1.5">
-            <span class="text-[9px] text-slate-400">CAMERA:</span>
-            <span id="pill-camera-status" class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-950 border border-emerald-500 text-emerald-300 font-bold">
-              ONLINE (60 FPS)
-            </span>
-          </div>
-          <div class="h-4 w-[1px] bg-slate-700"></div>
-          <div class="flex items-center space-x-1.5">
-            <span class="text-[9px] text-slate-400">IOT SENSORS:</span>
-            <span id="pill-iot-status" class="text-[10px] px-2 py-0.5 rounded-full bg-slate-900 border border-slate-700 text-slate-400 font-bold">
-              STANDBY
-            </span>
-          </div>
-          <div class="h-4 w-[1px] bg-slate-700"></div>
-          <div class="flex items-center space-x-1.5">
-            <span class="text-[9px] text-slate-400">GEAR:</span>
-            <span id="pill-gear-status" class="text-[10px] px-2 py-0.5 rounded-full bg-cyan-950 border border-cyan-400 text-cyan-300 font-bold">
-              [D] DRIVE
-            </span>
-          </div>
-        </div>
-
-      </div>
-
+    <!-- HIDDEN BACKWARD-COMPATIBLE ALERT BANNER (Preserves DOM IDs without blocking screen) -->
+    <div id="alert-banner" class="hidden">
+      <div id="alert-title"></div>
+      <div id="alert-sub"></div>
     </div>
 
-    <!-- Center Screen Alert Notification (Flashes on Hazard Avoidance) -->
-    <div class="flex justify-center pointer-events-none">
-      <div id="alert-banner" class="hidden glass-panel px-6 py-3 rounded-2xl border-2 border-red-500 danger-border flex items-center space-x-3 transition-all duration-200">
-        <span class="text-3xl animate-bounce">🚨</span>
-        <div>
-          <div id="alert-title" class="text-sm font-black text-red-400 tracking-wider uppercase font-mono">
-            COLLISION AVOIDANCE INITIATED
-          </div>
-          <div id="alert-sub" class="text-xs text-red-200 font-mono">
-            Hazard detected in corridor. Stanley controller swerving into clearance corridor.
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Bottom Bar: Controller HUD, Dynamic Object Spawner & Perception Telemetry -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 items-end interactive">
+    <!-- BOTTOM CYBER-DOCK: Low-Profile Floating Control Bar (Height ~42px) -->
+    <footer class="fixed bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex flex-wrap items-center justify-center gap-2 px-3.5 py-1.5 glass-panel rounded-2xl border border-cyan-500/30 shadow-2xl interactive max-w-[95vw]">
       
-      <!-- 1. Left: Vehicle Telemetry & Stanley Lateral Control Law -->
-      <div class="glass-panel p-3.5 rounded-2xl space-y-2 text-xs font-mono">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-          <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Stanley Lateral Controller</span>
-          <span id="txt-closest-threat" class="text-[9px] text-amber-400 font-bold">Threat: Calculating...</span>
+      <!-- 1. Lateral Steering & Cross-Track Meter -->
+      <div class="flex items-center space-x-2 bg-slate-950/80 px-2.5 py-0.5 rounded-xl border border-slate-800 text-xs font-mono">
+        <span class="text-[9px] text-cyan-400 font-bold uppercase">STEER:</span>
+        <span id="txt-steer" class="text-cyan-300 font-bold text-xs">0.0°</span>
+        <div class="h-1.5 w-14 bg-slate-900 rounded-full overflow-hidden relative border border-slate-700">
+          <div id="bar-steer" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-75" style="width: 50%;"></div>
+          <div class="absolute inset-y-0 left-1/2 w-0.5 bg-slate-400"></div>
         </div>
+        <span class="text-[9px] text-slate-400">EFA:</span>
+        <span id="txt-efa" class="text-emerald-400 font-bold text-xs">0.02 m</span>
+      </div>
 
-        <!-- Steering Angle -->
-        <div>
-          <div class="flex justify-between text-[11px] mb-1">
-            <span class="text-slate-400">Steering Wheel Angle:</span>
-            <span id="txt-steer" class="text-cyan-300 font-bold">0.0°</span>
-          </div>
-          <div class="h-2 w-full bg-slate-950 rounded-full overflow-hidden relative border border-slate-800">
-            <div id="bar-steer" class="h-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-75" style="width: 50%;"></div>
-            <div class="absolute inset-y-0 left-1/2 w-0.5 bg-slate-400"></div>
-          </div>
-        </div>
+      <!-- 2. Active Stop / Glide Profile Pill -->
+      <div class="flex items-center space-x-1.5 bg-slate-950/80 px-2.5 py-0.5 rounded-xl border border-slate-800 text-xs font-mono">
+        <span class="text-[9px] text-slate-400 uppercase">PROFILE:</span>
+        <span id="txt-stop-profile" class="text-cyan-300 font-bold text-xs">EXPRESSWAY CRUISE</span>
+      </div>
 
-        <!-- Cross-Track Error, Accuracy & Behavior -->
-        <div class="grid grid-cols-3 gap-1.5 text-[10px]">
-          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block">Cross-Track</span>
-            <span id="txt-efa" class="text-emerald-400 font-bold text-xs">0.02 m</span>
-          </div>
-          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block">Accuracy</span>
-            <span id="txt-acc-sub" class="text-emerald-400 font-bold text-xs">99.7%</span>
-          </div>
-          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block">Behavior</span>
-            <span id="txt-behavior" class="text-cyan-400 font-bold text-xs">CRUISE</span>
-          </div>
-        </div>
+      <!-- 3. Fail-Safe Quick Triggers -->
+      <div class="flex items-center space-x-1 text-xs font-mono">
+        <button id="btn-trigger-road-end" class="px-2 py-0.5 rounded-lg bg-red-600/80 hover:bg-red-500 text-white font-bold transition shadow text-[11px]" title="Test Road End Safe Stop">🛑 Road End</button>
+        <button id="btn-trigger-cam-fail" class="px-2 py-0.5 rounded-lg bg-amber-600/80 hover:bg-amber-500 text-white font-bold transition shadow text-[11px]" title="Simulate Camera Fail & IoT Handover">
+          <span id="txt-cam-fail-icon">📷</span>
+          <span id="txt-cam-fail-label">Cam Fail</span>
+        </button>
+        <button id="btn-recover-all" class="px-2 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-bold transition text-[11px]" title="Resume Normal Autonomous Cruise">✅ Resume</button>
+      </div>
 
-        <!-- Gear / EPB, Hazards & Failsafe Mode Telemetry -->
-        <div class="grid grid-cols-3 gap-1.5 text-[10px]">
-          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block">Gear (EPB)</span>
-            <span id="txt-gear" class="text-emerald-400 font-bold text-xs">[D] DRIVE</span>
-          </div>
-          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block">Hazards</span>
-            <span id="txt-hazards" class="text-slate-400 font-bold text-xs">OFF</span>
-          </div>
-          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800">
-            <span class="text-slate-500 block">Safety Mode</span>
-            <span id="txt-failsafe" class="text-cyan-400 font-bold text-xs">NORMAL</span>
-          </div>
-        </div>
+      <div class="h-4 w-[1px] bg-slate-700 hidden sm:block"></div>
 
-        <!-- Passenger Comfort & Chauffeur Deceleration Profile -->
-        <div class="grid grid-cols-2 gap-1.5 text-[10px] pt-0.5">
-          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800 flex justify-between items-center">
-            <span class="text-slate-400">Decel Rate:</span>
-            <span id="txt-brake-g" class="text-emerald-400 font-bold">0.00 G (Smooth)</span>
-          </div>
-          <div class="bg-slate-950/70 p-1.5 rounded-lg border border-slate-800 flex justify-between items-center">
-            <span class="text-slate-400">Stop Profile:</span>
-            <span id="txt-stop-profile" class="text-cyan-400 font-bold">CHAUFFEUR COMFORT</span>
-          </div>
+      <!-- 4. Quick Entity Spawners -->
+      <div class="flex items-center space-x-1 text-[11px] font-mono">
+        <button id="btn-add-cow" class="px-1.5 py-0.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Add Cow">+ 🐄 Cow</button>
+        <button id="btn-add-rickshaw" class="px-1.5 py-0.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Add Auto Rickshaw">+ 🛺 Auto</button>
+        <button id="btn-add-truck" class="px-1.5 py-0.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-slate-200 border border-slate-700 transition" title="Add Highway Truck">+ 🚛 Truck</button>
+        <button id="btn-add-bump" class="px-1.5 py-0.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-amber-300 border border-slate-700 transition" title="Add IRC Speed Breaker">+ 🚧 Bump</button>
+      </div>
+
+      <!-- 5. Config Drawer Toggle Button -->
+      <button onclick="toggleConfigDrawer()" class="px-2 py-0.5 rounded-lg bg-cyan-950/80 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 text-[11px] font-mono font-bold transition active:scale-95" title="Toggle Speed, Weather & Sensor Diagnostics Drawer">
+        ⚙️ Settings
+      </button>
+
+    </footer>
+
+    <!-- SLIDE-OVER CONFIG & TELEMETRY DRAWER (Hidden by default to keep screen 100% clean) -->
+    <div id="config-drawer" class="hidden fixed right-3 bottom-16 z-40 w-80 glass-panel rounded-2xl border border-cyan-500/40 p-4 space-y-3.5 shadow-2xl interactive text-xs font-mono">
+      <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+        <span class="text-xs font-bold text-cyan-400 uppercase tracking-wider">Simulation Settings & Telemetry</span>
+        <button onclick="toggleConfigDrawer()" class="text-slate-400 hover:text-white font-bold text-sm">✕</button>
+      </div>
+
+      <!-- Indian Road Speed Presets -->
+      <div>
+        <div class="text-[10px] text-slate-400 font-bold mb-1.5">INDIAN ROAD SPEED PRESET:</div>
+        <div class="grid grid-cols-2 gap-1.5 text-[11px]">
+          <button id="spd-120" class="px-2 py-1 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-bold transition shadow">⚡ 120 (Expressway)</button>
+          <button id="spd-80" class="px-2 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">🏎️ 80 (Highway)</button>
+          <button id="spd-50" class="px-2 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">🚗 50 (City)</button>
+          <button id="spd-35" class="px-2 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">🛺 35 (Town)</button>
         </div>
       </div>
 
-      <!-- 2. Center: Multi-Object Quick Injection (Click to inject more into scene) -->
-      <div class="glass-panel p-3.5 rounded-2xl text-center space-y-2">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-          <span class="text-[10px] text-amber-400 font-bold uppercase tracking-wider font-mono">
-            ➕ Inject More Road Entities Ahead
-          </span>
-          <span class="text-[9px] text-slate-400 font-mono">Instant spawn:</span>
-        </div>
-
-        <div class="grid grid-cols-9 gap-1 font-mono text-[11px]">
-          <button id="btn-add-cow" class="p-1 rounded-xl bg-amber-950/60 border border-amber-500/70 hover:bg-amber-900/80 text-amber-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Stray Cow">
-            <span class="text-base">🐄</span>
-            <span class="text-[8px] font-bold mt-0.5">Cow</span>
-          </button>
-          <button id="btn-add-rickshaw" class="p-1 rounded-xl bg-yellow-950/60 border border-yellow-500/70 hover:bg-yellow-900/80 text-yellow-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Auto-Rickshaw">
-            <span class="text-base">🛺</span>
-            <span class="text-[8px] font-bold mt-0.5">Auto</span>
-          </button>
-          <button id="btn-add-truck" class="p-1 rounded-xl bg-indigo-950/60 border border-indigo-500/70 hover:bg-indigo-900/80 text-indigo-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Tata Truck">
-            <span class="text-base">🚛</span>
-            <span class="text-[8px] font-bold mt-0.5">Truck</span>
-          </button>
-          <button id="btn-add-bike" class="p-1 rounded-xl bg-pink-950/60 border border-pink-500/70 hover:bg-pink-900/80 text-pink-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Motorcycle">
-            <span class="text-base">🏍️</span>
-            <span class="text-[8px] font-bold mt-0.5">Bike</span>
-          </button>
-          <button id="btn-add-ped" class="p-1 rounded-xl bg-cyan-950/60 border border-cyan-500/70 hover:bg-cyan-900/80 text-cyan-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Jaywalker">
-            <span class="text-base">🚶</span>
-            <span class="text-[8px] font-bold mt-0.5">Walker</span>
-          </button>
-          <button id="btn-add-pothole" class="p-1 rounded-xl bg-rose-950/60 border border-rose-500/70 hover:bg-rose-900/80 text-rose-200 transition active:scale-95 flex flex-col items-center shadow" title="Spawn Deep Pothole">
-            <span class="text-base">🕳️</span>
-            <span class="text-[8px] font-bold mt-0.5">Pothole</span>
-          </button>
-          <button id="btn-add-bump" class="p-1 rounded-xl bg-amber-950/70 border border-amber-400/90 hover:bg-amber-900/90 text-amber-300 transition active:scale-95 flex flex-col items-center shadow" title="Spawn IRC Speed Breaker (Auto Slow to 15 km/h)">
-            <span class="text-base">🚧</span>
-            <span class="text-[8px] font-bold mt-0.5">Bump</span>
-          </button>
-          <button id="btn-add-road-end" class="p-1 rounded-xl bg-red-950/70 border border-red-500/90 hover:bg-red-900/90 text-red-200 transition active:scale-95 flex flex-col items-center shadow animate-pulse" title="Spawn Road End Barricade (Auto Stop With Safety Measures)">
-            <span class="text-base">🛑</span>
-            <span class="text-[8px] font-bold mt-0.5">RoadEnd</span>
-          </button>
-          <button id="btn-add-cam-fail" class="p-1 rounded-xl bg-orange-950/70 border border-orange-500/90 hover:bg-orange-900/90 text-orange-200 transition active:scale-95 flex flex-col items-center shadow" title="Simulate Camera Fail -> IoT Handover & Safe Shoulder Park">
-            <span class="text-base">📷</span>
-            <span class="text-[8px] font-bold mt-0.5">CamFail</span>
-          </button>
+      <!-- Weather Presets -->
+      <div>
+        <div class="text-[10px] text-slate-400 font-bold mb-1.5">WEATHER & ATMOSPHERE:</div>
+        <div class="flex flex-wrap gap-1 text-[11px]">
+          <button id="w-clear" class="px-2 py-0.5 rounded-lg bg-cyan-600 text-white font-bold transition">🌙 Clear</button>
+          <button id="w-rain" class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">🌧️ Rain</button>
+          <button id="w-fog" class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">🌫️ Fog</button>
+          <button id="w-dust" class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">🌪️ Dust</button>
+          <button id="w-day" class="px-2 py-0.5 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">☀️ Day</button>
         </div>
       </div>
 
-      <!-- 3. Right: Sensor Fusion & CAN 2.0B Multi-Target Telemetry Feed -->
-      <div class="glass-panel p-3.5 rounded-2xl space-y-2 text-xs font-mono">
-        <div class="flex items-center justify-between border-b border-slate-800 pb-1.5">
-          <span class="text-[10px] text-cyan-400 font-bold uppercase tracking-wider">Perception & Multi-Target Fusion</span>
-          <span id="txt-primary-sensor" class="text-[9px] text-slate-300">Camera + LiDAR + Radar</span>
-        </div>
-
-        <div class="flex items-center justify-between text-[11px] text-slate-300">
-          <span>Camera: <span id="txt-cam-fps" class="text-emerald-400 font-bold">YOLOv8 60fps</span></span>
-          <span>LiDAR: <span id="txt-lidar-pts" class="text-emerald-400 font-bold">1200 pts</span></span>
-          <span>Radar: <span id="txt-radar-status" class="text-emerald-400 font-bold">77 GHz FMCW</span></span>
-        </div>
-
-        <div id="can-stream" class="h-14 bg-slate-950/80 rounded-xl p-1.5 text-[9px] font-mono overflow-y-auto space-y-0.5 text-slate-400 border border-slate-800">
-          <div>[0.0s] 0x100: SYSTEM_READY — Autonomous Stack Initialized</div>
-          <div>[0.0s] 0x102: STEER_ACTUATOR = 0.000 rad</div>
-          <div>[0.0s] 0x103: SPEED_DEMAND = 33.33 m/s (120 km/h)</div>
-          <div>[0.0s] 0x205: SENSORS = Camera + 16-Beam LiDAR + 77 GHz Radar</div>
+      <!-- Obstacle Density -->
+      <div>
+        <div class="text-[10px] text-slate-400 font-bold mb-1.5">TRAFFIC DENSITY:</div>
+        <div class="grid grid-cols-3 gap-1 text-[11px]">
+          <button id="dens-light" class="px-1.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">🟢 Solo (1)</button>
+          <button id="dens-medium" class="px-1.5 py-1 rounded-lg bg-gradient-to-r from-emerald-500 to-cyan-600 text-white font-bold transition">🎯 Clean (3)</button>
+          <button id="dens-heavy" class="px-1.5 py-1 rounded-lg bg-slate-800 text-slate-300 hover:text-white transition">🚕 Mod (5)</button>
         </div>
       </div>
 
+      <!-- Extra Spawners -->
+      <div>
+        <div class="text-[10px] text-slate-400 font-bold mb-1.5">MORE OBSTACLES:</div>
+        <div class="grid grid-cols-3 gap-1 text-[11px]">
+          <button id="btn-add-bike" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🏍️ Bike</button>
+          <button id="btn-add-ped" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🚶 Pedestrian</button>
+          <button id="btn-add-pothole" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🕳️ Pothole</button>
+          <button id="btn-add-road-end" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">🛑 Road End</button>
+          <button id="btn-add-cam-fail" class="px-1.5 py-0.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700">📷 Cam Fail</button>
+          <button id="btn-speed-toggle" class="px-1.5 py-0.5 rounded-lg bg-blue-950 text-cyan-300 border border-blue-600/40">⚡ Cycle Spd</button>
+        </div>
+      </div>
+
+      <!-- Sensor & Diagnostic Telemetry -->
+      <div class="border-t border-slate-800 pt-2 space-y-1.5 text-[10px] text-slate-300">
+        <div class="flex justify-between">
+          <span class="text-slate-400">Sensor Primary:</span>
+          <span id="txt-primary-sensor" class="text-cyan-300 font-bold">Cam + LiDAR + Radar</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Status Pills:</span>
+          <div class="flex space-x-1">
+            <span id="pill-camera-status" class="px-1 rounded bg-emerald-950 text-emerald-300 border border-emerald-500">CAM OK</span>
+            <span id="pill-iot-status" class="px-1 rounded bg-slate-900 text-slate-400 border border-slate-700">IOT STBY</span>
+            <span id="pill-gear-status" class="px-1 rounded bg-cyan-950 text-cyan-300 border border-cyan-400">[D] DRIVE</span>
+          </div>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Diagnostics:</span>
+          <span><span id="txt-cam-fps">60fps</span> • <span id="txt-lidar-pts">1200pts</span> • <span id="txt-radar-status">77GHz</span></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Telemetry:</span>
+          <span><span id="txt-obj-count">3 Active</span> • <span id="txt-dist">0.0 m</span> • <span id="txt-top-decel">0.00 G</span></span>
+        </div>
+        <div class="hidden">
+          <span id="txt-acc-sub">99.8%</span>
+          <span id="txt-brake-g">0.00 G</span>
+          <span id="txt-gear">D</span>
+          <span id="txt-hazards">0 Hazards</span>
+          <span id="txt-failsafe">ALL OK</span>
+          <span id="txt-target-speed">120 KM/H</span>
+          <span id="txt-closest-threat">Threat: Calculating...</span>
+          <span id="txt-behavior">CRUISE</span>
+        </div>
+      </div>
+
+      <!-- CAN Stream Feed -->
+      <div id="can-stream" class="h-16 bg-slate-950 rounded-lg p-1.5 text-[9px] font-mono overflow-y-auto space-y-0.5 text-slate-400 border border-slate-800">
+        <div>[0.0s] 0x100: SYSTEM_READY — Autonomous Stack Initialized</div>
+      </div>
     </div>
 
   </div>
+
+  <script>
+    function toggleConfigDrawer() {
+      const d = document.getElementById('config-drawer');
+      if (d) d.classList.toggle('hidden');
+    }
+  </script>
 
   <!-- ============================================================ -->
   <!-- 🚀 THREE.JS FULL 3D MULTI-AGENT AUTONOMOUS DRIVING SIMULATOR  -->
@@ -659,12 +489,40 @@
       return tex;
     }
 
+    // Realistic High-Dynamic Tone Mapping & Color Management
+    renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    renderer.toneMappingExposure = 1.16;
+    if (THREE.SRGBColorSpace) renderer.outputColorSpace = THREE.SRGBColorSpace;
+    else if (renderer.outputEncoding) renderer.outputEncoding = THREE.sRGBEncoding;
+
+    // Procedural Photorealistic Asphalt Grain Texture with Wet Specular Highlights
+    const asphaltTex = makeCanvasTexture(512, 512, (ctx, w, h) => {
+      ctx.fillStyle = '#0f172a';
+      ctx.fillRect(0, 0, w, h);
+      // Realistic aggregate grain specks
+      for (let i = 0; i < 24000; i++) {
+        const gx = Math.random() * w;
+        const gy = Math.random() * h;
+        const shade = Math.floor(22 + Math.random() * 38);
+        ctx.fillStyle = `rgb(${shade},${shade + 2},${shade + 5})`;
+        ctx.fillRect(gx, gy, 1.4, 1.4);
+      }
+      // Subtle wheel lane wear grooves
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.14)';
+      ctx.fillRect(w * 0.14, 0, w * 0.22, h);
+      ctx.fillRect(w * 0.64, 0, w * 0.22, h);
+    });
+    asphaltTex.wrapS = THREE.RepeatWrapping;
+    asphaltTex.wrapT = THREE.RepeatWrapping;
+    asphaltTex.repeat.set(4, 40);
+
     // A. Asphalt Highway Roadbed
     const roadGeo = new THREE.PlaneGeometry(ROAD_WIDTH, ROAD_LENGTH, 1, 60);
     const roadMat = new THREE.MeshStandardMaterial({
-      color: 0x0f172a,
-      roughness: 0.82,
-      metalness: 0.15
+      map: asphaltTex,
+      color: 0x1e293b,
+      roughness: 0.45,
+      metalness: 0.20
     });
     const road = new THREE.Mesh(roadGeo, roadMat);
     road.rotation.x = -Math.PI / 2;
@@ -1750,18 +1608,23 @@
       wheels.push({ group: wGroup, tire: tire, isFront: pos.isFront });
     });
 
-    // Headlights
-    const headlightL = new THREE.SpotLight(0xfef08a, 2.8, 50, 0.45, 0.6, 1.5);
-    headlightL.position.set(-0.65, 0.6, 2.3);
-    headlightL.target.position.set(-0.65, 0.0, 35.0);
-    scene.add(headlightL.target);
+    // Headlights: High-Power Projector Xenon Spotlights with Dynamic Vehicle Sweeping
+    const headlightL = new THREE.SpotLight(0xf8fafc, 4.5, 110, 0.52, 0.75, 1.6);
+    headlightL.position.set(-0.65, 0.62, 2.3);
+    headlightL.target.position.set(-0.5, -0.2, 60.0);
+    egoVehicle.add(headlightL.target);
     egoVehicle.add(headlightL);
 
-    const headlightR = new THREE.SpotLight(0xfef08a, 2.8, 50, 0.45, 0.6, 1.5);
-    headlightR.position.set(0.65, 0.6, 2.3);
-    headlightR.target.position.set(0.65, 0.0, 35.0);
-    scene.add(headlightR.target);
+    const headlightR = new THREE.SpotLight(0xf8fafc, 4.5, 110, 0.52, 0.75, 1.6);
+    headlightR.position.set(0.65, 0.62, 2.3);
+    headlightR.target.position.set(0.5, -0.2, 60.0);
+    egoVehicle.add(headlightR.target);
     egoVehicle.add(headlightR);
+
+    // Rear Taillight Ground Illumination
+    const taillightGlow = new THREE.PointLight(0xdc2626, 1.8, 8.0);
+    taillightGlow.position.set(0, 0.55, -2.6);
+    egoVehicle.add(taillightGlow);
 
     // Taillights
     const taillightMat = new THREE.MeshBasicMaterial({ color: 0xdc2626 });
@@ -1818,16 +1681,118 @@
     const lidarCloud = new THREE.Points(lidarGeo, lidarMat);
     scene.add(lidarCloud);
 
-    // --- 5. FRENET DYNAMIC 3D TRAJECTORY RIBBON ---
+    // --- 5. FRENET DYNAMIC 3D AR TRAJECTORY CORRIDOR WITH FLOWING CHEVRONS ---
+    // Procedural High-Contrast Animated Chevron HUD Texture
+    function createChevronTexture() {
+      const c = document.createElement('canvas');
+      c.width = 128;
+      c.height = 256;
+      const ctx = c.getContext('2d');
+      ctx.clearRect(0, 0, 128, 256);
+      
+      for (let offset = 0; offset < 256; offset += 128) {
+        ctx.save();
+        ctx.translate(64, offset + 64);
+        
+        // Outer cyan glow
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.45)';
+        ctx.lineWidth = 18;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(-46, 26);
+        ctx.lineTo(0, -26);
+        ctx.lineTo(46, 26);
+        ctx.stroke();
+
+        // Mid neon cyan
+        ctx.strokeStyle = 'rgba(34, 211, 238, 0.9)';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.moveTo(-46, 26);
+        ctx.lineTo(0, -26);
+        ctx.lineTo(46, 26);
+        ctx.stroke();
+
+        // Bright white core
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-46, 26);
+        ctx.lineTo(0, -26);
+        ctx.lineTo(46, 26);
+        ctx.stroke();
+        ctx.restore();
+      }
+      
+      const tex = new THREE.CanvasTexture(c);
+      tex.wrapS = THREE.RepeatWrapping;
+      tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(1, 10);
+      return tex;
+    }
+
+    const TRAJ_STEPS = 50; // 50 steps = 100 meters forward lookahead
     const trajectoryGeo = new THREE.BufferGeometry();
+    const trajPositions = new Float32Array(TRAJ_STEPS * 2 * 3);
+    const trajUvs = new Float32Array(TRAJ_STEPS * 2 * 2);
+    const trajIndices = [];
+
+    for (let i = 0; i < TRAJ_STEPS; i++) {
+      const v = (i / (TRAJ_STEPS - 1)) * 10.0;
+      trajUvs[i * 4 + 0] = 0;
+      trajUvs[i * 4 + 1] = v;
+      trajUvs[i * 4 + 2] = 1;
+      trajUvs[i * 4 + 3] = v;
+
+      if (i < TRAJ_STEPS - 1) {
+        const i0 = i * 2;
+        const i1 = i * 2 + 1;
+        const i2 = (i + 1) * 2;
+        const i3 = (i + 1) * 2 + 1;
+        trajIndices.push(i0, i1, i2);
+        trajIndices.push(i1, i3, i2);
+      }
+    }
+
+    trajectoryGeo.setAttribute('position', new THREE.BufferAttribute(trajPositions, 3));
+    trajectoryGeo.setAttribute('uv', new THREE.BufferAttribute(trajUvs, 2));
+    trajectoryGeo.setIndex(trajIndices);
+
+    const trajectoryTex = createChevronTexture();
     const trajectoryMat = new THREE.MeshBasicMaterial({
+      map: trajectoryTex,
       color: 0x06b6d4,
       transparent: true,
-      opacity: 0.75,
-      side: THREE.DoubleSide
+      opacity: 0.90,
+      side: THREE.DoubleSide,
+      depthWrite: false,
+      blending: THREE.AdditiveBlending
     });
     const trajectoryRibbon = new THREE.Mesh(trajectoryGeo, trajectoryMat);
     scene.add(trajectoryRibbon);
+
+    // Candidate Evaluation Lane Guides (Visualizing Discrete 3-Lane Cost Evaluation)
+    const candidateGuideGroup = new THREE.Group();
+    [-3.4, 0.0, 3.4].forEach(laneX => {
+      const guideGeo = new THREE.BufferGeometry();
+      const guidePts = [];
+      for (let z = 0; z <= 100; z += 4) {
+        guidePts.push(new THREE.Vector3(-laneX, 0.04, z));
+      }
+      guideGeo.setFromPoints(guidePts);
+      const guideMat = new THREE.LineDashedMaterial({
+        color: 0x0284c7,
+        dashSize: 2.0,
+        gapSize: 2.5,
+        transparent: true,
+        opacity: 0.35
+      });
+      const guideLine = new THREE.Line(guideGeo, guideMat);
+      guideLine.computeLineDistances();
+      candidateGuideGroup.add(guideLine);
+    });
+    scene.add(candidateGuideGroup);
 
     // --- 6. 3D WEATHER PARTICLE SYSTEMS ---
     // Rain
@@ -2234,11 +2199,45 @@
       const bbox = new THREE.BoxHelper(mesh, 0x06b6d4);
       scene.add(bbox);
 
+      // 3D Holographic Ground Clearance Threat Footprint
+      let threatRing = null;
+      let innerDisc = null;
+      if (type !== 'road_end' && type !== 'speed_breaker') {
+        const ringRadius = (type === 'truck') ? 2.2 : ((type === 'cow' || type === 'rickshaw') ? 1.8 : 1.4);
+        const ringGeo = new THREE.RingGeometry(ringRadius * 0.75, ringRadius, 32);
+        const ringMat = new THREE.MeshBasicMaterial({
+          color: 0x06b6d4,
+          transparent: true,
+          opacity: 0.65,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        });
+        threatRing = new THREE.Mesh(ringGeo, ringMat);
+        threatRing.rotation.x = -Math.PI / 2;
+        threatRing.position.set(-lateralX, 0.04, distAhead);
+        scene.add(threatRing);
+
+        const discGeo = new THREE.CircleGeometry(ringRadius * 0.75, 32);
+        const discMat = new THREE.MeshBasicMaterial({
+          color: 0x06b6d4,
+          transparent: true,
+          opacity: 0.20,
+          side: THREE.DoubleSide,
+          depthWrite: false
+        });
+        innerDisc = new THREE.Mesh(discGeo, discMat);
+        innerDisc.rotation.x = -Math.PI / 2;
+        innerDisc.position.set(-lateralX, 0.035, distAhead);
+        scene.add(innerDisc);
+      }
+
       const entity = {
         id: nextEntityId++,
         type: type,
         mesh: mesh,
         bbox: bbox,
+        threatRing: threatRing,
+        innerDisc: innerDisc,
         x: lateralX,
         z: distAhead,
         vx: vx,
@@ -2258,6 +2257,8 @@
       allEntities.forEach(e => {
         entityGroup.remove(e.mesh);
         scene.remove(e.bbox);
+        if (e.threatRing) scene.remove(e.threatRing);
+        if (e.innerDisc) scene.remove(e.innerDisc);
       });
       allEntities.length = 0;
 
@@ -2473,6 +2474,8 @@
         if (allEntities[i].type === 'road_end') {
           entityGroup.remove(allEntities[i].mesh);
           scene.remove(allEntities[i].bbox);
+          if (allEntities[i].threatRing) scene.remove(allEntities[i].threatRing);
+          if (allEntities[i].innerDisc) scene.remove(allEntities[i].innerDisc);
           allEntities.splice(i, 1);
         }
       }
@@ -2705,6 +2708,52 @@
           e.bbox.material.color.setHex(0x06b6d4); // Cyan - tracked
         } else {
           e.bbox.material.color.setHex(0x334155); // Slate
+        }
+
+        // 3D Holographic Ground Clearance & Predictive Footprint Logic
+        if (e.threatRing && e.type !== 'road_end' && e.type !== 'speed_breaker') {
+          e.threatRing.position.set(-e.x, 0.04, e.z);
+          if (e.innerDisc) e.innerDisc.position.set(-e.x, 0.035, e.z);
+
+          if (e.z > 0.0 && e.z < 110.0) {
+            e.threatRing.visible = true;
+            if (e.innerDisc) e.innerDisc.visible = true;
+
+            const targetLatGoal = sim.targetLatSmooth || 0.0;
+            const lateralDistToTarget = Math.abs(e.x - targetLatGoal);
+
+            if (lateralDistToEgo < 2.3 && e.z < 65.0 && !sim.swerving) {
+              // DIRECT PATH CONFLICT: DANGER RED PULSE!
+              e.threatRing.material.color.setHex(0xff0044);
+              if (e.innerDisc) e.innerDisc.material.color.setHex(0xff0044);
+              e.threatRing.material.opacity = 0.90 + Math.sin(performance.now() * 0.012) * 0.10;
+              const pScale = 1.0 + Math.sin(performance.now() * 0.01) * 0.14;
+              e.threatRing.scale.set(pScale, pScale, 1.0);
+            } else if (sim.swerving || lateralDistToTarget >= 2.6) {
+              if (lateralDistToTarget >= 2.6 && (lateralDistToEgo >= 2.3 || e.z < 35.0)) {
+                // CLEARANCE BUFFER CONFIRMED: GLOWING EMERALD GREEN!
+                e.threatRing.material.color.setHex(0x10b981);
+                if (e.innerDisc) e.innerDisc.material.color.setHex(0x10b981);
+                e.threatRing.material.opacity = 0.85;
+                e.threatRing.scale.set(1.0, 1.0, 1.0);
+              } else {
+                // S-CURVE LATERAL EVASION UNDERWAY: VIBRANT AMBER
+                e.threatRing.material.color.setHex(0xf59e0b);
+                if (e.innerDisc) e.innerDisc.material.color.setHex(0xf59e0b);
+                e.threatRing.material.opacity = 0.80;
+                e.threatRing.scale.set(1.05, 1.05, 1.0);
+              }
+            } else {
+              // SAFE DISTANT CORRIDOR TRACKING: NEON CYAN
+              e.threatRing.material.color.setHex(0x06b6d4);
+              if (e.innerDisc) e.innerDisc.material.color.setHex(0x06b6d4);
+              e.threatRing.material.opacity = 0.40;
+              e.threatRing.scale.set(1.0, 1.0, 1.0);
+            }
+          } else {
+            e.threatRing.visible = false;
+            if (e.innerDisc) e.innerDisc.visible = false;
+          }
         }
       });
 
@@ -3054,28 +3103,48 @@
     }
 
     function updateFrenetRibbon(targetLat) {
-      const ribbonWidth = 1.4;
-      const numSteps = 24;
-      const positions = new Float32Array(numSteps * 2 * 3);
+      const ribbonWidth = 1.8;
+      const posAttr = trajectoryGeo.attributes.position;
+      const positions = posAttr.array;
+      const planningHorizon = Math.max(45.0, Math.min(100.0, sim.speed * 2.2));
 
-      for (let i = 0; i < numSteps; i++) {
-        const s = i * 2.0;
-        const progress = s / 48.0;
-        const lat = sim.lateralY + (targetLat - sim.lateralY) * (3 * progress * progress - 2 * progress * progress * progress);
+      for (let i = 0; i < TRAJ_STEPS; i++) {
+        const s = i * 2.0; // 0 to 98 meters lookahead
+        const progress = Math.min(1.0, s / planningHorizon);
+        // Quintic smooth S-curve interpolation
+        const smoothProgress = progress * progress * progress * (progress * (progress * 6 - 15) + 10);
+        const lat = sim.lateralY + (targetLat - sim.lateralY) * smoothProgress;
         const z = s;
         const x = -lat;
 
+        // Left vertex
         positions[i * 6 + 0] = x - ribbonWidth / 2;
-        positions[i * 6 + 1] = 0.05;
+        positions[i * 6 + 1] = 0.055;
         positions[i * 6 + 2] = z;
 
+        // Right vertex
         positions[i * 6 + 3] = x + ribbonWidth / 2;
-        positions[i * 6 + 4] = 0.05;
+        positions[i * 6 + 4] = 0.055;
         positions[i * 6 + 5] = z;
       }
 
-      trajectoryGeo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      posAttr.needsUpdate = true;
       trajectoryGeo.computeVertexNormals();
+
+      // Dynamic Color & Emissive State
+      if (sim.cameraFailed || sim.roadEndActive || (sim.speed < 2.0 && sim.activeRoadEnd)) {
+        trajectoryMat.color.setHex(0xef4444); // Red: Emergency Stop / Barricade
+        trajectoryMat.opacity = 0.95;
+      } else if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0 && sim.bumpDist < 120.0) {
+        trajectoryMat.color.setHex(0xf59e0b); // Amber: Speed Breaker Glide
+        trajectoryMat.opacity = 0.90;
+      } else if (sim.swerving || (sim.closestThreat && sim.closestThreat.z < 70.0)) {
+        trajectoryMat.color.setHex(0xf59e0b); // Vibrant Amber: Predictive Evasion
+        trajectoryMat.opacity = 0.95;
+      } else {
+        trajectoryMat.color.setHex(0x06b6d4); // Neon Cyan: Normal Cruise
+        trajectoryMat.opacity = 0.85;
+      }
     }
 
     function updateHUDDOM(crossTrack) {
@@ -3245,49 +3314,66 @@
         accSub.textContent = `${accVal}%`;
       }
 
-      // HUD Alert Banners & Threat Indicator
-      const alertBanner = document.getElementById('alert-banner');
+      // AI PREDICTIVE AVOIDANCE CORRIDOR TICKER (Zero Screen-Blocking Popups!)
+      const tickerBadge = document.getElementById('ai-ticker-badge');
+      const tickerDetail = document.getElementById('ai-ticker-detail');
+      const tickerDot = document.getElementById('ai-ticker-dot');
+      const tickerBox = document.getElementById('ai-predictive-ticker');
       const threatLabel = document.getElementById('txt-closest-threat');
 
       if (sim.cameraFailed) {
-        alertBanner.classList.remove('hidden');
+        tickerDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-ping";
+        tickerBadge.className = "font-bold text-amber-400 uppercase tracking-wide";
+        tickerBox.className = "flex items-center space-x-2 px-3 py-1 rounded-xl bg-slate-950/90 border border-amber-500/60 text-xs font-mono shadow-inner";
         if (sim.cameraFailState === 'parked') {
-          document.getElementById('alert-title').textContent = '🅿️ SAFE EMERGENCY PULL-OVER COMPLETE';
-          document.getElementById('alert-sub').textContent = 'Parked safely on road shoulder (X = -4.2m). EPB engaged, 4-way hazards active, LiDAR+Radar perimeter live.';
-          threatLabel.textContent = 'Safe Shoulder Parked | Camera Offline | IoT Guard Active';
+          tickerBadge.textContent = '🅿️ SHOULDER PARKED';
+          tickerDetail.textContent = 'Parked safely at verge (X = -4.2m) • EPB Locked • LiDAR Guard Active';
+          if (threatLabel) threatLabel.textContent = 'Safe Shoulder Parked | Camera Offline | IoT Guard Active';
         } else if (sim.cameraFailState === 'pulling_over') {
-          document.getElementById('alert-title').textContent = '⚠️ CAMERA OFFLINE — IOT SENSOR HANDOVER ACTIVE';
-          document.getElementById('alert-sub').textContent = 'Primary camera lost. Switched to 16-Beam LiDAR + 77 GHz Radar. Smoothly steering towards shoulder verge.';
-          threatLabel.textContent = 'Maneuver: Pulling Over to Shoulder (-4.2m)';
+          tickerBadge.textContent = '⚠️ IOT SENSOR HANDOVER';
+          tickerDetail.textContent = 'Camera offline • 16-Beam LiDAR + Radar active • Steering to shoulder';
+          if (threatLabel) threatLabel.textContent = 'Maneuver: Pulling Over to Shoulder (-4.2m)';
         } else {
-          document.getElementById('alert-title').textContent = '⚠️ CAMERA SENSOR FAULT DETECTED';
-          document.getElementById('alert-sub').textContent = 'Speed reducing smoothly from ' + document.getElementById('txt-target-speed').textContent + ' to safe 15 km/h crawl before shoulder parking.';
-          threatLabel.textContent = 'IoT Handover: Decelerating to 15 km/h Crawl';
+          tickerBadge.textContent = '⚠️ SENSOR FAULT DETECTED';
+          tickerDetail.textContent = 'Smooth deceleration to safe 15 km/h crawl before shoulder parking';
+          if (threatLabel) threatLabel.textContent = 'IoT Handover: Decelerating to 15 km/h Crawl';
         }
       } else if (sim.roadEndActive || (sim.activeRoadEnd && sim.roadEndDist < 250.0)) {
-        alertBanner.classList.remove('hidden');
+        tickerDot.className = "w-2 h-2 rounded-full bg-red-500 animate-ping";
+        tickerBadge.className = "font-bold text-red-400 uppercase tracking-wide";
+        tickerBox.className = "flex items-center space-x-2 px-3 py-1 rounded-xl bg-slate-950/90 border border-red-500/60 text-xs font-mono shadow-inner";
         if (sim.speed <= 0.2) {
-          document.getElementById('alert-title').textContent = '🛑 ROAD TERMINUS REACHED — CHAUFFEUR STOP COMPLETE';
-          document.getElementById('alert-sub').textContent = 'Vehicle halted safely 5.0m before barricade. Transmission shifted to [P] Park, EPB locked, zero passenger jerk.';
-          threatLabel.textContent = 'Road End Stop Complete | 0.0 km/h | EPB Secured';
+          tickerBadge.textContent = '🛑 ROAD END STOP COMPLETE';
+          tickerDetail.textContent = 'Halted 5.0m before barricade • [P] Park & EPB Engaged • 0 Passenger Jerk';
+          if (threatLabel) threatLabel.textContent = 'Road End Stop Complete | 0.0 km/h | EPB Secured';
         } else {
-          document.getElementById('alert-title').textContent = '🛑 ROAD END DETECTED — CHAUFFEUR COMFORT STOP';
-          document.getElementById('alert-sub').textContent = `Progressive passenger-comfort glide active (-${decelG.toFixed(2)} G). Barricade in ${Math.max(0, sim.roadEndDist).toFixed(1)}m.`;
-          threatLabel.textContent = `Road End Barricade (${Math.max(0, sim.roadEndDist).toFixed(1)}m) -> Chauffeur Glide (-${decelG.toFixed(2)}G)`;
+          tickerBadge.textContent = '🛑 PREDICTIVE ROAD END STOP';
+          tickerDetail.textContent = `Barricade in ${Math.max(0, sim.roadEndDist).toFixed(1)}m • Chauffeur Glide (-${decelG.toFixed(2)} G)`;
+          if (threatLabel) threatLabel.textContent = `Road End Barricade (${Math.max(0, sim.roadEndDist).toFixed(1)}m) -> Chauffeur Glide (-${decelG.toFixed(2)}G)`;
         }
       } else if (sim.speedBreakerActive && sim.bumpDist !== undefined && sim.bumpDist > -2.0) {
-        alertBanner.classList.remove('hidden');
-        document.getElementById('alert-title').textContent = '⚠️ IRC-99 SPEED BREAKER DETECTED';
-        document.getElementById('alert-sub').textContent = `Speed reduced from ${document.getElementById('txt-target-speed').textContent} to 15 km/h. Bump in ${Math.max(0, sim.bumpDist).toFixed(1)}m.`;
-        threatLabel.textContent = `Speed Breaker (${Math.max(0, sim.bumpDist).toFixed(1)}m) -> 15 km/h Crawl`;
+        tickerDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+        tickerBadge.className = "font-bold text-amber-400 uppercase tracking-wide";
+        tickerBox.className = "flex items-center space-x-2 px-3 py-1 rounded-xl bg-slate-950/90 border border-amber-500/60 text-xs font-mono shadow-inner";
+        tickerBadge.textContent = '🚧 PREDICTIVE SPEED BREAKER GLIDE';
+        tickerDetail.textContent = `IRC-99 Bump in ${Math.max(0, sim.bumpDist).toFixed(1)}m • Smooth Chauffeur Decel -> 7 km/h Crawl`;
+        if (threatLabel) threatLabel.textContent = `Speed Breaker (${Math.max(0, sim.bumpDist).toFixed(1)}m) -> 15 km/h Crawl`;
       } else if (sim.closestThreat) {
-        alertBanner.classList.remove('hidden');
-        document.getElementById('alert-title').textContent = `🚨 AVOIDING ${sim.closestThreat.type.toUpperCase()}`;
-        document.getElementById('alert-sub').textContent = `Frenet planner bypass active. Distance: ${sim.closestThreat.z.toFixed(1)}m.`;
-        threatLabel.textContent = `Threat: ${sim.closestThreat.type.toUpperCase()} (${sim.closestThreat.z.toFixed(1)}m)`;
+        tickerDot.className = "w-2 h-2 rounded-full bg-amber-400 animate-pulse";
+        tickerBadge.className = "font-bold text-amber-300 uppercase tracking-wide";
+        tickerBox.className = "flex items-center space-x-2 px-3 py-1 rounded-xl bg-slate-950/90 border border-amber-500/60 text-xs font-mono shadow-inner";
+        const threatTTC = (sim.speed > 1.0) ? (sim.closestThreat.z / sim.speed).toFixed(1) + 's' : 'HOLD';
+        const latDir = (sim.targetLatSmooth > 0.4) ? 'RIGHT (+3.4m)' : ((sim.targetLatSmooth < -0.4) ? 'LEFT (-3.4m)' : 'CENTER');
+        tickerBadge.textContent = `🚨 PREDICTIVE EVASION: ${sim.closestThreat.type.toUpperCase()}`;
+        tickerDetail.textContent = `Hazard ${sim.closestThreat.z.toFixed(1)}m • Swerving ${latDir} • TTC: ${threatTTC} • Clearance Buffer: 2.8m`;
+        if (threatLabel) threatLabel.textContent = `Threat: ${sim.closestThreat.type.toUpperCase()} (${sim.closestThreat.z.toFixed(1)}m)`;
       } else {
-        alertBanner.classList.add('hidden');
-        threatLabel.textContent = `Expressway Cruise: ${allEntities.length} road entities tracked`;
+        tickerDot.className = "w-2 h-2 rounded-full bg-emerald-400 animate-pulse";
+        tickerBadge.className = "font-bold text-emerald-400 uppercase tracking-wide";
+        tickerBox.className = "flex items-center space-x-2 px-3 py-1 rounded-xl bg-slate-950/90 border border-emerald-500/50 text-xs font-mono shadow-inner";
+        tickerBadge.textContent = '🟢 AI PREDICTIVE CRUISE';
+        tickerDetail.textContent = `Corridor Clear (120m Lookahead) • ${allEntities.length} Road Entities Monitored`;
+        if (threatLabel) threatLabel.textContent = `Expressway Cruise: ${allEntities.length} road entities tracked`;
       }
     }
 
@@ -3563,6 +3649,11 @@
           c.position.x += 0.04;
           if (c.position.x > 180) c.position.x = -180;
         });
+      }
+
+      // Dynamically Scroll AR Trajectory Chevrons Down Road
+      if (typeof trajectoryTex !== 'undefined' && trajectoryTex) {
+        trajectoryTex.offset.y -= dt * (sim.speed * 0.16 + 0.5);
       }
 
       updateCamera();
