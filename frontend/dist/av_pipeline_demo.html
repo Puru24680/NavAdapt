@@ -1809,15 +1809,12 @@
       speedBreakerActive: false,
       friction: 0.85,
       closestThreat: null,
-      // Realistic Passenger Comfort Deceleration & Suspension Dynamics
-      currentDecel: 0.0, // actual applied deceleration in m/s^2
-      targetDecel: 0.0,  // controller demand in m/s^2
+      // Smooth Longitudinal Dynamics & Jerk-Limited Accel/Decel
+      currentAccel: 0.0, // actual applied acceleration in m/s^2 (+ for accel, - for decel)
+      currentDecel: 0.0, // actual applied deceleration for HUD telemetry (m/s^2)
       pitchDive: 0.0,    // forward suspension dive tilt in radians
       reboundTime: 1.5,  // spring rebound oscillation timer after standstill
       reboundAmplitude: 0.0,
-      // Vulnerable Road User (VRU) / Human Life Protection
-      isYieldingHuman: false,
-      humanYieldDist: 999,
       // Road End Detection & Safety Stop
       roadEndActive: false,
       activeRoadEnd: null,
@@ -1829,7 +1826,7 @@
       gear: 'D', // 'D' or 'P'
       hazardBlinkers: false,
       electronicParkingBrake: false,
-      stopProfile: 'CHAUFFEUR COMFORT'
+      stopProfile: 'EXPRESSWAY CRUISE'
     };
 
     function resetSimulation() {
@@ -1841,13 +1838,11 @@
       sim.totalDistance = 0.0;
       sim.swerving = false;
       sim.speedBreakerActive = false;
+      sim.currentAccel = 0.0;
       sim.currentDecel = 0.0;
-      sim.targetDecel = 0.0;
       sim.pitchDive = 0.0;
       sim.reboundTime = 1.5;
       sim.reboundAmplitude = 0.0;
-      sim.isYieldingHuman = false;
-      sim.humanYieldDist = 999;
       sim.roadEndActive = false;
       sim.activeRoadEnd = null;
       sim.roadEndDist = 999;
@@ -1856,8 +1851,8 @@
       sim.gear = 'D';
       sim.hazardBlinkers = false;
       sim.electronicParkingBrake = false;
-      sim.stopProfile = 'CHAUFFEUR COMFORT';
-      sim.accuracy = 99.7;
+      sim.stopProfile = 'EXPRESSWAY CRUISE';
+      sim.accuracy = 99.8;
       carBody.position.y = 0.65;
       carBody.rotation.x = 0;
       populateTraffic(sim.density);
@@ -2087,16 +2082,15 @@
       audio.setSpeed(sim.speed);
 
       // 1. Step & Update All Surrounding Multi-Agents
-      let closestInCorridor = null;
-      let minThreatDist = 999;
-      let closestVRU = null;
-      let minVRUDist = 999;
       let activeSpeedBreaker = null;
       let bumpDist = 999;
       let activeRoadEnd = null;
       let roadEndDist = 999;
+      let closestThreat = null;
+      let minThreatDist = 999;
 
-      const lookaheadAvoidance = (sim.friction < 0.6) ? 45.0 : 35.0;
+      // Long-horizon lookahead scales dynamically with speed (at 120 km/h = 33.3 m/s, lookahead is ~105m)
+      const lookaheadHorizon = Math.max(50.0, sim.speed * 2.8 + 18.0);
 
       allEntities.forEach(e => {
         // Relative forward movement (Ego moving forward at sim.speed, entity moving at e.vz)
@@ -2111,8 +2105,8 @@
           }
         }
 
-        // Check if entity has fallen behind ego vehicle (< -18m) -> Recycle & Respawn in distant corridor!
-        if (e.z < -18.0) {
+        // Check if entity has fallen behind ego vehicle (< -20m) -> Recycle & Respawn in distant corridor!
+        if (e.z < -20.0) {
           if (e.type === 'road_end') {
             // Keep road end in place when active
           } else {
@@ -2150,7 +2144,7 @@
               activeSpeedBreaker = e;
             }
           }
-          return; // Speed breaker spans entire road, avoid lateral steering evasion
+          return; // Spans entire road
         }
 
         // Check if this is Road End Barricade (detected up to 350m in long-horizon highway preview)
@@ -2165,44 +2159,30 @@
             const isRedOn = Math.sin(performance.now() * 0.008) > 0;
             e.mesh.beacons.forEach(b => b.material.color.setHex(isRedOn ? 0xef4444 : 0x450a0a));
           }
-          return; // Spans whole road, handled by longitudinal Chauffeur safety stop
+          return;
         }
 
-        // 2. Collision Corridor Check & Human Life Priority (VRUs: Pedestrians & Cattle)
-        const isVRU = (e.type === 'pedestrian' || e.type === 'cow');
-        const lateralDist = Math.abs(e.x - sim.lateralY);
+        // Physical Obstacle on Roadway (pedestrians, cows, rickshaws, trucks, bikes, potholes)
+        // Check if this obstacle is in front of or alongside the vehicle [-4.2m to lookaheadHorizon]
+        const inClearanceZone = (e.z > -4.2 && e.z < lookaheadHorizon);
+        const lateralDistToEgo = Math.abs(e.x - sim.lateralY);
 
-        if (isVRU) {
-          // Dedicated Vulnerable Road User perception track: Human Life Priority
-          if (e.z > 0 && e.z < 95.0 && lateralDist < 3.2) {
-            e.bbox.material.color.setHex(0xf59e0b); // Amber alert highlight
-            if (e.z < minVRUDist) {
-              minVRUDist = e.z;
-              closestVRU = e;
-            }
-          } else if (e.z > 0 && e.z < 60) {
-            e.bbox.material.color.setHex(0x06b6d4);
-          } else {
-            e.bbox.material.color.setHex(0x334155);
+        if (inClearanceZone && lateralDistToEgo < 2.4) {
+          e.bbox.material.color.setHex(0xef4444); // Urgent red - in path
+          if (e.z > -1.0 && e.z < minThreatDist) {
+            minThreatDist = e.z;
+            closestThreat = e;
           }
+        } else if (inClearanceZone && lateralDistToEgo < 3.8) {
+          e.bbox.material.color.setHex(0xf59e0b); // Amber - adjacent lane threat
+        } else if (e.z > 0 && e.z < 70.0) {
+          e.bbox.material.color.setHex(0x06b6d4); // Cyan - tracked in field of view
         } else {
-          // General dynamic obstacle (trucks, auto-rickshaws, bikes, potholes)
-          const inCorridor = (e.z > 0 && e.z < lookaheadAvoidance && lateralDist < 2.0);
-          if (inCorridor) {
-            e.bbox.material.color.setHex(0xef4444);
-            if (e.z < minThreatDist) {
-              minThreatDist = e.z;
-              closestInCorridor = e;
-            }
-          } else if (e.z > 0 && e.z < 60) {
-            e.bbox.material.color.setHex(0x06b6d4);
-          } else {
-            e.bbox.material.color.setHex(0x334155);
-          }
+          e.bbox.material.color.setHex(0x334155); // Slate - background
         }
       });
 
-      sim.closestThreat = closestVRU || closestInCorridor;
+      sim.closestThreat = closestThreat;
       sim.activeSpeedBreaker = activeSpeedBreaker;
       sim.bumpDist = bumpDist;
       sim.activeRoadEnd = activeRoadEnd;
@@ -2211,40 +2191,80 @@
         sim.roadEndActive = true;
       }
 
-      // 2. Multi-Tier Longitudinal Controller (ISO 15622 / SAE Chauffeur Comfort & Human-First Safety)
-      let desiredDecel = 0.0;
+      // 2. Multi-Candidate Optimal Lateral Path Planning (3-Lane Frenet Grid Evaluation)
       let targetLat = 0.0;
-      let isStoppingToZero = false;
+      let evasionActive = false;
+      let safeSpeedCap = sim.targetSpeed;
       let stopProfileName = "EXPRESSWAY CRUISE";
-      let speedBreakerEngaged = false;
+      let isStoppingToZero = false;
 
+      // Candidate Lateral Lanes: Left (-3.4m), Center (0.0m), Right (+3.4m)
+      const candidateLanes = [-3.4, 0.0, 3.4];
+      let bestLane = 0.0;
+      let minLaneCost = Infinity;
+
+      for (const lane of candidateLanes) {
+        // Base cost: slight preference for center lane (0.0m)
+        let cost = Math.abs(lane) * 0.35;
+        // Hysteresis: small preference to maintain current target lane to prevent oscillation
+        if (Math.abs(lane - sim.targetLatSmooth) < 0.6) {
+          cost -= 0.8;
+        }
+
+        for (const e of allEntities) {
+          if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
+          // An entity affects lane feasibility if it is within the clearance window [-4.2m to lookaheadHorizon]
+          if (e.z > -4.2 && e.z < lookaheadHorizon) {
+            const latDist = Math.abs(e.x - lane);
+            // Dynamic entity safety radius based on vehicle dimensions
+            let eRadius = 1.0;
+            if (e.type === 'truck') eRadius = 1.65;
+            else if (e.type === 'rickshaw' || e.type === 'cow') eRadius = 1.3;
+            else if (e.type === 'pedestrian' || e.type === 'bike') eRadius = 0.85;
+
+            const egoHalfWidth = 1.0;
+            const requiredClearance = eRadius + egoHalfWidth + 0.6; // generous lateral clearance margin
+
+            if (latDist < requiredClearance) {
+              // Heavy collision penalty inversely proportional to distance to obstacle
+              const proximityWeight = Math.max(1.0, (lookaheadHorizon - Math.max(0, e.z)) / 8.0);
+              const overlap = requiredClearance - latDist;
+              cost += 8000.0 * proximityWeight * (overlap + 1.2);
+            } else if (latDist < requiredClearance + 1.2) {
+              cost += 60.0 / Math.max(0.1, latDist - requiredClearance);
+            }
+          }
+        }
+
+        if (cost < minLaneCost) {
+          minLaneCost = cost;
+          bestLane = lane;
+        }
+      }
+
+      // Determine target lane based on candidate evaluation
+      if (Math.abs(bestLane) > 0.5 || minLaneCost > 10.0) {
+        evasionActive = true;
+        targetLat = bestLane;
+      } else {
+        targetLat = 0.0;
+      }
+
+      // 3. Multi-Tier Behavioral Protocols (Fail-Safe & Speed Constraints)
       if (sim.cameraFailed) {
         // --- FAIL-SAFE PROTOCOL A: CAMERA FAULT -> IOT SENSOR HANDOVER & SHOULDER PARK ---
         sim.hazardBlinkers = true;
-        sim.isYieldingHuman = false;
-
         if (sim.cameraFailState === 'handover_slowing') {
-          // Phase 1: Smooth progressive glide down to safe 15 km/h crawl (~1.8-2.0 m/s^2)
-          const crawlSpeed = 4.17;
+          safeSpeedCap = 4.17; // 15 km/h crawl
           targetLat = 0.0;
-          if (sim.speed > crawlSpeed) {
-            desiredDecel = (sim.friction < 0.6) ? 1.6 : 2.0;
-            stopProfileName = "IOT SENSOR HANDOVER";
-          } else {
-            desiredDecel = 0.0;
+          stopProfileName = "IOT SENSOR HANDOVER";
+          if (sim.speed <= 4.3) {
             sim.cameraFailState = 'pulling_over';
             logCAN("0x304: LATERAL_PLANNER — Smooth lane change towards shoulder verge (X = -4.2m)");
           }
         } else if (sim.cameraFailState === 'pulling_over') {
-          // Phase 2: Steer smoothly to shoulder verge while maintaining crawl (14 km/h)
-          const crawlSpeed = 3.8;
+          safeSpeedCap = 3.8; // 14 km/h
           targetLat = -4.2;
-          if (sim.speed > crawlSpeed) {
-            desiredDecel = 1.2;
-          } else {
-            desiredDecel = 0.0;
-            sim.speed = Math.min(crawlSpeed, sim.speed + 1.0 * dt);
-          }
           stopProfileName = "SHOULDER PULL-OVER";
           if (Math.abs(sim.lateralY - (-4.2)) < 0.28) {
             sim.cameraFailState = 'parked';
@@ -2252,132 +2272,49 @@
             logCAN("0x305: SHOULDER_REACHED — Commencing final Chauffeur Soft-Stop");
           }
         } else if (sim.cameraFailState === 'parked') {
-          // Phase 3: Final Chauffeur Soft-Stop into safe park
-          isStoppingToZero = true;
+          safeSpeedCap = 0.0;
           targetLat = -4.2;
-          if (sim.speed > 2.0) {
-            desiredDecel = 1.6;
-            stopProfileName = "CHAUFFEUR STOP";
-          } else if (sim.speed > 0.06) {
-            desiredDecel = Math.max(0.35, sim.speed * 0.45);
-            stopProfileName = "CHAUFFEUR SOFT-STOP";
-          } else {
-            desiredDecel = 0.0;
-            stopProfileName = "PARKED (SHOULDER)";
-          }
+          isStoppingToZero = true;
+          stopProfileName = (sim.speed < 0.2) ? "PARKED (SHOULDER)" : "CHAUFFEUR SOFT-STOP";
         }
 
       } else if (activeRoadEnd || sim.roadEndActive) {
         // --- FAIL-SAFE PROTOCOL B: ROAD END BARRICADE -> PROGRESSIVE CHAUFFEUR STOP ---
         sim.hazardBlinkers = true;
-        sim.isYieldingHuman = false;
         targetLat = 0.0;
         isStoppingToZero = true;
         const stopMargin = 5.0; // Stop 5.0m before barricade
         const currentDist = activeRoadEnd ? activeRoadEnd.z : sim.roadEndDist;
         const distToStop = currentDist - stopMargin;
 
-        if (distToStop > 0.3 && sim.speed > 0.06) {
-          // Kinematic deceleration: v^2 / (2 * s)
-          const decelNeeded = (sim.speed * sim.speed) / (2 * Math.max(1.0, distToStop));
-          // Passenger comfort upper bound: 2.0 m/s^2 (~0.20 G)
-          const maxComfortDecel = (sim.friction < 0.6) ? 1.7 : 2.1;
-          desiredDecel = Math.max(1.5, Math.min(maxComfortDecel, decelNeeded));
-
-          // Chauffeur Soft-Stop ease-off (prevents head lurch in final 8 meters)
-          if (sim.speed < 2.5 || distToStop < 8.0) {
-            desiredDecel = Math.max(0.35, Math.min(desiredDecel, sim.speed * 0.45));
+        if (distToStop > 0.2) {
+          // Kinematic safe approach curve: v_target = sqrt(2 * a_comfort * s)
+          const comfortDecel = (sim.friction < 0.6) ? 1.5 : 1.9; // m/s^2
+          const kinematicV = Math.sqrt(2.0 * comfortDecel * Math.max(0.1, distToStop));
+          safeSpeedCap = Math.min(sim.targetSpeed, kinematicV);
+          if (distToStop < 8.0 || sim.speed < 2.5) {
             stopProfileName = "CHAUFFEUR SOFT-STOP";
           } else {
-            stopProfileName = `CHAUFFEUR COMFORT (-${(desiredDecel / 9.81).toFixed(2)} G)`;
-          }
-
-          if (sim.speed <= 0.12 && distToStop < 2.0) {
-            sim.speed = 0.0;
-            desiredDecel = 0.0;
-            sim.gear = 'P';
-            sim.electronicParkingBrake = true;
-            audio.playParkChime();
-            logCAN("0x282: CONTROLLED_STOP_COMPLETE — Halted safely 5.0m before barricade");
-            logCAN("0x283: EPB_ENGAGED — Transmission in [P] Park, EPB secured");
+            stopProfileName = `CHAUFFEUR COMFORT (-${(comfortDecel / 9.81).toFixed(2)} G)`;
           }
         } else {
-          desiredDecel = 0.0;
+          safeSpeedCap = 0.0;
           stopProfileName = "ROAD END STANDSTILL";
         }
 
-      } else if (closestVRU) {
-        // --- HUMAN LIFE MATTERS: VULNERABLE ROAD USER (PEDESTRIAN / COW) PROTECTION ---
-        const vruLat = Math.abs(closestVRU.x - sim.lateralY);
-        if (vruLat < 1.7) {
-          // Direct in-line human/cow in path: Prioritize Life -> Gentle progressive stop with 9.5m standoff
-          sim.isYieldingHuman = true;
-          sim.humanYieldDist = closestVRU.z;
-          isStoppingToZero = true;
-          targetLat = 0.0;
-          const vruBuffer = 9.5; // Generous 9.5m protective buffer
-          const distToYield = closestVRU.z - vruBuffer;
-
-          if (distToYield > 0.4 && sim.speed > 0.06) {
-            const decelNeeded = (sim.speed * sim.speed) / (2 * Math.max(1.0, distToYield));
-            const maxComfort = (sim.friction < 0.6) ? 2.0 : 2.5;
-            desiredDecel = Math.max(1.6, Math.min(maxComfort, decelNeeded));
-
-            // Chauffeur ease-off in final approach
-            if (sim.speed < 2.5 || distToYield < 7.0) {
-              desiredDecel = Math.max(0.35, Math.min(desiredDecel, sim.speed * 0.42));
-              stopProfileName = "HUMAN-FIRST SOFT STOP";
-            } else {
-              stopProfileName = `HUMAN YIELD (-${(desiredDecel / 9.81).toFixed(2)} G)`;
-            }
-
-            if (sim.speed <= 0.1 && distToYield < 1.5) {
-              sim.speed = 0.0;
-              desiredDecel = 0.0;
-              logCAN("0x250: VRU_PROTECTION — Standstill complete 9.5m before pedestrian. Yielding.");
-            }
-          } else {
-            desiredDecel = 0.0;
-            stopProfileName = "HUMAN YIELD WAITING (9.5m)";
-          }
-        } else {
-          // VRU on shoulder / near verge (1.7 <= vruLat < 3.2): Slow to safe 20 km/h with wide lateral margin
-          sim.isYieldingHuman = false;
-          targetLat = (closestVRU.x >= sim.lateralY) ? -2.2 : 2.2;
-          const safeCrawl = 5.56; // 20 km/h safe approach speed
-          if (sim.speed > safeCrawl) {
-            desiredDecel = 1.8;
-            stopProfileName = "VRU CAUTION (20 km/h)";
-          } else {
-            desiredDecel = 0.0;
-            sim.speed = Math.min(safeCrawl, sim.speed + 1.2 * dt);
-            stopProfileName = "VRU SAFE CLEARANCE";
-          }
-        }
-
-      } else if (activeSpeedBreaker) {
+      } else if (activeSpeedBreaker && bumpDist > -2.0 && bumpDist < 60.0) {
         // --- SPEED BREAKER: IRC-99 PROGRESSIVE GLIDE TO 15 KM/H ---
-        speedBreakerEngaged = true;
-        sim.isYieldingHuman = false;
+        sim.speedBreakerActive = true;
         targetLat = 0.0;
         const safeSpeed = 4.17; // 15 km/h safe crawl speed for speed breaker
 
         if (bumpDist > 1.8) {
-          if (sim.speed > safeSpeed) {
-            const decelNeeded = (sim.speed * sim.speed - safeSpeed * safeSpeed) / (2 * Math.max(1.5, bumpDist));
-            desiredDecel = Math.max(1.6, Math.min(2.8, decelNeeded));
-            stopProfileName = "SPEED BREAKER GLIDE";
-          } else {
-            desiredDecel = 0.0;
-            sim.speed = Math.max(safeSpeed - 0.5, Math.min(safeSpeed + 0.5, sim.speed));
-            stopProfileName = "SPEED BREAKER CRAWL";
-          }
-          sim.speedBreakerActive = true;
+          const decelDist = Math.max(1.5, bumpDist);
+          const kinematicV = Math.sqrt(safeSpeed * safeSpeed + 2.0 * 1.8 * decelDist);
+          safeSpeedCap = Math.min(sim.targetSpeed, Math.max(safeSpeed, kinematicV));
+          stopProfileName = "SPEED BREAKER GLIDE";
         } else if (bumpDist >= -1.8 && bumpDist <= 1.8) {
-          // Traversing bump
-          sim.speed = Math.max(3.8, Math.min(4.5, sim.speed));
-          desiredDecel = 0.0;
-          sim.speedBreakerActive = true;
+          safeSpeedCap = safeSpeed;
           stopProfileName = "SPEED BREAKER TRAVERSAL";
           if (!activeSpeedBreaker.thumpPlayed) {
             audio.playBump();
@@ -2385,74 +2322,104 @@
           }
         } else {
           sim.speedBreakerActive = false;
-          speedBreakerEngaged = false;
         }
 
-      } else if (closestInCorridor) {
-        // --- NORMAL OBSTACLE EVASION (CONES, DEBRIS, POTHOLES, VEHICLES) ---
-        sim.isYieldingHuman = false;
+      } else if (evasionActive) {
+        // --- OBSTACLE EVASION: SMOOTH LATERAL SWERVE WITH SPEED HARMONIZATION ---
         if (!sim.swerving) {
           audio.playWarning();
         }
         sim.swerving = true;
-        targetLat = (closestInCorridor.x >= sim.lateralY) ? -2.4 : 2.4;
-        desiredDecel = 1.5;
         stopProfileName = "SMOOTH LATERAL EVASION";
+
+        // Predictive Collision Prevention Fail-Safe:
+        // Harmonize speed if an obstacle in path has not yet been cleared laterally
+        for (const e of allEntities) {
+          if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
+          if (e.z > -1.0 && e.z < 45.0) {
+            const currentLatClearance = Math.abs(e.x - sim.lateralY);
+            if (currentLatClearance < 1.9) {
+              if (e.z < 12.0 && currentLatClearance < 1.4) {
+                // Emergency AEB stop if obstacle is imminent and lateral clearance is incomplete
+                safeSpeedCap = Math.min(safeSpeedCap, 0.0);
+                stopProfileName = "PREDICTIVE AEB BRAKING";
+              } else if (e.z < 25.0) {
+                // Firm speed reduction to 25 km/h
+                safeSpeedCap = Math.min(safeSpeedCap, 6.94);
+                stopProfileName = "EVASION SPEED HARMONIZE";
+              } else {
+                // Harmonize to 50 km/h (13.9 m/s)
+                safeSpeedCap = Math.min(safeSpeedCap, 13.9);
+                stopProfileName = "EVASION SPEED HARMONIZE";
+              }
+            }
+          }
+        }
 
       } else if (sim.swerving) {
         // --- RE-CENTERING AFTER LATERAL EVASION ---
-        sim.isYieldingHuman = false;
         targetLat = 0.0;
-        desiredDecel = 0.0;
-        sim.speed = Math.min(sim.targetSpeed, sim.speed + 2.0 * dt);
         stopProfileName = "LANE RE-CENTERING";
         if (Math.abs(sim.lateralY) < 0.25) {
           sim.swerving = false;
         }
-
       } else {
-        // --- NORMAL CRUISE: SMOOTH ACCELERATION TO TARGET SPEED (UP TO 120 KM/H) ---
-        sim.isYieldingHuman = false;
-        targetLat = 0.0;
-        desiredDecel = 0.0;
-        const accelRate = (sim.speed < 12.0) ? 3.5 : (sim.speed < 22.0 ? 2.5 : 1.6);
-        sim.speed = Math.min(sim.targetSpeed, sim.speed + accelRate * dt);
+        // Normal expressway cruise
         stopProfileName = "EXPRESSWAY CRUISE";
         sim.hazardBlinkers = false;
         sim.gear = 'D';
         sim.electronicParkingBrake = false;
+        sim.swerving = false;
       }
 
-      // Jerk-bounded deceleration rate filter: d(decel)/dt <= maxJerk
-      // Eliminates sudden braking spikes and enforces silky-smooth chauffeur transitions
-      const maxJerk = (isStoppingToZero && sim.speed < 2.5) ? 1.4 : 2.2; // m/s^3
-      const decelDelta = desiredDecel - sim.currentDecel;
-      sim.currentDecel += Math.max(-maxJerk * dt, Math.min(maxJerk * dt, decelDelta));
+      // 4. Continuous 2nd-Order S-Curve Longitudinal Controller (Jerk-Limited da/dt <= 1.8 m/s^3)
+      const targetSpeedDemand = Math.max(0.0, safeSpeedCap);
+      const speedDiff = targetSpeedDemand - sim.speed;
+      let desiredAccel = 0.0;
 
-      if (sim.currentDecel > 0.04) {
-        sim.speed = Math.max(0.0, sim.speed - sim.currentDecel * dt);
+      if (speedDiff > 0.05) {
+        // Progressive acceleration: smooth power delivery up to 2.0 m/s^2 (~0.20 G)
+        const accelGain = (sim.speed < 12.0) ? 0.70 : (sim.speed < 22.0 ? 0.55 : 0.45);
+        desiredAccel = Math.min(2.0, speedDiff * accelGain);
+      } else if (speedDiff < -0.05) {
+        // Progressive deceleration: comfortable braking up to -2.8 m/s^2
+        const decelGain = (isStoppingToZero && sim.speed < 3.0) ? 0.95 : 0.80;
+        const maxDecelCap = (isStoppingToZero && sim.speed < 2.0) ? 1.4 : 2.8;
+        desiredAccel = Math.max(-maxDecelCap, speedDiff * decelGain);
+      } else {
+        desiredAccel = 0.0;
       }
 
-      // Standstill detection & Damped Harmonic Suspension Rebound
+      // Strict Jerk Limiting: enforces continuous, silky-smooth S-curve transitions
+      const maxJerk = (isStoppingToZero && sim.speed < 2.2) ? 1.4 : 1.8; // m/s^3
+      const accelDelta = desiredAccel - sim.currentAccel;
+      sim.currentAccel += Math.max(-maxJerk * dt, Math.min(maxJerk * dt, accelDelta));
+
+      // Velocity Integration
+      sim.speed = Math.max(0.0, sim.speed + sim.currentAccel * dt);
+
+      // Controlled Standstill & EPB Auto-Lock
       if (isStoppingToZero && sim.speed <= 0.06) {
         if (sim.speed > 0.0) {
-          // Transition from motion to standstill: initiate damped harmonic rebound
           sim.reboundTime = 0.0;
-          sim.reboundAmplitude = (sim.currentDecel / 9.81) * 0.038;
+          sim.reboundAmplitude = (Math.abs(sim.currentAccel) / 9.81) * 0.035;
         }
         sim.speed = 0.0;
-        sim.currentDecel = 0.0;
+        sim.currentAccel = 0.0;
         sim.gear = 'P';
         sim.electronicParkingBrake = true;
       }
 
+      // Telemetry deceleration magnitude for HUD
+      sim.currentDecel = Math.max(0.0, -sim.currentAccel);
       sim.stopProfile = stopProfileName;
 
-      // Suspension Pitch-Dive & Standstill Damped Harmonic Rebound
+      // 5. Suspension Pitch-Dive & Standstill Damped Harmonic Rebound
       const decelG = sim.currentDecel / 9.81;
       const targetPitch = -decelG * 0.055; // front suspension compresses downward
 
-      if (speedBreakerEngaged && bumpDist >= -1.8 && bumpDist <= 1.8) {
+      const speedBreakerEngaged = sim.speedBreakerActive && bumpDist >= -1.8 && bumpDist <= 1.8;
+      if (speedBreakerEngaged) {
         // Speed breaker bounce
         const bumpProgress = (bumpDist + 1.8) / 3.6;
         const bounceY = Math.sin(bumpProgress * Math.PI) * 0.16;
@@ -2473,31 +2440,33 @@
         carBody.position.y = 0.65 + sim.pitchDive * 0.35;
       }
 
-      // Smooth target lateral position filter (exponential moving average for fluid lane change)
-      sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, 4.0 * dt);
+      // 6. Responsive Lateral Controller (Stanley Steering & Kinematics)
+      // Rapid target lateral position filter (rate 7.5 * dt for crisp lane transition)
+      sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, 7.5 * dt);
 
-      // Stanley steering calculation (with speed-adaptive maximum steer angle for high-speed stability):
-      const kStanley = (sim.friction < 0.6) ? 0.55 : 0.72;
-      const eps = 0.8;
+      // Stanley steering calculation:
+      const kStanley = (sim.friction < 0.6) ? 0.70 : 0.95;
+      const eps = 0.6;
       const crossTrack = sim.lateralY - sim.targetLatSmooth;
       const steerDemand = -sim.heading - Math.atan((kStanley * crossTrack) / (sim.speed + eps));
-      const maxSteerForSpeed = (sim.speed > 25.0) ? 0.24 : (sim.speed > 14.0 ? 0.35 : 0.45);
+      // Speed-adaptive maximum steer angle: allows nimble evasion while maintaining high-speed stability
+      const maxSteerForSpeed = (sim.speed > 28.0) ? 0.32 : (sim.speed > 16.0 ? 0.42 : 0.50);
       const clampedSteer = Math.max(-maxSteerForSpeed, Math.min(maxSteerForSpeed, steerDemand));
 
-      // Smooth steering actuator response (models EPS motor slew rate)
-      sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, 10.0 * dt);
+      // Fast EPS steering motor slew rate: 16.0 * dt for crisp, authoritative steering response
+      sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, 16.0 * dt);
 
       // 2-DOF Bicycle Kinematics Integration with yaw damping
       const wheelbase = 2.7;
       sim.heading += (sim.speed / wheelbase) * Math.tan(sim.steerAngle) * dt;
-      sim.heading *= 0.95;
+      sim.heading *= 0.94;
       sim.lateralY += sim.speed * Math.sin(sim.heading) * dt;
       sim.lateralY = Math.max(-4.8, Math.min(4.8, sim.lateralY));
 
       // Dynamic AI Trajectory Tracking & Planning Ultra-High Accuracy (99.5% - 99.9%)
-      const errorPenalty = Math.abs(crossTrack) * 1.5;
-      const steerPenalty = Math.abs(sim.steerAngle) * 0.8;
-      const targetAccuracy = Math.max(99.0, Math.min(99.9, 99.88 - errorPenalty - steerPenalty));
+      const errorPenalty = Math.abs(crossTrack) * 0.6;
+      const steerPenalty = Math.abs(sim.steerAngle) * 0.4;
+      const targetAccuracy = Math.max(99.2, Math.min(99.9, 99.88 - errorPenalty - steerPenalty));
       sim.accuracy += (targetAccuracy - sim.accuracy) * Math.min(1.0, 3.0 * dt);
 
       // Update Ego 3D Position & Wheel Steer
@@ -2513,7 +2482,7 @@
       });
 
       // Brake Taillights
-      if (sim.swerving || sim.speed < 6.0) {
+      if (sim.swerving || sim.currentDecel > 0.8 || sim.speed < 4.0) {
         taillightMat.color.setHex(0xff0000);
       } else {
         taillightMat.color.setHex(0xdc2626);
@@ -2611,9 +2580,7 @@
       const stopProfElem = document.getElementById('txt-stop-profile');
       if (stopProfElem) {
         stopProfElem.textContent = sim.stopProfile || "CHAUFFEUR COMFORT";
-        if (sim.isYieldingHuman) {
-          stopProfElem.className = "text-amber-400 font-bold animate-pulse";
-        } else if (sim.roadEndActive) {
+        if (sim.roadEndActive) {
           stopProfElem.className = "text-rose-400 font-bold";
         } else {
           stopProfElem.className = "text-cyan-400 font-bold";
@@ -2703,10 +2670,7 @@
           txtRadarStatus.className = 'text-emerald-400 font-bold';
         }
         if (failSafeElem) {
-          if (sim.isYieldingHuman) {
-            failSafeElem.textContent = 'HUMAN YIELD (9.5m)';
-            failSafeElem.className = 'text-amber-400 font-bold text-xs animate-pulse';
-          } else if (sim.roadEndActive) {
+          if (sim.roadEndActive) {
             failSafeElem.textContent = (sim.speed <= 0.1) ? 'PARKED (EPB)' : 'CHAUFFEUR STOP';
             failSafeElem.className = 'text-rose-400 font-bold text-xs';
           } else {
@@ -2714,9 +2678,7 @@
             failSafeElem.className = 'text-cyan-400 font-bold text-xs';
           }
         }
-        if (sim.isYieldingHuman) {
-          document.getElementById('txt-behavior').textContent = (sim.speed <= 0.1) ? 'HUMAN SAFE YIELD' : 'YIELDING TO HUMAN';
-        } else if (sim.roadEndActive) {
+        if (sim.roadEndActive) {
           document.getElementById('txt-behavior').textContent = (sim.speed <= 0.1) ? 'ROAD END STOP' : 'CHAUFFEUR GLIDE';
         } else if (sim.speedBreakerActive) {
           document.getElementById('txt-behavior').textContent = 'SPEED BREAKER';
@@ -2763,17 +2725,6 @@
           document.getElementById('alert-title').textContent = '⚠️ CAMERA SENSOR FAULT DETECTED';
           document.getElementById('alert-sub').textContent = 'Speed reducing smoothly from ' + document.getElementById('txt-target-speed').textContent + ' to safe 15 km/h crawl before shoulder parking.';
           threatLabel.textContent = 'IoT Handover: Decelerating to 15 km/h Crawl';
-        }
-      } else if (sim.isYieldingHuman) {
-        alertBanner.classList.remove('hidden');
-        if (sim.speed <= 0.1) {
-          document.getElementById('alert-title').textContent = '🚶 HUMAN-FIRST SAFE YIELD COMPLETE';
-          document.getElementById('alert-sub').textContent = 'Vehicle halted smoothly with 9.5m safety standoff buffer. Zero passenger jerk. Awaiting clear corridor.';
-          threatLabel.textContent = `Human Life Protected | 9.5m Standoff Buffer | Standstill [P]`;
-        } else {
-          document.getElementById('alert-title').textContent = '🚶 HUMAN-FIRST SAFETY PROTOCOL ACTIVE';
-          document.getElementById('alert-sub').textContent = `Vulnerable Road User detected ahead. Progressively slowing (-${decelG.toFixed(2)} G) to gentle 9.5m standoff buffer.`;
-          threatLabel.textContent = `Yielding to Pedestrian/Cow (${Math.max(0, sim.humanYieldDist).toFixed(1)}m) -> 9.5m Buffer`;
         }
       } else if (sim.roadEndActive || (sim.activeRoadEnd && sim.roadEndDist < 250.0)) {
         alertBanner.classList.remove('hidden');
