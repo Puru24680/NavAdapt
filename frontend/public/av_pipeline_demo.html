@@ -3313,12 +3313,12 @@
           const predX = e.x + (e.vx * Math.min(3.0, timeToReach));
 
           // Exact physical lateral clearance required for clean, safe bypass
-          let reqClearance = 1.65; // default
-          if (e.type === 'truck') reqClearance = 2.25;
-          else if (e.type === 'rickshaw') reqClearance = 1.70;
-          else if (e.type === 'cow') reqClearance = 1.60;
-          else if (e.type === 'pedestrian') reqClearance = 1.45;
-          else if (e.type === 'bike') reqClearance = 1.50;
+          let reqClearance = 1.90; // default
+          if (e.type === 'truck') reqClearance = 2.55;
+          else if (e.type === 'rickshaw') reqClearance = 2.05;
+          else if (e.type === 'cow') reqClearance = 2.05;
+          else if (e.type === 'pedestrian') reqClearance = 1.75;
+          else if (e.type === 'bike') reqClearance = 1.80;
 
           const obsInfo = {
             entity: e,
@@ -3408,55 +3408,91 @@
         sim.swerving = false;
       }
 
-      // 140m Horizon Velocity Continuity: The vehicle maintains cruising speed while evading laterally.
-      // Under normal Autopilot, obstacles are identified and bypassed in free space without dropping speed or causing passenger jerk.
-      safeSpeedCap = sim.targetSpeed;
+      // =========================================================================
+      // DYNAMIC COLLISION AVOIDANCE & SPEED HARMONIZATION ENGINE
+      // =========================================================================
+      let obstacleBrakeSpeedCap = sim.targetSpeed;
+      let obstacleYieldActive = false;
 
-      // Active Dynamic Free-Space Repulsion Shield:
-      // Scans all entities in range (-3.5m to 45.0m). If the planned path or current lateral position
-      // has insufficient physical margin to clear any entity, dynamically push targetLat towards the open road side.
       for (const e of allEntities) {
         if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
-        if (e.z > -3.5 && e.z < 45.0) {
-          let reqMargin = 1.80;
-          if (e.type === 'truck') reqMargin = 2.30;
-          else if (e.type === 'rickshaw') reqMargin = 1.85;
-          else if (e.type === 'cow') reqMargin = 1.75;
-          else if (e.type === 'pedestrian') reqMargin = 1.65;
-          else if (e.type === 'bike') reqMargin = 1.70;
 
-          // Check clearance with planned targetLat
-          const tgtDist = Math.abs(e.x - targetLat);
-          if (tgtDist < reqMargin) {
-            // Repel targetLat to open side
-            const spaceLeft = e.x - roadLeft;
-            const spaceRight = roadRight - e.x;
-            if (spaceRight >= spaceLeft) {
-              targetLat = Math.min(roadRight, e.x + reqMargin);
+        let reqMargin = 2.00;
+        if (e.type === 'truck') reqMargin = 2.55;
+        else if (e.type === 'rickshaw') reqMargin = 2.10;
+        else if (e.type === 'cow') reqMargin = 2.10;
+        else if (e.type === 'pedestrian') reqMargin = 1.85;
+        else if (e.type === 'bike') reqMargin = 1.85;
+
+        // Check clearance along current ego position AND along planned target path:
+        const currentEgoDx = Math.abs(e.x - sim.lateralY);
+        const plannedPathDx = Math.abs(e.x - targetLat);
+        const minDx = Math.min(currentEgoDx, plannedPathDx);
+
+        // Forward corridor hazard scanning (e.z between -1.5m and 55.0m)
+        if (e.z > -1.5 && e.z < 55.0) {
+          // If lateral clearance is tight (< reqMargin), proactively regulate speed:
+          if (minDx < reqMargin) {
+            const forwardGap = e.z - 3.2; // 3.2m safety cushion ahead of front bumper
+
+            if (forwardGap > 0.4) {
+              // Smooth progressive kinematic deceleration: v = sqrt(2 * a * gap)
+              const comfortDecel = 1.5; // m/s^2 (~0.15 G, silk smooth)
+              let vSafe = Math.sqrt(2.0 * comfortDecel * forwardGap);
+
+              // If lead vehicle is moving forward (e.g. truck, rickshaw), match lead pace
+              if (e.vz > 0.5) {
+                vSafe = Math.max(e.vz * 0.95, vSafe);
+              }
+
+              if (vSafe < obstacleBrakeSpeedCap) {
+                obstacleBrakeSpeedCap = vSafe;
+                obstacleYieldActive = true;
+                if (vSafe < 4.0) {
+                  stopProfileName = `YIELDING FOR ${e.type.toUpperCase()}`;
+                } else {
+                  stopProfileName = `ADAPTIVE CRUISE (${(vSafe * 3.6).toFixed(0)} km/h)`;
+                }
+              }
             } else {
-              targetLat = Math.max(roadLeft, e.x - reqMargin);
+              // Blocked right in front: Smoothly hold safe standstill until obstacle clears
+              obstacleBrakeSpeedCap = 0.0;
+              obstacleYieldActive = true;
+              stopProfileName = `STANDSTILL YIELD: ${e.type.toUpperCase()}`;
             }
           }
 
-          // Active Dynamic Proximity Shield (z between -2.5m and 16.0m):
-          if (e.z > -2.5 && e.z < 16.0) {
+          // Active Dynamic Proximity Lateral Repulsion (e.z between -2.5m and 28.0m):
+          if (e.z > -2.5 && e.z < 28.0) {
             const egoDelta = e.x - sim.lateralY;
             if (Math.abs(egoDelta) < reqMargin) {
-              // Rapid evasive lateral steer command
-              if (egoDelta > 0) {
+              if (egoDelta >= 0) {
                 targetLat = Math.max(roadLeft, Math.min(targetLat, e.x - reqMargin));
               } else {
                 targetLat = Math.min(roadRight, Math.max(targetLat, e.x + reqMargin));
               }
+              evasionActive = true;
             }
-            // Absolute Zero-Collision Geometric Boundary at overlap point (z between -2.2m and 3.2m):
-            if (e.z > -2.2 && e.z < 3.2 && Math.abs(egoDelta) < 1.75) {
-              const pushSign = (egoDelta >= 0) ? -1 : 1;
-              sim.lateralY = e.x + pushSign * 1.80;
-              sim.lateralY = Math.max(currentMeta.lateralBounds[0], Math.min(currentMeta.lateralBounds[1], sim.lateralY));
+
+            // Inviolable Zero-Collision Geometric Boundary (e.z between -2.2m and 2.5m):
+            if (e.z > -2.2 && e.z < 2.5) {
+              const overlapDelta = e.x - sim.lateralY;
+              const hardSafeWidth = (e.type === 'truck') ? 2.15 : ((e.type === 'cow' || e.type === 'rickshaw') ? 1.75 : 1.45);
+              if (Math.abs(overlapDelta) < hardSafeWidth) {
+                const pushDir = (overlapDelta >= 0) ? -1 : 1;
+                sim.lateralY = e.x + pushDir * hardSafeWidth;
+                sim.lateralY = Math.max(currentMeta.lateralBounds[0], Math.min(currentMeta.lateralBounds[1], sim.lateralY));
+              }
             }
           }
         }
+      }
+
+      // Safe speed cap assignment
+      if (obstacleYieldActive) {
+        safeSpeedCap = Math.min(sim.targetSpeed, obstacleBrakeSpeedCap);
+      } else {
+        safeSpeedCap = sim.targetSpeed;
       }
 
       // 3. Multi-Tier Behavioral Protocols (Fail-Safe, Speed Breaker & AEB Envelope)
@@ -3555,8 +3591,19 @@
           stopProfileName = "RESUMING CRUISE";
         }
 
+      } else if (obstacleYieldActive) {
+        if (obstacleBrakeSpeedCap < 0.6) {
+          isStoppingToZero = true;
+          stopProfileName = "YIELDING: FULL STOP (OBSTACLE AHEAD)";
+        } else {
+          isStoppingToZero = false;
+          stopProfileName = `ADAPTIVE YIELD (${(safeSpeedCap * 3.6).toFixed(0)} km/h)`;
+        }
       } else if (evasionActive) {
-        stopProfileName = "DYNAMIC EVASION SWERVE";
+        stopProfileName = "140m RADAR: CONTINUOUS EVASION";
+        sim.hazardBlinkers = false;
+        sim.gear = 'D';
+        sim.electronicParkingBrake = false;
       } else if (!isStoppingToZero) {
         stopProfileName = "EXPRESSWAY CRUISE";
         sim.hazardBlinkers = false;
@@ -3575,8 +3622,8 @@
         sim.gear = 'D';
         sim.electronicParkingBrake = false;
 
-        // When no speed breaker is active, maintain cruising velocity demand
-        if (!sim.speedBreakerActive) {
+        // When no speed breaker or obstacle yield is active, maintain cruising velocity demand
+        if (!sim.speedBreakerActive && !obstacleYieldActive) {
           safeSpeedCap = sim.targetSpeed;
         }
       }
@@ -3598,22 +3645,50 @@
         const accelGain = (sim.speed < 12.0) ? 0.60 : (sim.speed < 22.0 ? 0.45 : 0.35);
         desiredAccel = Math.min(1.8, speedDiff * accelGain);
       } else if (speedDiff < -0.05) {
-        // Luxury Chauffeur Deceleration: capped to max -0.85 m/s^2 (or -1.35 m/s^2 for speed breakers)
-        const maxComfortDecel = isStoppingToZero ? -2.2 : (sim.speedBreakerActive ? -1.35 : -0.85);
-        const decelGain = (isStoppingToZero && sim.speed < 3.0) ? 0.70 : (sim.speedBreakerActive ? 0.65 : 0.35);
+        // Luxury Chauffeur Deceleration & Obstacle Yielding Dynamics
+        let maxComfortDecel = -1.10;
+        let decelGain = 0.40;
+        let activeJerkLimit = 0.75;
+
+        if (isStoppingToZero || obstacleYieldActive) {
+          // Obstacle blocking / yielding: up to -2.8 m/s^2 (~0.28G, completely passenger-safe)
+          maxComfortDecel = -2.80;
+          decelGain = (sim.speed < 4.0) ? 0.85 : 0.70;
+          activeJerkLimit = 2.20;
+        } else if (sim.speedBreakerActive) {
+          maxComfortDecel = -1.45;
+          decelGain = 0.65;
+          activeJerkLimit = 0.90;
+        }
+
         desiredAccel = Math.max(maxComfortDecel, speedDiff * decelGain);
       } else {
         desiredAccel = 0.0;
       }
 
-      // Strict Comfort Jerk Limiter (|da/dt| <= maxJerk)
-      // Caps jerk to <= 0.5 m/s^3 to guarantee silk-smooth passenger comfort (SAE J2944 / ISO 2631 standard)
-      const maxJerk = (isStoppingToZero && sim.speed < 2.0) ? 0.8 : 0.5; // m/s^3
+      // Comfort Jerk Limiter (|da/dt| <= activeJerkLimit)
+      const activeJerkLimit = (isStoppingToZero || obstacleYieldActive) ? 2.20 : (sim.speedBreakerActive ? 0.90 : 0.75);
       const accelDelta = desiredAccel - sim.currentAccel;
-      sim.currentAccel += Math.max(-maxJerk * dt, Math.min(maxJerk * dt, accelDelta));
+      sim.currentAccel += Math.max(-activeJerkLimit * dt, Math.min(activeJerkLimit * dt, accelDelta));
 
       // Velocity Integration
       sim.speed = Math.max(0.0, sim.speed + sim.currentAccel * dt);
+
+      // Absolute Zero-Collision AEB Safety Clamp:
+      // If any obstacle is directly in our path within 3.5m, enforce hard zero speed before physical contact
+      for (const e of allEntities) {
+        if (e.type === 'speed_breaker' || e.type === 'road_end') continue;
+        const dx = Math.abs(e.x - sim.lateralY);
+        let hardMargin = (e.type === 'truck') ? 2.05 : ((e.type === 'cow' || e.type === 'rickshaw') ? 1.65 : 1.35);
+        if (e.z > -1.5 && e.z < 3.8 && dx < hardMargin) {
+          if (e.z > 0.1) {
+            sim.speed = Math.min(sim.speed, Math.max(0.0, (e.z - 2.8) * 0.9));
+          } else {
+            sim.speed = 0.0;
+          }
+          sim.currentAccel = Math.min(sim.currentAccel, -2.5);
+        }
+      }
 
       // Controlled Standstill & EPB Auto-Lock
       if (isStoppingToZero && sim.speed <= 0.06) {
@@ -3676,16 +3751,18 @@
 
       // 6. Responsive Lateral Controller (Stanley Steering & Kinematics)
       if (sim.driveMode !== 'manual') {
-        // Silky-Smooth Continuous Lateral Target Tracking (rate = 3.6 rad/s, Zero Steering Jerk!)
-        sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, 3.6 * dt);
-        const kStanley = 1.15;
+        // Dynamic Responsive Lateral Target Tracking (7.5 rad/s during evasion, 3.6 rad/s during cruise)
+        const latTrackRate = evasionActive ? 7.5 : 3.6;
+        sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, latTrackRate * dt);
+        const kStanley = 1.25;
         const eps = 0.4;
         crossTrack = sim.lateralY - sim.targetLatSmooth;
         const steerDemand = -sim.heading - Math.atan((kStanley * crossTrack) / (sim.speed + eps));
-        const maxSteerForSpeed = (sim.speed > 28.0) ? 0.32 : (sim.speed > 16.0 ? 0.42 : 0.50);
+        const maxSteerForSpeed = (sim.speed > 28.0) ? 0.35 : (sim.speed > 16.0 ? 0.45 : 0.55);
         const clampedSteer = Math.max(-maxSteerForSpeed, Math.min(maxSteerForSpeed, steerDemand));
-        // Smooth progressive steering wheel rotation (rate = 6.5 rad/s, Zero twitch!)
-        sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, 6.5 * dt);
+        // Smooth progressive steering wheel rotation (9.0 rad/s during evasion, 6.5 rad/s cruise)
+        const steerRate = evasionActive ? 9.0 : 6.5;
+        sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, steerRate * dt);
 
         const wheelbase = 2.7;
         sim.heading += (sim.speed / wheelbase) * Math.tan(sim.steerAngle) * dt;
@@ -4313,7 +4390,7 @@
         speed: 9.72, // 35 km/h (realistic rural village road cruise)
         speedLabel: '35 KM/H',
         hazards: ['Missing Centerlines', 'Natural Dirt Shoulder', 'Roaming Cattle', 'Severe Potholes', 'Speed Breaker', 'Oncoming Two-Wheeler'],
-        lateralBounds: [-2.35, 2.35],
+        lateralBounds: [-2.7, 2.7],
         candidateLanes: [-1.4, 0.0, 1.4]
       },
       'scenario_2': {
