@@ -3345,22 +3345,28 @@
 
       // Sample 41 continuous lateral trajectory candidates across the full road width
       const NUM_CANDIDATES = 41;
-      let bestPathX = sim.lateralY;
+      let bestPathX = 0.0;
       let minTrajectoryCost = Infinity;
+
+      // Safe lateral boundary clamping for evasion (stay securely on paved surface)
+      const maxAllowedDev = Math.min(currentMeta.roadWidth * 0.36, 1.95);
 
       for (let i = 0; i < NUM_CANDIDATES; i++) {
         const candX = roadLeft + (i / (NUM_CANDIDATES - 1)) * (roadRight - roadLeft);
 
-        // 1. Smoothness Cost: Prefers staying close to current lateral position (Zero Steering Jerk)
-        let cost = Math.abs(candX - sim.lateralY) * 0.35 + Math.abs(candX) * 0.08;
+        // 1. Natural Centerline Tracking: Strong preference to maintain stable lane center (Rock-Solid Straight Cruising)
+        let cost = Math.abs(candX) * 1.65;
 
-        // 2. Soft Road Edge Penalty: Disfavors riding on the edge of dirt shoulders or market stalls
+        // 2. Trajectory Persistence (Anti-Hunting / Hysteresis): Strongly disfavors switching away from current target
+        cost += Math.abs(candX - (sim.targetLatSmooth || 0.0)) * 2.80;
+
+        // 3. Soft Road Edge Penalty: Disfavors riding on the edge of dirt shoulders or market stalls
         const edgeDist = Math.min(candX - roadLeft, roadRight - candX);
         if (edgeDist < 0.45) {
-          cost += 25.0 / (edgeDist + 0.1);
+          cost += 35.0 / (edgeDist + 0.08);
         }
 
-        // 3. 140m Radar Obstacle Avoidance Cost
+        // 4. Actionable Obstacle Avoidance Cost (Only threats within actionable 38m horizon trigger lateral shift)
         for (const obs of predictedObstacles) {
           // Check lateral clearance to both current and predicted future position
           const latDist = Math.min(Math.abs(candX - obs.predX), Math.abs(candX - obs.x));
@@ -3370,14 +3376,18 @@
             cost += 99999.0;
           }
 
-          if (latDist < obs.reqClearance) {
-            // Direct collision conflict with this candidate path!
-            const proximityFactor = Math.max(1.0, (radarHorizon - Math.max(0, obs.z)) / 8.0);
-            const overlap = obs.reqClearance - latDist;
-            cost += 12000.0 * proximityFactor * (overlap + 1.2);
-          } else if (latDist < obs.reqClearance + 1.0) {
-            // Soft safety clearance buffer
-            cost += 60.0 / Math.max(0.1, latDist - obs.reqClearance);
+          // Lateral evasion is activated only when obstacle is within actionable action window (<= 38m)
+          if (obs.z > -2.5 && obs.z < 38.0) {
+            if (latDist < obs.reqClearance) {
+              // Direct collision conflict with this candidate path within actionable distance!
+              const urgency = Math.max(0.0, 1.0 - (obs.z / 38.0));
+              const overlap = obs.reqClearance - latDist;
+              cost += 5500.0 * (urgency * urgency + 0.15) * (overlap + 0.6);
+            } else if (latDist < obs.reqClearance + 0.75) {
+              // Soft safety clearance buffer
+              const urgency = Math.max(0.0, 1.0 - (obs.z / 38.0));
+              cost += 80.0 * urgency / Math.max(0.08, latDist - obs.reqClearance);
+            }
           }
         }
 
@@ -3387,11 +3397,12 @@
         }
       }
 
-      // --- SMOOTH CONTINUOUS TRAJECTORY DECISION ENGINE (ZERO-STOP GUARANTEE) ---
-      // Primary Philosophy: The vehicle NEVER stops for road obstacles.
-      // It avoids collisions 100% smoothly by changing trajectory across continuous free space using the 140m radar!
+      // Clamp target to safe drivable surface
+      bestPathX = Math.max(-maxAllowedDev, Math.min(maxAllowedDev, bestPathX));
+
+      // --- STABLE CONTINUOUS TRAJECTORY DECISION ENGINE ---
       targetLat = bestPathX;
-      evasionActive = Math.abs(bestPathX - sim.lateralY) > 0.18;
+      evasionActive = Math.abs(sim.targetLatSmooth) > 0.40 || Math.abs(bestPathX - sim.lateralY) > 0.40;
       isStoppingToZero = false;
 
       if (evasionActive) {
@@ -3462,27 +3473,15 @@
             }
           }
 
-          // Active Dynamic Proximity Lateral Repulsion (e.z between -2.5m and 28.0m):
-          if (e.z > -2.5 && e.z < 28.0) {
+          // Smooth Continuous Clearance Guidance (e.z between -2.0m and 24.0m)
+          if (e.z > -2.0 && e.z < 24.0) {
             const egoDelta = e.x - sim.lateralY;
             if (Math.abs(egoDelta) < reqMargin) {
-              if (egoDelta >= 0) {
-                targetLat = Math.max(roadLeft, Math.min(targetLat, e.x - reqMargin));
-              } else {
-                targetLat = Math.min(roadRight, Math.max(targetLat, e.x + reqMargin));
-              }
+              // Steer gently away while respecting road bounds, without violent flip-flops
+              const evasiveOffset = (egoDelta >= 0) ? (e.x - reqMargin) : (e.x + reqMargin);
+              const clampedOffset = Math.max(-maxAllowedDev, Math.min(maxAllowedDev, evasiveOffset));
+              targetLat = targetLat * 0.3 + clampedOffset * 0.7;
               evasionActive = true;
-            }
-
-            // Inviolable Zero-Collision Geometric Boundary (e.z between -2.2m and 2.5m):
-            if (e.z > -2.2 && e.z < 2.5) {
-              const overlapDelta = e.x - sim.lateralY;
-              const hardSafeWidth = (e.type === 'truck') ? 2.15 : ((e.type === 'cow' || e.type === 'rickshaw') ? 1.75 : 1.45);
-              if (Math.abs(overlapDelta) < hardSafeWidth) {
-                const pushDir = (overlapDelta >= 0) ? -1 : 1;
-                sim.lateralY = e.x + pushDir * hardSafeWidth;
-                sim.lateralY = Math.max(currentMeta.lateralBounds[0], Math.min(currentMeta.lateralBounds[1], sim.lateralY));
-              }
             }
           }
         }
@@ -3749,24 +3748,30 @@
 
       } // End of sim.driveMode === 'manual' else branch
 
-      // 6. Responsive Lateral Controller (Stanley Steering & Kinematics)
+      // 6. Stabilized Critically-Damped Lateral Controller (Stanley Steering & Kinematics)
       if (sim.driveMode !== 'manual') {
-        // Dynamic Responsive Lateral Target Tracking (7.5 rad/s during evasion, 3.6 rad/s during cruise)
-        const latTrackRate = evasionActive ? 7.5 : 3.6;
+        // Smooth, progressive lateral target tracking (3.5 rad/s evasion, 2.2 rad/s cruise - zero snap)
+        const latTrackRate = evasionActive ? 3.5 : 2.2;
         sim.targetLatSmooth += (targetLat - sim.targetLatSmooth) * Math.min(1.0, latTrackRate * dt);
-        const kStanley = 1.25;
-        const eps = 0.4;
+        
+        // Critically-damped Stanley steering controller with heading derivative damping (zero fishtail / zero wobble)
+        const kStanley = 1.30;
+        const kHeading = 1.55; // Strong heading damping prevents yaw overshoot and limits limit-cycles
+        const eps = 0.8;
         crossTrack = sim.lateralY - sim.targetLatSmooth;
-        const steerDemand = -sim.heading - Math.atan((kStanley * crossTrack) / (sim.speed + eps));
-        const maxSteerForSpeed = (sim.speed > 28.0) ? 0.35 : (sim.speed > 16.0 ? 0.45 : 0.55);
+        const steerDemand = -sim.heading * kHeading - Math.atan((kStanley * crossTrack) / (sim.speed + eps));
+        
+        // Realistic, comfortable steering limits (max 5° at high speed, 8° at medium speed, 13° at slow crawl)
+        const maxSteerForSpeed = (sim.speed > 28.0) ? 0.09 : (sim.speed > 14.0 ? 0.14 : 0.22);
         const clampedSteer = Math.max(-maxSteerForSpeed, Math.min(maxSteerForSpeed, steerDemand));
-        // Smooth progressive steering wheel rotation (9.0 rad/s during evasion, 6.5 rad/s cruise)
-        const steerRate = evasionActive ? 9.0 : 6.5;
+        
+        // Smooth, progressive steering wheel rotation rate
+        const steerRate = evasionActive ? 5.2 : 3.8;
         sim.steerAngle += (clampedSteer - sim.steerAngle) * Math.min(1.0, steerRate * dt);
 
         const wheelbase = 2.7;
         sim.heading += (sim.speed / wheelbase) * Math.tan(sim.steerAngle) * dt;
-        sim.heading *= 0.985;
+        sim.heading *= 0.965; // High-stability damping aligns vehicle smoothly with forward corridor
         sim.lateralY += sim.speed * Math.sin(sim.heading) * dt;
         sim.lateralY = Math.max(currentMeta.lateralBounds[0], Math.min(currentMeta.lateralBounds[1], sim.lateralY));
       }
@@ -4257,11 +4262,15 @@
     function updateCamera() {
       if (sim.cameraMode === 'chase') {
         controls.enabled = false;
-        const targetCamX = egoVehicle.position.x * 0.7;
-        const targetCamY = 3.8;
-        const targetCamZ = -8.5;
-        camera.position.lerp(new THREE.Vector3(targetCamX, targetCamY, targetCamZ), 0.12);
-        camera.lookAt(egoVehicle.position.x * 0.8, 1.2, 18.0);
+        if (typeof sim.camTargetX === 'undefined') {
+          sim.camTargetX = egoVehicle.position.x * 0.60;
+          sim.camLookX = egoVehicle.position.x * 0.35;
+        }
+        // Gimbal-damped camera position and focal tracking (eliminates visual shake and horizon wobble)
+        sim.camTargetX += (egoVehicle.position.x * 0.60 - sim.camTargetX) * 0.08;
+        sim.camLookX += (egoVehicle.position.x * 0.35 - sim.camLookX) * 0.06;
+        camera.position.set(sim.camTargetX, 3.8, -8.5);
+        camera.lookAt(sim.camLookX, 1.2, 22.0);
       } else if (sim.cameraMode === 'cockpit') {
         controls.enabled = false;
         camera.position.set(egoVehicle.position.x - 0.35, 1.35, -0.2);
