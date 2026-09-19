@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
+import { LayoutDashboard, MapPin, PlaySquare, BarChart3, Zap } from 'lucide-react';
 import { useSimulationSocket } from './hooks/useSimulationSocket';
+import { useAuth } from './hooks/useAuth';
+import { AuthModal } from './components/auth/AuthModal';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
 import { LandingPage } from './pages/LandingPage';
@@ -24,6 +27,16 @@ export function App() {
     triggerHazard
   } = useSimulationSocket();
 
+  const {
+    user,
+    isAuthModalOpen,
+    authModalInitialTab,
+    openAuthModal,
+    closeAuthModal,
+    signIn,
+    signOut
+  } = useAuth();
+
   const handleSelectScenario = (scenarioId: string) => {
     resetSimulation(scenarioId);
   };
@@ -34,6 +47,9 @@ export function App() {
       <Navbar
         state={state}
         connected={connected}
+        user={user}
+        onOpenAuth={() => openAuthModal('signin')}
+        onSignOut={signOut}
         onStart={startSimulation}
         onPause={pauseSimulation}
         onStop={stopSimulation}
@@ -106,6 +122,59 @@ export function App() {
           )}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar (< md) */}
+      <nav className="md:hidden flex items-center justify-around bg-navy-950/95 backdrop-blur-md border-t border-slate-800 px-1 py-1.5 z-40 shrink-0 select-none">
+        <button 
+          onClick={() => setCurrentTab('dashboard')} 
+          className={`px-2 py-1 rounded-lg flex flex-col items-center transition ${currentTab === 'dashboard' ? 'text-cyan-400 bg-cyan-950/50' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          <LayoutDashboard className="w-4 h-4" />
+          <span className="text-[9px] font-mono mt-0.5">Command</span>
+        </button>
+
+        <button 
+          onClick={() => setCurrentTab('scenarios')} 
+          className={`px-2 py-1 rounded-lg flex flex-col items-center transition ${currentTab === 'scenarios' ? 'text-cyan-400 bg-cyan-950/50' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          <MapPin className="w-4 h-4" />
+          <span className="text-[9px] font-mono mt-0.5">Scenarios</span>
+        </button>
+
+        <button 
+          onClick={() => setCurrentTab('live')} 
+          className={`px-2 py-1 rounded-lg flex flex-col items-center transition ${currentTab === 'live' ? 'text-cyan-400 bg-cyan-950/50' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          <PlaySquare className="w-4 h-4" />
+          <span className="text-[9px] font-mono mt-0.5">Live HUD</span>
+        </button>
+
+        <button 
+          onClick={() => setCurrentTab('analytics')} 
+          className={`px-2 py-1 rounded-lg flex flex-col items-center transition ${currentTab === 'analytics' ? 'text-cyan-400 bg-cyan-950/50' : 'text-slate-400 hover:text-slate-200'}`}
+        >
+          <BarChart3 className="w-4 h-4" />
+          <span className="text-[9px] font-mono mt-0.5">Analytics</span>
+        </button>
+
+        <a 
+          href="/av_pipeline_demo.html" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="px-2 py-1 rounded-lg flex flex-col items-center text-cyan-300 hover:text-white transition bg-gradient-to-tr from-cyan-600/30 to-blue-600/30 border border-cyan-500/40"
+        >
+          <Zap className="w-4 h-4 fill-current text-cyan-400" />
+          <span className="text-[9px] font-mono font-bold mt-0.5">3D Sim</span>
+        </a>
+      </nav>
+
+      {/* Authentication Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        initialTab={authModalInitialTab}
+        onClose={closeAuthModal}
+        onSuccess={signIn}
+      />
     </div>
   );
 }

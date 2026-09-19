@@ -2,9 +2,14 @@ import React from 'react';
 import { Play, Pause, Square, RefreshCw, Radio, AlertTriangle, ShieldCheck, Zap, RotateCcw } from 'lucide-react';
 import { SimulationState } from '../../types/simulation';
 
+import { UserProfile } from '../../types/auth';
+
 interface NavbarProps {
   state: SimulationState;
   connected: boolean;
+  user?: UserProfile | null;
+  onOpenAuth?: () => void;
+  onSignOut?: () => void;
   onStart: () => void;
   onPause: () => void;
   onStop: () => void;
@@ -15,6 +20,9 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   state,
   connected,
+  user,
+  onOpenAuth,
+  onSignOut,
   onStart,
   onPause,
   onStop,
@@ -115,41 +123,74 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         <button
           onClick={onStop}
-          className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-md text-xs font-semibold border border-slate-700 transition active:scale-95"
-          title="Stop Simulation"
+          className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-300 hover:text-rose-100 rounded-md text-xs font-semibold border border-rose-500/40 transition active:scale-95"
+          title="Emergency Brake & Full Safe Stop"
         >
-          <Square className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">STOP</span>
+          <Square className="w-3.5 h-3.5 fill-current" />
+          <span>STOP</span>
         </button>
 
         <button
           onClick={onReset}
-          className="flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-md text-xs font-semibold border border-slate-700 transition active:scale-95"
+          className="hidden md:flex items-center space-x-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-md text-xs font-semibold border border-slate-700 transition active:scale-95"
           title="Reset Simulation to Beginning"
         >
           <RotateCcw className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">RESET</span>
+          <span>RESET</span>
         </button>
 
         <button
           onClick={onReplan}
-          className="flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 hover:text-blue-100 rounded-md text-xs font-semibold border border-blue-500/40 transition active:scale-95"
+          className="hidden md:flex items-center space-x-1.5 px-3 py-1.5 bg-blue-600/30 hover:bg-blue-600/50 text-blue-300 hover:text-blue-100 rounded-md text-xs font-semibold border border-blue-500/40 transition active:scale-95"
           title="Force Sub-50ms Replanning"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          <span className="hidden sm:inline">REPLAN</span>
+          <span>REPLAN</span>
         </button>
 
         <a
           href="/av_pipeline_demo.html"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-md text-xs font-bold shadow-lg shadow-cyan-500/30 border border-cyan-400/40 transition active:scale-95 animate-pulse"
+          className="hidden sm:flex items-center space-x-1.5 px-3.5 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white rounded-md text-xs font-bold shadow-lg shadow-cyan-500/30 border border-cyan-400/40 transition active:scale-95"
           title="Open Fullscreen 3D WebGL Simulator"
         >
           <Zap className="w-3.5 h-3.5 fill-current" />
-          <span>3D SIMULATOR</span>
+          <span className="hidden md:inline">3D SIMULATOR</span>
         </a>
+
+        {/* User Auth Profile / Sign In */}
+        {user ? (
+          <div className="flex items-center space-x-2 pl-2 border-l border-slate-800">
+            <div className="flex items-center space-x-1.5 px-2.5 py-1 bg-slate-950/80 rounded-lg border border-cyan-500/40 text-xs font-mono">
+              <span>{user.avatarIcon}</span>
+              <div className="hidden lg:block text-left">
+                <div className="font-bold text-white leading-none truncate max-w-[110px]">{user.name}</div>
+                <div className="text-[9px] text-cyan-400 truncate max-w-[110px]">{user.role.split(' ')[0]}</div>
+              </div>
+            </div>
+            {onSignOut && (
+              <button
+                onClick={onSignOut}
+                className="px-2 py-1 bg-slate-800 hover:bg-red-950/80 hover:border-red-500/40 hover:text-red-300 text-slate-400 rounded text-xs border border-slate-700 transition"
+                title="Sign Out"
+              >
+                Sign Out
+              </button>
+            )}
+          </div>
+        ) : (
+          onOpenAuth && (
+            <button
+              onClick={onOpenAuth}
+              className="flex items-center space-x-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white rounded-md text-xs font-bold shadow-md shadow-cyan-500/20 transition active:scale-95"
+              title="Sign In or Create Operator Account"
+            >
+              <span>👤</span>
+              <span>Sign In</span>
+            </button>
+          )
+        )}
       </div>
     </header>
   );

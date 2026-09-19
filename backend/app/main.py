@@ -4,6 +4,7 @@ import logging
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from .api.routes import router, sim_engine
+from .auth.router import router as auth_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("NavAdapt-AV")
@@ -23,6 +24,7 @@ app.add_middleware(
 )
 
 app.include_router(router, prefix="/api")
+app.include_router(auth_router, prefix="/api/auth", tags=["auth"])
 
 from pathlib import Path
 from fastapi import HTTPException

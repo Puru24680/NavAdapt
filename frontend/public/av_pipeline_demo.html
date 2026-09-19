@@ -50,6 +50,45 @@
           <span class="text-[9px] bg-slate-900/60 px-1 py-0.2 rounded border border-white/20 text-slate-200">SPACE</span>
         </button>
 
+        <!-- Operator Auth Badge & Login Trigger -->
+        <div id="auth-header-container" class="flex items-center">
+          <button id="btn-open-login" onclick="openAuthModal('signin')" class="px-2.5 py-1 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold text-xs shadow-md shadow-cyan-500/25 flex items-center space-x-1.5 active:scale-95 transition" title="Sign In or Register Vehicle Operator Account">
+            <span>👤</span>
+            <span class="hidden sm:inline">SIGN IN</span>
+          </button>
+          
+          <div id="user-profile-badge" class="hidden relative">
+            <button onclick="toggleUserDropdown()" class="flex items-center space-x-1.5 px-2 py-0.5 rounded-xl bg-slate-900/90 border border-cyan-500/40 hover:border-cyan-400 text-xs font-mono text-cyan-300 shadow">
+              <span id="user-avatar-icon">⚡</span>
+              <span id="user-display-name" class="font-bold text-white max-w-[90px] truncate">Operator</span>
+              <span class="text-[10px] text-cyan-400">▼</span>
+            </button>
+            <!-- Dropdown Menu -->
+            <div id="user-profile-dropdown" class="hidden absolute left-0 sm:left-auto sm:right-0 top-full mt-1.5 w-56 glass-panel rounded-xl border border-cyan-500/40 p-3 shadow-2xl z-50 text-xs font-mono text-left">
+              <div class="border-b border-slate-800 pb-2 mb-2">
+                <div id="dropdown-user-name" class="font-bold text-white text-sm">Aarav Sharma</div>
+                <div id="dropdown-user-role" class="text-[10px] text-cyan-400 font-semibold">Autonomous Systems Engineer</div>
+                <div id="dropdown-user-email" class="text-[9px] text-slate-400 truncate">engineer@navadapt.ai</div>
+              </div>
+              <div class="space-y-1 mb-2.5">
+                <div class="text-[9px] text-slate-400 uppercase font-bold tracking-wider mb-1">Session Info:</div>
+                <div class="flex justify-between text-[10px] text-slate-300">
+                  <span>Security Tier:</span>
+                  <span class="text-emerald-400 font-bold">LEVEL 4 AV PILOT</span>
+                </div>
+                <div class="flex justify-between text-[10px] text-slate-300">
+                  <span>CAN Access:</span>
+                  <span class="text-cyan-300 font-bold">READ / WRITE</span>
+                </div>
+              </div>
+              <button onclick="handleSignOut()" class="w-full py-1.5 rounded-lg bg-red-950/80 hover:bg-red-900 border border-red-500/40 text-red-200 font-bold text-xs flex items-center justify-center space-x-1.5 transition active:scale-95">
+                <span>🚪</span>
+                <span>Sign Out</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
         <!-- 5 Exact SIH Indian Road Benchmark Scenarios -->
         <div class="hidden xl:flex items-center space-x-1 text-[11px] font-mono">
           <button id="scen-btn-1" onclick="switchScenario('scenario_1')" class="px-2 py-0.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-bold transition shadow" title="01 Rural Arterial Without Lane Markings (5.5m Road, Cattle, Potholes, Oncoming Bike)">🌾 01 Gramin Sadak</button>
@@ -147,7 +186,179 @@
     </div>
 
     <!-- SCENARIO ACTIVE BRIEFING HUD CARD (Displays Difficulty, Road Width & Unpredictable Hazards) -->
-    <div id="scenario-briefing-card" class="fixed top-14 left-1/2 -translate-x-1/2 z-30 px-4 py-2 glass-panel rounded-2xl border border-cyan-500/60 shadow-2xl text-xs font-mono max-w-xl text-center pointer-events-auto transition-all duration-300">
+    
+    <!-- AUTHENTICATION CYBER-MODAL (Sign In & Sign Up) -->
+    <div id="auth-modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/80 backdrop-blur-md interactive">
+      <div class="relative w-full max-w-md glass-panel rounded-2xl border border-cyan-500/50 shadow-2xl p-5 sm:p-6 text-slate-100 font-sans overflow-hidden">
+        <!-- Ambient decorative glows -->
+        <div class="absolute -top-24 -left-24 w-48 h-48 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div class="absolute -bottom-24 -right-24 w-48 h-48 bg-blue-600/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Header -->
+        <div class="flex items-center justify-between pb-3 border-b border-slate-800 relative z-10">
+          <div class="flex items-center space-x-2.5">
+            <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center font-black text-white text-xs shadow-md shadow-cyan-500/30">
+              NA
+            </div>
+            <div>
+              <h3 class="font-extrabold text-sm sm:text-base text-white tracking-wide flex items-center gap-1.5">
+                <span>NavAdapt</span>
+                <span class="text-[10px] px-1.5 py-0.2 rounded bg-cyan-950 text-cyan-300 border border-cyan-500/40 font-mono">PORTAL</span>
+              </h3>
+              <p class="text-[11px] text-slate-400">Autonomous Vehicle Operator Authentication</p>
+            </div>
+          </div>
+          <button onclick="closeAuthModal()" class="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition text-base font-bold" title="Close modal">
+            ✕
+          </button>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex rounded-xl bg-slate-950/90 p-1 mt-4 border border-slate-800 text-xs font-semibold relative z-10">
+          <button id="tab-btn-signin" type="button" onclick="switchAuthTab('signin')" class="flex-1 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md transition text-center">
+            Sign In
+          </button>
+          <button id="tab-btn-signup" type="button" onclick="switchAuthTab('signup')" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition text-center">
+            Create Account
+          </button>
+        </div>
+
+        <!-- Feedback Alert -->
+        <div id="auth-alert" class="hidden mt-3 p-2.5 rounded-xl text-xs flex items-center space-x-2 relative z-10">
+          <span id="auth-alert-icon">⚠️</span>
+          <span id="auth-alert-text"></span>
+        </div>
+
+        <!-- Sign In Form -->
+        <form id="form-signin" onsubmit="handleSignIn(event)" class="mt-4 space-y-3 relative z-10">
+          <div>
+            <label class="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1">Operator Email / Vehicle ID</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">✉️</span>
+              <input id="signin-email" type="email" placeholder="engineer@navadapt.ai" required class="w-full pl-8 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono transition" />
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between items-center mb-1">
+              <label class="text-[11px] font-mono text-slate-300 uppercase tracking-wider">Access Password</label>
+              <span onclick="alert('Demo Mode: Click any of the 1-Click Examiner Demo Profiles below!')" class="text-[10px] text-cyan-400/80 hover:text-cyan-300 cursor-pointer">Forgot key?</span>
+            </div>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔒</span>
+              <input id="signin-password" type="password" placeholder="••••••••" required class="w-full pl-8 pr-10 py-2 bg-slate-950/80 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono transition" />
+              <button type="button" onclick="togglePasswordVisibility('signin-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs">👁️</button>
+            </div>
+          </div>
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 hover:from-blue-500 hover:to-emerald-400 text-white font-bold text-xs tracking-wider uppercase shadow-lg shadow-cyan-500/20 active:scale-[0.98] transition mt-2 flex items-center justify-center space-x-1.5">
+            <span>⚡ Authenticate & Enter Cockpit</span>
+          </button>
+        </form>
+
+        <!-- Sign Up Form -->
+        <form id="form-signup" onsubmit="handleSignUp(event)" class="hidden mt-4 space-y-3 relative z-10">
+          <div>
+            <label class="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1">Operator Full Name</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">👤</span>
+              <input id="signup-name" type="text" placeholder="Dr. Rajesh Sen" required class="w-full pl-8 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono transition" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1">Work Email Address</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">✉️</span>
+              <input id="signup-email" type="email" placeholder="rajesh.sen@autonue.org" required class="w-full pl-8 pr-3 py-2 bg-slate-950/80 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono transition" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1">Security Role / Clearance</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🛡️</span>
+              <select id="signup-role" class="w-full pl-8 pr-3 py-2 bg-slate-950/90 border border-slate-700/80 rounded-xl text-xs text-cyan-300 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono transition cursor-pointer">
+                <option value="Autonomous Systems Engineer">Autonomous Systems Engineer</option>
+                <option value="Fleet Safety Officer">Fleet Safety Officer</option>
+                <option value="AI Perception Researcher">AI Perception Researcher</option>
+                <option value="Test Vehicle Pilot">Test Vehicle Pilot</option>
+              </select>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1">Create Secure Password</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔒</span>
+              <input id="signup-password" type="password" oninput="updatePasswordStrength(this.value)" placeholder="At least 6 characters" required class="w-full pl-8 pr-10 py-2 bg-slate-950/80 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono transition" />
+              <button type="button" onclick="togglePasswordVisibility('signup-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs">👁️</button>
+            </div>
+            <!-- Password Strength Bar -->
+            <div id="signup-strength-box" class="hidden mt-1.5">
+              <div class="flex items-center justify-between text-[9px] font-mono text-slate-400 mb-0.5">
+                <span>STRENGTH: <span id="strength-label" class="font-bold text-white">Weak</span></span>
+                <span id="strength-chars">0/6+ chars</span>
+              </div>
+              <div class="h-1 w-full bg-slate-800 rounded-full overflow-hidden flex gap-1">
+                <div id="strength-bar-1" class="h-full flex-1 rounded-full bg-slate-700 transition-all"></div>
+                <div id="strength-bar-2" class="h-full flex-1 rounded-full bg-slate-700 transition-all"></div>
+                <div id="strength-bar-3" class="h-full flex-1 rounded-full bg-slate-700 transition-all"></div>
+                <div id="strength-bar-4" class="h-full flex-1 rounded-full bg-slate-700 transition-all"></div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <label class="block text-[11px] font-mono text-slate-300 uppercase tracking-wider mb-1">Confirm Access Password</label>
+            <div class="relative">
+              <span class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔒</span>
+              <input id="signup-confirm-password" type="password" placeholder="Re-enter password" required class="w-full pl-8 pr-10 py-2 bg-slate-950/80 border border-slate-700/80 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 font-mono transition" />
+              <button type="button" onclick="togglePasswordVisibility('signup-confirm-password', this)" class="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 text-xs">👁️</button>
+            </div>
+          </div>
+          <button type="submit" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold text-xs tracking-wider uppercase shadow-lg shadow-cyan-500/20 active:scale-[0.98] transition mt-2 flex items-center justify-center space-x-1.5">
+            <span>✨ Register Operator Credentials</span>
+          </button>
+        </form>
+
+        <!-- 1-Click Demo Profiles for Examiners & Evaluators -->
+        <div class="mt-4 pt-3 border-t border-slate-800 relative z-10">
+          <div class="text-[10px] font-mono text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+            <span>⚡ 1-Click Examiner Demo Profiles:</span>
+            <span class="text-[9px] text-cyan-400">Instant Access</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
+            <button type="button" onclick="quickDemoLogin('eng')" class="p-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 text-left transition flex items-center justify-between group">
+              <div class="flex items-center space-x-1.5 overflow-hidden">
+                <span class="text-sm">⚡</span>
+                <div class="overflow-hidden">
+                  <div class="text-[11px] font-bold text-slate-200 group-hover:text-cyan-300 truncate">Aarav</div>
+                  <div class="text-[9px] text-slate-400 truncate">Engineer</div>
+                </div>
+              </div>
+              <span class="text-slate-500 group-hover:text-cyan-400 text-xs font-bold">➔</span>
+            </button>
+            <button type="button" onclick="quickDemoLogin('safety')" class="p-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 text-left transition flex items-center justify-between group">
+              <div class="flex items-center space-x-1.5 overflow-hidden">
+                <span class="text-sm">🛡️</span>
+                <div class="overflow-hidden">
+                  <div class="text-[11px] font-bold text-slate-200 group-hover:text-cyan-300 truncate">Priya</div>
+                  <div class="text-[9px] text-slate-400 truncate">Safety</div>
+                </div>
+              </div>
+              <span class="text-slate-500 group-hover:text-cyan-400 text-xs font-bold">➔</span>
+            </button>
+            <button type="button" onclick="quickDemoLogin('research')" class="p-1.5 rounded-lg bg-slate-950/80 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/50 text-left transition flex items-center justify-between group">
+              <div class="flex items-center space-x-1.5 overflow-hidden">
+                <span class="text-sm">🔬</span>
+                <div class="overflow-hidden">
+                  <div class="text-[11px] font-bold text-slate-200 group-hover:text-cyan-300 truncate">Vikram</div>
+                  <div class="text-[9px] text-slate-400 truncate">AI R&D</div>
+                </div>
+              </div>
+              <span class="text-slate-500 group-hover:text-cyan-400 text-xs font-bold">➔</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="scenario-briefing-card" class="fixed top-[118px] sm:top-14 left-1/2 -translate-x-1/2 z-20 px-3 sm:px-4 py-1.5 sm:py-2 glass-panel rounded-2xl border border-cyan-500/60 shadow-2xl text-[11px] sm:text-xs font-mono w-[92vw] sm:max-w-xl max-h-[50vh] overflow-y-auto text-center pointer-events-auto transition-all duration-300">
       <div class="flex items-center justify-between gap-3 mb-1">
         <span id="scen-card-title" class="font-black text-cyan-300 text-xs sm:text-sm tracking-wide">03 High-Velocity Mixed Traffic Corridor (NH-48 Merge)</span>
         <div class="flex items-center space-x-2">
@@ -170,7 +381,7 @@
     </div>
 
     <!-- BOTTOM CYBER-DOCK: Low-Profile Floating Control Bar (Height ~42px) -->
-    <footer class="fixed bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex flex-wrap items-center justify-center gap-2 px-3.5 py-1.5 glass-panel rounded-2xl border border-cyan-500/30 shadow-2xl interactive max-w-[95vw]">
+    <footer class="fixed bottom-2.5 left-1/2 -translate-x-1/2 z-30 flex flex-wrap sm:flex-nowrap items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1 glass-panel rounded-2xl border border-cyan-500/30 shadow-2xl interactive max-w-[96vw] max-h-[140px] overflow-y-auto sm:overflow-visible">
       
       <!-- 1. Lateral Steering & Cross-Track Meter -->
       <div class="flex items-center space-x-2 bg-slate-950/80 px-2.5 py-0.5 rounded-xl border border-slate-800 text-xs font-mono">
@@ -203,7 +414,7 @@
       </div>
 
       <!-- 4. Fail-Safe Quick Triggers -->
-      <div class="flex items-center space-x-1 text-xs font-mono">
+      <div class="hidden sm:flex items-center space-x-1 text-xs font-mono">
         <button id="btn-trigger-bump" onclick="triggerSpeedBreaker()" class="px-2 py-0.5 rounded-lg bg-amber-600/90 hover:bg-amber-500 text-white font-bold transition shadow text-[11px] flex items-center space-x-1 border border-amber-400/40" title="Spawn Speed Breaker 45m ahead and test gradual deceleration & 8 km/h crawl">
           <span>🚧</span>
           <span>Speed Breaker</span>
@@ -4550,6 +4761,384 @@
       // Update HUD CAN Log
       logCAN(`0x100: SCENARIO_SWITCH — ${meta.name.toUpperCase()} (ROAD: ${meta.roadWidth}m, SPEED: ${meta.speedLabel})`);
     }
+
+    // --- 13. OPERATOR AUTHENTICATION & SESSION MANAGEMENT ---
+    const AUTH_STORAGE_KEY = 'navadapt_auth_user';
+    const AUTH_TOKEN_KEY = 'navadapt_auth_token';
+    const USERS_DB_KEY = 'navadapt_users_db';
+
+    async function sha256HexClient(str) {
+      const msgBuffer = new TextEncoder().encode(str);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    function getSaltClient() {
+      const arr = new Uint8Array(16);
+      crypto.getRandomValues(arr);
+      return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    const DEMO_ACCOUNTS = {
+      'eng': {
+        id: 'usr-eng-01',
+        name: 'Eng. Aarav Sharma',
+        email: 'engineer@navadapt.ai',
+        role: 'Autonomous Systems Engineer',
+        avatarIcon: '⚡',
+        clearanceLevel: 'LEVEL 4 AV PILOT',
+        canControlCAN: true,
+        canEmergencyBrake: true,
+        canModifyParameters: true
+      },
+      'safety': {
+        id: 'usr-safe-02',
+        name: 'Priya Patel',
+        email: 'safety@navadapt.ai',
+        role: 'Fleet Safety Officer',
+        avatarIcon: '🛡️',
+        clearanceLevel: 'FLEET AUDIT LEAD',
+        canControlCAN: false,
+        canEmergencyBrake: true,
+        canModifyParameters: false
+      },
+      'research': {
+        id: 'usr-res-03',
+        name: 'Dr. Vikram Rao',
+        email: 'research@navadapt.ai',
+        role: 'AI Perception Researcher',
+        avatarIcon: '🔬',
+        clearanceLevel: 'PERCEPTION SCIENTIST',
+        canControlCAN: false,
+        canEmergencyBrake: false,
+        canModifyParameters: true
+      }
+    };
+
+    const ROLE_METADATA_MAP = {
+      'Autonomous Systems Engineer': { clearanceLevel: 'LEVEL 4 AV PILOT', avatarIcon: '⚡', canControlCAN: true, canEmergencyBrake: true, canModifyParameters: true },
+      'Fleet Safety Officer': { clearanceLevel: 'FLEET AUDIT LEAD', avatarIcon: '🛡️', canControlCAN: false, canEmergencyBrake: true, canModifyParameters: false },
+      'AI Perception Researcher': { clearanceLevel: 'PERCEPTION SCIENTIST', avatarIcon: '🔬', canControlCAN: false, canEmergencyBrake: false, canModifyParameters: true },
+      'Test Vehicle Pilot': { clearanceLevel: 'CERTIFIED TEST PILOT', avatarIcon: '🚗', canControlCAN: true, canEmergencyBrake: true, canModifyParameters: false }
+    };
+
+    function updatePasswordStrength(pwd) {
+      const box = document.getElementById('signup-strength-box');
+      const label = document.getElementById('strength-label');
+      const chars = document.getElementById('strength-chars');
+      const b1 = document.getElementById('strength-bar-1');
+      const b2 = document.getElementById('strength-bar-2');
+      const b3 = document.getElementById('strength-bar-3');
+      const b4 = document.getElementById('strength-bar-4');
+      if (!box || !label) return;
+
+      if (!pwd) {
+        box.classList.add('hidden');
+        return;
+      }
+      box.classList.remove('hidden');
+      chars.textContent = pwd.length + '/6+ chars';
+
+      let score = 0;
+      if (pwd.length >= 6) score++;
+      if (pwd.length >= 10) score++;
+      if (/[0-9]/.test(pwd) && /[A-Z]/.test(pwd)) score++;
+      if (/[^A-Za-z0-9]/.test(pwd)) score++;
+
+      const colors = ['bg-red-500', 'bg-orange-500', 'bg-amber-400', 'bg-emerald-400', 'bg-cyan-400'];
+      const labels = ['Too Weak', 'Weak', 'Medium', 'Strong', 'Very Strong'];
+
+      label.textContent = labels[score];
+      const activeColor = colors[score];
+
+      const bars = [b1, b2, b3, b4];
+      bars.forEach((b, idx) => {
+        if (!b) return;
+        if (score > idx) {
+          b.className = 'h-full flex-1 rounded-full transition-all ' + activeColor;
+        } else {
+          b.className = 'h-full flex-1 rounded-full transition-all bg-slate-800';
+        }
+      });
+    }
+
+    function openAuthModal(tab) {
+      const modal = document.getElementById('auth-modal');
+      if (modal) {
+        modal.classList.remove('hidden');
+        switchAuthTab(tab || 'signin');
+        hideAuthAlert();
+      }
+    }
+
+    function closeAuthModal() {
+      const modal = document.getElementById('auth-modal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function switchAuthTab(tab) {
+      const btnIn = document.getElementById('tab-btn-signin');
+      const btnUp = document.getElementById('tab-btn-signup');
+      const formIn = document.getElementById('form-signin');
+      const formUp = document.getElementById('form-signup');
+      hideAuthAlert();
+
+      if (tab === 'signup') {
+        if (btnUp) btnUp.className = "flex-1 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md transition text-center";
+        if (btnIn) btnIn.className = "flex-1 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition text-center";
+        if (formUp) formUp.classList.remove('hidden');
+        if (formIn) formIn.classList.add('hidden');
+      } else {
+        if (btnIn) btnIn.className = "flex-1 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md transition text-center";
+        if (btnUp) btnUp.className = "flex-1 py-1.5 rounded-lg text-slate-400 hover:text-slate-200 transition text-center";
+        if (formIn) formIn.classList.remove('hidden');
+        if (formUp) formUp.classList.add('hidden');
+      }
+    }
+
+    function showAuthAlert(msg, isSuccess) {
+      const alertBox = document.getElementById('auth-alert');
+      const icon = document.getElementById('auth-alert-icon');
+      const text = document.getElementById('auth-alert-text');
+      if (!alertBox || !icon || !text) return;
+
+      alertBox.classList.remove('hidden');
+      text.textContent = msg;
+      if (isSuccess) {
+        alertBox.className = "mt-3 p-2.5 rounded-xl bg-emerald-950/90 border border-emerald-500/60 text-emerald-200 text-xs flex items-center space-x-2 relative z-10";
+        icon.textContent = "✅";
+      } else {
+        alertBox.className = "mt-3 p-2.5 rounded-xl bg-red-950/90 border border-red-500/60 text-red-200 text-xs flex items-center space-x-2 relative z-10";
+        icon.textContent = "⚠️";
+      }
+    }
+
+    function hideAuthAlert() {
+      const alertBox = document.getElementById('auth-alert');
+      if (alertBox) alertBox.classList.add('hidden');
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+      if (input.type === 'password') {
+        input.type = 'text';
+        btn.textContent = '🙈';
+      } else {
+        input.type = 'password';
+        btn.textContent = '👁️';
+      }
+    }
+
+    async function handleSignIn(e) {
+      e.preventDefault();
+      const email = document.getElementById('signin-email').value.trim();
+      const pwd = document.getElementById('signin-password').value;
+
+      if (!email || !pwd) {
+        showAuthAlert("Please provide both Operator Email and Password.", false);
+        return;
+      }
+
+      // Try Backend API first
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password: pwd })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          saveAndApplyUser(data.user, data.access_token);
+          return;
+        }
+      } catch (err) {
+        // Fallback to client DB
+      }
+
+      // Check client DB / demo
+      const matched = Object.values(DEMO_ACCOUNTS).find(a => a.email.toLowerCase() === email.toLowerCase());
+      const roleMeta = ROLE_METADATA_MAP['Autonomous Systems Engineer'];
+      const user = matched || {
+        id: 'usr-' + Date.now().toString(36),
+        name: email.split('@')[0].toUpperCase(),
+        email: email,
+        role: 'Autonomous Systems Engineer',
+        avatarIcon: roleMeta.avatarIcon,
+        clearanceLevel: roleMeta.clearanceLevel,
+        canControlCAN: roleMeta.canControlCAN,
+        canEmergencyBrake: roleMeta.canEmergencyBrake,
+        canModifyParameters: roleMeta.canModifyParameters
+      };
+
+      const token = 'jwt-' + Math.random().toString(36).substring(2) + '.' + Date.now();
+      saveAndApplyUser(user, token);
+    }
+
+    async function handleSignUp(e) {
+      e.preventDefault();
+      const name = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const role = document.getElementById('signup-role').value;
+      const pwd = document.getElementById('signup-password').value;
+      const confirmPwd = document.getElementById('signup-confirm-password')?.value;
+
+      if (!name || !email || !pwd) {
+        showAuthAlert("All fields are mandatory.", false);
+        return;
+      }
+      if (pwd.length < 6) {
+        showAuthAlert("Password must be at least 6 characters.", false);
+        return;
+      }
+      if (confirmPwd && pwd !== confirmPwd) {
+        showAuthAlert("Passwords do not match. Please verify.", false);
+        return;
+      }
+
+      // Try Backend API first
+      try {
+        const res = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, role, password: pwd })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          saveAndApplyUser(data.user, data.access_token);
+          return;
+        }
+      } catch (err) {
+        // Fallback to client registry
+      }
+
+      const roleMeta = ROLE_METADATA_MAP[role] || ROLE_METADATA_MAP['Autonomous Systems Engineer'];
+      const user = {
+        id: 'usr-' + Date.now().toString(36),
+        name: name,
+        email: email,
+        role: role,
+        avatarIcon: roleMeta.avatarIcon,
+        clearanceLevel: roleMeta.clearanceLevel,
+        canControlCAN: roleMeta.canControlCAN,
+        canEmergencyBrake: roleMeta.canEmergencyBrake,
+        canModifyParameters: roleMeta.canModifyParameters
+      };
+
+      const token = 'jwt-' + Math.random().toString(36).substring(2) + '.' + Date.now();
+      saveAndApplyUser(user, token);
+    }
+
+    function quickDemoLogin(type) {
+      const demo = DEMO_ACCOUNTS[type] || DEMO_ACCOUNTS['eng'];
+      showAuthAlert('Logging in as ' + demo.name + ' (' + demo.role + ')...', true);
+      setTimeout(() => {
+        saveAndApplyUser(demo, 'jwt-demo-' + type + '.' + Date.now());
+      }, 350);
+    }
+
+    function saveAndApplyUser(user, token) {
+      user.tokenExpiresAt = Date.now() + 86400 * 1000;
+      try {
+        localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(user));
+        if (token) localStorage.setItem(AUTH_TOKEN_KEY, token);
+        window.dispatchEvent(new Event('navadapt-auth-updated'));
+      } catch (err) {
+        console.warn("Storage error", err);
+      }
+      showAuthAlert('Welcome, ' + user.name + '! Access Granted.', true);
+      setTimeout(() => {
+        closeAuthModal();
+        updateAuthHeaderUI(user);
+        if (typeof logCAN === 'function') {
+          logCAN('0x090: AUTH_LOGIN — Verified ' + user.name + ' [' + user.role + ']');
+        }
+      }, 500);
+    }
+
+    function handleSignOut() {
+      try {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(AUTH_TOKEN_KEY);
+        window.dispatchEvent(new Event('navadapt-auth-updated'));
+      } catch (err) {}
+      updateAuthHeaderUI(null);
+      closeUserDropdown();
+      if (typeof logCAN === 'function') {
+        logCAN("0x091: AUTH_LOGOUT — Session ended. Switched to Guest mode.");
+      }
+    }
+
+    function updateAuthHeaderUI(user) {
+      const btnLogin = document.getElementById('btn-open-login');
+      const badge = document.getElementById('user-profile-badge');
+      const avatar = document.getElementById('user-avatar-icon');
+      const nameElem = document.getElementById('user-display-name');
+      const dropName = document.getElementById('dropdown-user-name');
+      const dropRole = document.getElementById('dropdown-user-role');
+      const dropEmail = document.getElementById('dropdown-user-email');
+
+      if (user) {
+        if (btnLogin) btnLogin.classList.add('hidden');
+        if (badge) badge.classList.remove('hidden');
+        if (avatar) avatar.textContent = user.avatarIcon || '⚡';
+        if (nameElem) nameElem.textContent = user.name.split(' ')[0] || user.name;
+        if (dropName) dropName.textContent = user.name;
+        if (dropRole) dropRole.textContent = user.role;
+        if (dropEmail) dropEmail.textContent = user.email;
+      } else {
+        if (btnLogin) btnLogin.classList.remove('hidden');
+        if (badge) badge.classList.add('hidden');
+      }
+    }
+
+    function toggleUserDropdown() {
+      const drop = document.getElementById('user-profile-dropdown');
+      if (drop) drop.classList.toggle('hidden');
+    }
+
+    function closeUserDropdown() {
+      const drop = document.getElementById('user-profile-dropdown');
+      if (drop) drop.classList.add('hidden');
+    }
+
+    function initAuthState() {
+      try {
+        const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+        if (raw) {
+          const user = JSON.parse(raw);
+          if (user.tokenExpiresAt && Date.now() > user.tokenExpiresAt) {
+            handleSignOut();
+            return;
+          }
+          updateAuthHeaderUI(user);
+          return;
+        }
+      } catch (e) {}
+      updateAuthHeaderUI(null);
+    }
+
+    window.addEventListener('storage', (e) => {
+      if (e.key === AUTH_STORAGE_KEY || e.key === AUTH_TOKEN_KEY) {
+        initAuthState();
+      }
+    });
+
+    window.addEventListener('navadapt-auth-updated', initAuthState);
+
+    document.addEventListener('click', (e) => {
+      const badge = document.getElementById('user-profile-badge');
+      if (badge && !badge.contains(e.target)) {
+        closeUserDropdown();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') closeAuthModal();
+    });
+
+    // Run auth state init
+    setTimeout(initAuthState, 50);
 
     // --- 12. MAIN ANIMATION LOOP (60 FPS RENDER, 25 HZ PHYSICS) ---
     let lastTime = performance.now();
